@@ -1,0 +1,11 @@
+trino_profile:
+  target: cluster
+  outputs:
+    cluster:
+      type: trino
+      host: trino.aaas.svc.cluster.local
+      port: 8080
+      user: dbt
+      catalog: iceberg
+      schema: default
+      http_scheme: http

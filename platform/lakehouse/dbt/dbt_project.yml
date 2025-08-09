@@ -1,0 +1,8 @@
+name: lakehouse_medallion
+version: 1.0.0
+profile: trino_profile
+models:
+  bronze:   { +materialized: table, +schema: bronze }
+  silver:   { +materialized: table, +schema: silver }
+  gold:     { +materialized: view,  +schema: gold }
+  platinum: { +materialized: table, +schema: platinum }

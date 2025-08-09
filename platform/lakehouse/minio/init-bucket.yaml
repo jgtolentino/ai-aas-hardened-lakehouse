@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata: { name: minio-make-bucket, namespace: aaas }
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: quay.io/minio/mc:RELEASE.2025-03-20T00-00-00Z
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom: { secretKeyRef: { name: minio-keys, key: access_key } }
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: minio-keys, key: secret_key } }
+          command: ["/bin/sh","-lc"]
+          args:
+            - >
+              mc alias set lake http://minio.aaas.svc.cluster.local:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD &&
+              mc mb -p lake/lakehouse || true;

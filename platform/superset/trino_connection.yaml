@@ -1,0 +1,4 @@
+databases:
+  - database_name: "Trino (lake)"
+    sqlalchemy_uri: "trino://dbt@trino.aaas.svc.cluster.local:8080/iceberg/gold"
+    allow_run_async: true
