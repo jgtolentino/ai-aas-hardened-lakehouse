@@ -1,6 +1,6 @@
 name: lakehouse_medallion
 version: 1.0.0
-profile: trino_profile
+profile: scout
 models:
   bronze:   { +materialized: table, +schema: bronze }
   silver:   { +materialized: table, +schema: silver }
