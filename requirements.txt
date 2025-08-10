@@ -3,7 +3,7 @@
 # Data Engineering
 dbt-core==1.7.4
 dbt-postgres==1.7.4
-dbt-trino==1.7.1
+dbt-trino==1.9.3
 great-expectations==0.18.8
 
 # Database
