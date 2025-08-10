@@ -1,0 +1,23 @@
+{
+  "name": "@tbwa/scout-contracts",
+  "version": "1.0.0",
+  "description": "Data contracts and type definitions for Scout Analytics",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "generate": "npm run generate:types && npm run generate:openapi",
+    "generate:types": "supabase gen types typescript --project-ref $SUPABASE_PROJECT_REF > types/database.types.ts",
+    "generate:openapi": "echo '// OpenAPI spec generation here' > openapi.json",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist",
+    "types",
+    "sql",
+    "openapi.json"
+  ],
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
