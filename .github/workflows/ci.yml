@@ -17,10 +17,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: |
-          pip install dbt-duckdb dbt-trino
-          DBT_TARGET=ci dbt compile --profiles-dir profiles
-          DBT_TARGET=ci dbt test --profiles-dir profiles
+      - run: pip install dbt-duckdb dbt-trino
+      - name: Run dbt compile and test
+        working-directory: ./platform/lakehouse/dbt
+        run: |
+          DBT_TARGET=ci dbt compile --profiles-dir ../../../profiles
+          DBT_TARGET=ci dbt test --profiles-dir ../../../profiles
 
   bruno-smoke:
     runs-on: ubuntu-latest
@@ -30,7 +32,12 @@ jobs:
         with:
           node-version: 20
       - run: npm install -g @usebruno/cli
-      - run: bruno run collections/smoke --env staging || echo "No collections yet"
+      - run: |
+          if [ -d "collections/smoke" ]; then
+            bruno run collections/smoke --env staging
+          else
+            echo "No Bruno collections found - skipping"
+          fi
 
   security-scan:
     runs-on: ubuntu-latest
@@ -59,4 +66,5 @@ jobs:
       - run: |
           pip install great_expectations
           mkdir -p great_expectations
-          echo "GE not configured yet" > great_expectations/.placeholder
+          echo "config_version: 3.0" > great_expectations/great_expectations.yml
+          echo "GE configuration initialized"
