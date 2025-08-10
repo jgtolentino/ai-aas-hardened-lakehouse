@@ -77,3 +77,10 @@ charts/*.lock
 # Scout Analytics generated data
 tools/scout_seed_data/
 tools/.env
+
+# QA artifacts and dependencies
+qa/node_modules/
+qa/.env
+artifacts/
+*.junit.xml
+*.report.json

@@ -1,0 +1,66 @@
+name: QA Browser-Use
+on:
+  workflow_dispatch:
+  push:
+    paths: 
+      - "qa/**"
+      - ".github/workflows/qa.yml"
+jobs:
+  run-qa:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix: 
+        browser: [chrome, firefox]
+    env:
+      BROWSERS: ${{ matrix.browser }}
+      QA_BASE_URL: ${{ vars.QA_BASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      MCP_BROWSER_USE_URL: "http://127.0.0.1:5173"
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: 20
+          
+      - run: npm i -g npm@latest
+      
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./qa
+        
+      - name: Start Browser-Use MCP
+        run: |
+          nohup npx -y browser-use-mcp@latest \
+            --headless \
+            --browser=${{ matrix.browser }} \
+            --port 5173 > mcp.log 2>&1 &
+            
+      - name: Wait for MCP
+        run: |
+          for i in {1..30}; do 
+            nc -z 127.0.0.1 5173 && echo "MCP is up!" && exit 0
+            sleep 1
+          done
+          echo "MCP failed to start"
+          cat mcp.log
+          exit 1
+          
+      - name: Run flows
+        run: npm run run
+        working-directory: ./qa
+        
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-artifacts-${{ matrix.browser }}
+          path: artifacts/
+          
+      - name: Upload MCP logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-logs-${{ matrix.browser }}
+          path: mcp.log

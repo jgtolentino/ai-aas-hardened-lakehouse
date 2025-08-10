@@ -1,0 +1,24 @@
+meta:
+  id: login_checkout
+  description: "Login → add to cart → checkout happy path"
+  tags: [e2e, smoke]
+setup:
+  baseUrl: "${QA_BASE_URL}"
+  browserMatrix: "${BROWSERS}"
+steps:
+  - navigate: "/login"
+  - waitFor: { selector: 'input[name="email"]' }
+  - type: { selector: 'input[name="email"]', text: "qa.user@example.com" }
+  - type: { selector: 'input[name="password"]', text: "correct-horse-battery-staple" }
+  - click: { text: "Sign in" }
+  - assert: { condition: 'url.includes("/dashboard")', message: "Should land on dashboard" }
+  - navigate: "/products"
+  - click: { text: "Add to Cart", nth: 1 }
+  - click: { role: "button", name: "Cart" }
+  - assert: { condition: 'innerText("h1").includes("Your Cart")', message: "Cart page visible" }
+  - click: { text: "Checkout" }
+  - waitFor: { selector: '[data-test="order-summary"]' }
+  - screenshot: "artifacts/login_checkout_summary.png"
+  - assert:
+      condition: 'innerText("[data-test=total]").match(/\\₱?\\d+[\\.,]\\d{2}/)'
+      message: "Total shows a currency amount"

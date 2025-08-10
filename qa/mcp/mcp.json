@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "browser-use": {
+      "command": "npx",
+      "args": ["-y", "browser-use-mcp@latest", "--headless", "--port", "5173"],
+      "transport": "stdio",
+      "env": { 
+        "MCP_PORT": "5173" 
+      }
+    }
+  }
+}

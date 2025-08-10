@@ -1,0 +1,23 @@
+meta:
+  id: cross_browser_smoke
+  description: "Basic smoke test across browsers"
+  tags: [smoke, cross-browser]
+setup:
+  baseUrl: "${QA_BASE_URL}"
+  browserMatrix: "${BROWSERS}"
+steps:
+  - navigate: "/"
+  - waitFor: { selector: 'body' }
+  - assert: { condition: 'document.title.length > 0', message: "Page has title" }
+  - screenshot: "artifacts/homepage_${browser}.png"
+  
+  # Test navigation menu
+  - click: { selector: '[data-test="nav-menu"]' }
+  - waitFor: { selector: '[data-test="nav-items"]' }
+  - assert: { condition: 'document.querySelectorAll("[data-test=nav-items] a").length > 0', message: "Nav has links" }
+  
+  # Test search
+  - type: { selector: 'input[type="search"]', text: "test product" }
+  - click: { selector: 'button[type="submit"]' }
+  - waitFor: { selector: '[data-test="search-results"]' }
+  - assert: { condition: 'innerText("body").includes("results")', message: "Search returns results" }

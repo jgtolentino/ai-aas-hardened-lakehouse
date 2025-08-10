@@ -1,0 +1,21 @@
+meta:
+  id: price_validation
+  description: "Prices on PDP match expected feed"
+  tags: [validation, price]
+data:
+  expected:
+    SKU123: 129.00
+    SKU456: 89.50
+setup:
+  baseUrl: "${QA_BASE_URL}"
+steps:
+  - navigate: "/product/SKU123"
+  - extract: { selector: "[data-test=pdp-price]", as: "priceText" }
+  - assert:
+      condition: 'Number(normalizeCurrency(ctx.priceText)) === 129.00'
+      message: "SKU123 price matches"
+  - navigate: "/product/SKU456"
+  - extract: { selector: "[data-test=pdp-price]", as: "priceText" }
+  - assert:
+      condition: 'Number(normalizeCurrency(ctx.priceText)) === 89.50'
+      message: "SKU456 price matches"
