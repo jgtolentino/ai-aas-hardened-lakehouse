@@ -1,0 +1,93 @@
+{
+  "dashboard": {
+    "title": "Scout Platform SLOs",
+    "uid": "scout-slos",
+    "panels": [
+      {
+        "title": "Data Freshness",
+        "targets": [
+          {
+            "expr": "time() - max(scout_last_transaction_timestamp)",
+            "legendFormat": "Minutes since last transaction"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [60],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "60s",
+          "handler": 1,
+          "name": "Data Freshness Alert",
+          "noDataState": "alerting",
+          "notifications": []
+        }
+      },
+      {
+        "title": "API Latency (p95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"scout-api\"}[5m]))",
+            "legendFormat": "p95 latency"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [2],
+                "type": "gt"
+              }
+            }
+          ],
+          "name": "API Latency Alert"
+        }
+      },
+      {
+        "title": "Edge Function Error Rate",
+        "targets": [
+          {
+            "expr": "rate(edge_function_errors_total[5m]) / rate(edge_function_requests_total[5m])",
+            "legendFormat": "Error rate"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [0.001],
+                "type": "gt"
+              }
+            }
+          ],
+          "name": "Edge Function Error Rate Alert"
+        }
+      },
+      {
+        "title": "MV Refresh Success Rate",
+        "targets": [
+          {
+            "expr": "rate(mv_refresh_success_total[1h]) / rate(mv_refresh_attempts_total[1h])",
+            "legendFormat": "Success rate"
+          }
+        ]
+      }
+    ]
+  }
+}

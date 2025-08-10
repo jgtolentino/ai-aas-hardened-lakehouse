@@ -1,36 +1,122 @@
 apiVersion: batch/v1
 kind: CronJob
-metadata: { name: dbt-nightly, namespace: aaas }
+metadata:
+  name: scout-dbt-runner
+  namespace: aaas
 spec:
-  schedule: "0 18 * * *" # 02:00+08:00 Manila
+  schedule: "0 */2 * * *"  # Run every 2 hours
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
-      backoffLimit: 1
       template:
         spec:
           restartPolicy: OnFailure
-          serviceAccountName: dbt-runner
           containers:
-            - name: dbt
-              image: ghcr.io/REPO_OWNER/ai-aas-hardened-lakehouse-dbt:latest
-              imagePullPolicy: IfNotPresent
-              resources:
-                requests: { cpu: "200m", memory: "512Mi" }
-                limits:   { cpu: "1", memory: "2Gi" }
+          - name: dbt-runner
+            image: ghcr.io/REPO_OWNER/scout-dbt-runner:main
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting dbt run at $(date)"
+              
+              # Run data quality tests first
+              echo "Running data quality tests..."
+              dbt test --select source:* --profiles-dir /dbt/profiles || exit 1
+              
+              # Run incremental models
+              echo "Running dbt models..."
+              dbt run --profiles-dir /dbt/profiles || exit 1
+              
+              # Run post-transformation tests
+              echo "Running model tests..."
+              dbt test --exclude source:* --profiles-dir /dbt/profiles || exit 1
+              
+              # Generate documentation
+              echo "Generating documentation..."
+              dbt docs generate --profiles-dir /dbt/profiles || true
+              
+              echo "dbt run completed successfully at $(date)"
+            env:
+            - name: DBT_PROFILES_DIR
+              value: /dbt/profiles
+            - name: TRINO_HOST
+              value: trino.aaas.svc.cluster.local
+            - name: TRINO_PORT
+              value: "8080"
+            - name: TRINO_USER
+              value: dbt_runner
+            volumeMounts:
+            - name: dbt-profiles
+              mountPath: /dbt/profiles
+              readOnly: true
+            resources:
+              requests:
+                memory: 512Mi
+                cpu: 500m
+              limits:
+                memory: 2Gi
+                cpu: 2000m
+          volumes:
+          - name: dbt-profiles
+            configMap:
+              name: dbt-profiles
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbt-profiles
+  namespace: aaas
+data:
+  profiles.yml: |
+    scout_lakehouse:
+      target: prod
+      outputs:
+        prod:
+          type: trino
+          method: none  # No authentication for internal cluster
+          user: dbt_runner
+          database: iceberg
+          schema: bronze
+          host: trino.aaas.svc.cluster.local
+          port: 8080
+          threads: 4
+          http_scheme: http
+          session_properties:
+            query_max_run_time: 5m
 ---
 apiVersion: v1
 kind: ServiceAccount
-metadata: { name: dbt-runner, namespace: aaas }
+metadata:
+  name: dbt-runner
+  namespace: aaas
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
-metadata: { name: dbt-runner, namespace: aaas }
+metadata:
+  name: dbt-runner
+  namespace: aaas
 rules:
-  - apiGroups: ["batch"] resources: ["jobs"] verbs: ["get","list","watch","create","delete"]
-  - apiGroups: [""] resources: ["pods"] verbs: ["get","list","watch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
-metadata: { name: dbt-runner, namespace: aaas }
-subjects: [ { kind: ServiceAccount, name: dbt-runner, namespace: aaas } ]
-roleRef: { kind: Role, name: dbt-runner, apiGroup: rbac.authorization.k8s.io }
+metadata:
+  name: dbt-runner
+  namespace: aaas
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dbt-runner
+subjects:
+- kind: ServiceAccount
+  name: dbt-runner
+  namespace: aaas

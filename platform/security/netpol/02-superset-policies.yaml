@@ -1,0 +1,88 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: superset-allow-ingress
+  namespace: aaas
+spec:
+  podSelector:
+    matchLabels:
+      app: superset
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8088
+  # Allow from internal monitoring
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+      podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 8088
+  egress:
+  # Allow to Trino
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: aaas
+      podSelector:
+        matchLabels:
+          app: trino
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Allow to Redis cache
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: aaas
+      podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow to PostgreSQL metadata DB
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: aaas
+      podSelector:
+        matchLabels:
+          app: postgres-meta
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow to external Supabase
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+    ports:
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 443
+  # Allow DNS
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53

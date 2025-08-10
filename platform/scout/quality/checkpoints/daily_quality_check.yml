@@ -1,0 +1,57 @@
+name: daily_quality_check
+config_version: 1.0
+class_name: Checkpoint
+run_name_template: "%Y%m%d-%H%M%S-scout-daily"
+
+validations:
+  - batch_request:
+      datasource_name: scout_postgres
+      data_connector_name: default_inferred_data_connector
+      data_asset_name: scout.silver_transactions
+      data_connector_query:
+        index: -1
+    expectation_suite_name: scout.silver_transactions
+
+  - batch_request:
+      datasource_name: scout_postgres
+      data_connector_name: default_runtime_data_connector
+      data_asset_name: daily_ingestion_metrics
+      runtime_parameters:
+        query: |
+          WITH daily_stats AS (
+            SELECT 
+              date_trunc('day', ts) as day,
+              COUNT(*) as transaction_count,
+              COUNT(DISTINCT store_id) as unique_stores,
+              COUNT(DISTINCT barangay) as unique_barangays,
+              AVG(peso_value) as avg_transaction_value,
+              SUM(peso_value) as total_revenue
+            FROM scout.silver_transactions
+            WHERE ts >= CURRENT_DATE - INTERVAL '7 days'
+            GROUP BY 1
+          )
+          SELECT * FROM daily_stats ORDER BY day DESC
+    expectation_suite_name: daily_metrics_suite
+
+action_list:
+  - name: store_validation_result
+    action:
+      class_name: StoreValidationResultAction
+
+  - name: store_evaluation_params
+    action:
+      class_name: StoreEvaluationParametersAction
+
+  - name: update_data_docs
+    action:
+      class_name: UpdateDataDocsAction
+
+  - name: send_slack_notification_on_failure
+    action:
+      class_name: SlackNotificationAction
+      slack_webhook: ${SLACK_WEBHOOK}
+      notify_on: failure
+      notification_string: |
+        Scout Data Quality Check Failed!
+        Suite: {expectation_suite_name}
+        Result: {success}

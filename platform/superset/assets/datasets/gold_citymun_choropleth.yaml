@@ -1,0 +1,115 @@
+table_name: "gold_citymun_choropleth"
+schema: "scout"
+database_name: "Scout Supabase"
+description: "City/Municipality level sales metrics with geographic boundaries for detailed choropleth visualization"
+is_sqllab_view: false
+columns:
+  - column_name: citymun_psgc
+    verbose_name: City/Municipality PSGC
+    type: TEXT
+    groupby: true
+    filterable: true
+  - column_name: citymun_name
+    verbose_name: City/Municipality
+    type: TEXT
+    groupby: true
+    filterable: true
+  - column_name: province_psgc
+    verbose_name: Province PSGC
+    type: TEXT
+    groupby: true
+    filterable: true
+  - column_name: region_key
+    verbose_name: Region
+    type: TEXT
+    groupby: true
+    filterable: true
+  - column_name: day
+    verbose_name: Date
+    is_dttm: true
+    type: TIMESTAMP
+    python_date_format: "%Y-%m-%d"
+  - column_name: txn_count
+    verbose_name: Transactions
+    type: BIGINT
+    metric: true
+  - column_name: active_stores
+    verbose_name: Active Stores
+    type: BIGINT
+    metric: true
+  - column_name: peso_total
+    verbose_name: Total Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: avg_transaction_value
+    verbose_name: Avg Transaction (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: beverages_sales
+    verbose_name: Beverages Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: snacks_sales
+    verbose_name: Snacks Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: personal_care_sales
+    verbose_name: Personal Care Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: household_sales
+    verbose_name: Household Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: revenue_per_capita
+    verbose_name: Revenue per Capita (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: income_class
+    verbose_name: Income Class
+    type: TEXT
+    groupby: true
+    filterable: true
+  - column_name: is_city
+    verbose_name: Is City
+    type: BOOLEAN
+    groupby: true
+    filterable: true
+  - column_name: geom
+    verbose_name: Geometry
+    is_spatial: true
+    type: GEOMETRY
+  # Virtual column for Deck.gl GeoJSON visualization
+  - column_name: geojson
+    verbose_name: GeoJSON
+    type: TEXT
+    expression: "ST_AsGeoJSON(geom)"
+    is_dttm: false
+metrics:
+  - metric_name: sum_peso_total
+    expression: "SUM(peso_total)"
+    metric_type: sum
+    verbose_name: "Total Sales (₱)"
+    d3format: ",.2f"
+  - metric_name: sum_txn_count
+    expression: "SUM(txn_count)"
+    metric_type: sum
+    verbose_name: "Total Transactions"
+    d3format: ",.0f"
+  - metric_name: avg_ticket
+    expression: "NULLIF(SUM(peso_total),0)/NULLIF(SUM(txn_count),0)"
+    metric_type: avg
+    verbose_name: "Average Ticket (₱)"
+    d3format: ",.2f"
+  - metric_name: category_diversity
+    expression: "COUNT(DISTINCT CASE WHEN beverages_sales > 0 THEN 1 END) + COUNT(DISTINCT CASE WHEN snacks_sales > 0 THEN 1 END) + COUNT(DISTINCT CASE WHEN personal_care_sales > 0 THEN 1 END) + COUNT(DISTINCT CASE WHEN household_sales > 0 THEN 1 END)"
+    metric_type: count_distinct
+    verbose_name: "Category Diversity"
+    d3format: ",.0f"

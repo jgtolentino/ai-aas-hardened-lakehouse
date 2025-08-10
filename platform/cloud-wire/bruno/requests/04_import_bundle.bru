@@ -1,0 +1,18 @@
+meta { name: import_bundle; type: http }
+vars { BASE: {{SUPERSET_BASE}} TOKEN: {{TOKEN}} CSRF: {{CSRF}} }
+files {
+  bundle: ../../superset/bundle.zip
+}
+request {
+  url: {{BASE}}/api/v1/assets/import
+  method: POST
+  headers: {
+    Authorization: Bearer {{TOKEN}}
+    X-CSRFToken: {{CSRF}}
+    Referer: {{BASE}}
+  }
+  body: multipart-form
+  multipartForm: [
+    { name: "bundle", value: @bundle }
+  ]
+}

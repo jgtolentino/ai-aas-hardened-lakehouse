@@ -1,0 +1,176 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: geo-boundary-importer
+  namespace: aaas
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: ogr2ogr
+        image: osgeo/gdal:3.7.3-ubuntu-small
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: supabase-source
+              key: PG_PASS
+        - name: PG_HOST
+          valueFrom:
+            secretKeyRef:
+              name: supabase-source
+              key: PG_HOST
+        - name: PG_USER
+          valueFrom:
+            secretKeyRef:
+              name: supabase-source
+              key: PG_USER
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          echo "Starting Philippine boundary import..."
+          
+          # PostgreSQL connection string
+          export PGURI="postgresql://${PG_USER}:${PGPASSWORD}@${PG_HOST}:5432/postgres?sslmode=require"
+          
+          # Download Philippine boundaries from public sources
+          echo "Downloading ADM1 (regions)..."
+          curl -L -o /tmp/PHL_ADM1.geojson \
+            "https://raw.githubusercontent.com/faeldon/philippines-json-maps/master/geojson/regions/hires/regions.json"
+          
+          echo "Downloading ADM2 (provinces)..."
+          curl -L -o /tmp/PHL_ADM2.geojson \
+            "https://raw.githubusercontent.com/faeldon/philippines-json-maps/master/geojson/provinces/hires/provinces.json"
+          
+          echo "Downloading ADM3 (cities/municipalities)..."
+          curl -L -o /tmp/PHL_ADM3.geojson \
+            "https://raw.githubusercontent.com/faeldon/philippines-json-maps/master/geojson/municities/hires/municities.json"
+          
+          # Import ADM1 (regions)
+          echo "Importing regions..."
+          ogr2ogr -f PostgreSQL PG:"$PGURI" \
+            /tmp/PHL_ADM1.geojson \
+            -nln scout.geo_adm1_region_temp \
+            -nlt MULTIPOLYGON \
+            -lco GEOMETRY_NAME=geom \
+            -lco FID=region_key \
+            -lco SCHEMA=scout \
+            -overwrite
+          
+          # Import ADM2 (provinces)
+          echo "Importing provinces..."
+          ogr2ogr -f PostgreSQL PG:"$PGURI" \
+            /tmp/PHL_ADM2.geojson \
+            -nln scout.geo_adm2_province_temp \
+            -nlt MULTIPOLYGON \
+            -lco GEOMETRY_NAME=geom \
+            -lco FID=province_psgc \
+            -lco SCHEMA=scout \
+            -overwrite
+          
+          # Import ADM3 (cities/municipalities)
+          echo "Importing cities/municipalities..."
+          ogr2ogr -f PostgreSQL PG:"$PGURI" \
+            /tmp/PHL_ADM3.geojson \
+            -nln scout.geo_adm3_citymun_temp \
+            -nlt MULTIPOLYGON \
+            -lco GEOMETRY_NAME=geom \
+            -lco FID=citymun_psgc \
+            -lco SCHEMA=scout \
+            -overwrite
+          
+          # Run post-processing SQL to map fields and normalize
+          echo "Post-processing imported data..."
+          psql "$PGURI" <<'SQL'
+          -- Map region data
+          INSERT INTO scout.geo_adm1_region (region_key, region_name, geom, props)
+          SELECT 
+            COALESCE(properties->>'reg_code', properties->>'id', properties->>'name') as region_key,
+            properties->>'name' as region_name,
+            geom,
+            properties as props
+          FROM scout.geo_adm1_region_temp
+          ON CONFLICT (region_key) DO UPDATE SET
+            region_name = EXCLUDED.region_name,
+            geom = EXCLUDED.geom,
+            props = EXCLUDED.props,
+            updated_at = NOW();
+          
+          -- Map province data
+          INSERT INTO scout.geo_adm2_province (province_psgc, province_name, region_key, geom, props)
+          SELECT 
+            COALESCE(properties->>'prov_code', properties->>'id', properties->>'name') as province_psgc,
+            properties->>'name' as province_name,
+            scout.norm_region(properties->>'region') as region_key,
+            geom,
+            properties as props
+          FROM scout.geo_adm2_province_temp
+          ON CONFLICT (province_psgc) DO UPDATE SET
+            province_name = EXCLUDED.province_name,
+            region_key = EXCLUDED.region_key,
+            geom = EXCLUDED.geom,
+            props = EXCLUDED.props,
+            updated_at = NOW();
+          
+          -- Map city/municipality data  
+          INSERT INTO scout.geo_adm3_citymun (citymun_psgc, citymun_name, province_psgc, region_key, geom, props)
+          SELECT 
+            COALESCE(properties->>'mun_code', properties->>'city_code', properties->>'id') as citymun_psgc,
+            properties->>'name' as citymun_name,
+            COALESCE(properties->>'prov_code', properties->>'province') as province_psgc,
+            scout.norm_region(properties->>'region') as region_key,
+            geom,
+            properties as props
+          FROM scout.geo_adm3_citymun_temp
+          ON CONFLICT (citymun_psgc) DO UPDATE SET
+            citymun_name = EXCLUDED.citymun_name,
+            province_psgc = EXCLUDED.province_psgc,
+            region_key = EXCLUDED.region_key,
+            geom = EXCLUDED.geom,
+            props = EXCLUDED.props,
+            updated_at = NOW();
+          
+          -- Clean up temp tables
+          DROP TABLE IF EXISTS scout.geo_adm1_region_temp;
+          DROP TABLE IF EXISTS scout.geo_adm2_province_temp;
+          DROP TABLE IF EXISTS scout.geo_adm3_citymun_temp;
+          
+          -- Generate simplified geometries
+          TRUNCATE scout.geo_adm1_region_gen;
+          INSERT INTO scout.geo_adm1_region_gen(region_key, geom, tolerance)
+          SELECT region_key, ST_SimplifyPreserveTopology(geom, 0.005), 0.005
+          FROM scout.geo_adm1_region;
+          
+          TRUNCATE scout.geo_adm2_province_gen;
+          INSERT INTO scout.geo_adm2_province_gen(province_psgc, geom, tolerance)
+          SELECT province_psgc, ST_SimplifyPreserveTopology(geom, 0.003), 0.003
+          FROM scout.geo_adm2_province;
+          
+          TRUNCATE scout.geo_adm3_citymun_gen;
+          INSERT INTO scout.geo_adm3_citymun_gen(citymun_psgc, geom, tolerance)
+          SELECT citymun_psgc, ST_SimplifyPreserveTopology(geom, 0.002), 0.002
+          FROM scout.geo_adm3_citymun;
+          
+          -- Update dim_store PSGC codes
+          SELECT scout.update_store_psgc();
+          
+          -- Report results
+          SELECT 'Regions imported:' as status, COUNT(*) as count FROM scout.geo_adm1_region
+          UNION ALL
+          SELECT 'Provinces imported:', COUNT(*) FROM scout.geo_adm2_province
+          UNION ALL
+          SELECT 'Cities/Municipalities imported:', COUNT(*) FROM scout.geo_adm3_citymun;
+          
+          SQL
+          
+          echo "Geographic boundary import completed successfully!"
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2000m

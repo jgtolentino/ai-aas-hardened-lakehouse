@@ -1,0 +1,45 @@
+vars {
+  # Staging environment configuration
+  # Lower thresholds and test data for staging
+  
+  # Supabase Configuration
+  SUPABASE_URL: https://texxwmlroefdisgxpszc.supabase.co
+  SUPABASE_ANON_KEY: your_staging_anon_key
+  SUPABASE_SERVICE_KEY: your_staging_service_key
+  
+  # Superset Configuration
+  SUPERSET_BASE: http://localhost:8088
+  SUPERSET_USERNAME: admin
+  SUPERSET_PASSWORD: admin
+  
+  # Scout Analytics Database (local/staging)
+  SCOUT_DB_HOST: localhost
+  SCOUT_DB_PORT: 5432
+  SCOUT_DB_NAME: scout_analytics_staging
+  SCOUT_DB_USER: scout_viewer
+  SCOUT_DB_PASSWORD: viewer_pass
+  
+  # Test Data Configuration
+  TEST_STORE_ID: TEST_STORE_001
+  TEST_REGION: NCR
+  TEST_DATE_FROM: 2024-01-01
+  TEST_DATE_TO: 2024-01-07
+  
+  # Performance Thresholds (more lenient for staging)
+  PERF_THRESHOLD_API: 2000
+  PERF_THRESHOLD_QUERY: 3000
+  PERF_THRESHOLD_CHOROPLETH: 5000
+  
+  # Feature Flags
+  ENABLE_PERFORMANCE_TESTS: true
+  ENABLE_NEGATIVE_TESTS: true
+  ENABLE_CHOROPLETH_TESTS: true
+  
+  # Timeout Configuration
+  REQUEST_TIMEOUT: 60000
+  
+  # Expected Data Counts (may be lower in staging)
+  EXPECTED_REGIONS: 5
+  EXPECTED_PROVINCES: 10
+  EXPECTED_CITIES: 50
+}

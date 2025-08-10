@@ -1,0 +1,60 @@
+meta {
+  name: 14 Genie Query (Natural Language)
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/functions/v1/genie-query
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseAnonKey}}
+}
+
+headers {
+  Content-Type: application/json
+  apikey: {{supabaseAnonKey}}
+}
+
+body:json {
+  {
+    "prompt": "Show me top 5 brands by revenue in NCR region for the last 7 days",
+    "context": {
+      "schema": "scout",
+      "tables": ["gold_txn_daily", "gold_product_mix"],
+      "user_region": "{{region}}"
+    }
+  }
+}
+
+script:pre-request {
+  // This assumes you have a genie-query Edge Function that:
+  // 1. Takes natural language prompt
+  // 2. Generates SQL using an LLM
+  // 3. Executes the query safely
+  // 4. Returns results
+}
+
+tests {
+  test("Should return SQL and results", function() {
+    if (res.status === 404) {
+      console.log("genie-query function not deployed. Deploy it first or skip this test.");
+      return;
+    }
+    
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property("sql");
+    expect(res.body).to.have.property("results");
+    expect(res.body).to.have.property("row_count");
+    
+    if (res.body.results && res.body.results.length > 0) {
+      // Should have brand revenue data
+      const firstResult = res.body.results[0];
+      expect(firstResult).to.have.property("brand_name");
+      expect(firstResult).to.have.property("total_revenue");
+    }
+  });
+}

@@ -1,0 +1,124 @@
+meta {
+  name: Batch Transactions
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/functions/v1/ingest-transaction
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseAnonKey}}
+}
+
+headers {
+  Content-Type: application/json
+  apikey: {{supabaseAnonKey}}
+}
+
+body:json {
+  {
+    "transactions": [
+      {
+        "id": "txn_{{timestamp}}_batch_001",
+        "store_id": "CEB_LAP_001",
+        "timestamp": "{{isoTimestamp}}",
+        "location": {
+          "barangay": "Poblacion",
+          "city": "Lapu-Lapu City",
+          "province": "Cebu",
+          "region": "Region VII"
+        },
+        "product_category": "snacks",
+        "brand_name": "Jack n Jill",
+        "sku": "PIATTOS_40G",
+        "units_per_transaction": 3,
+        "peso_value": 60.00,
+        "basket_size": 5,
+        "combo_basket": [
+          { "sku": "PIATTOS_40G", "quantity": 3 },
+          { "sku": "C2_APPLE_355ML", "quantity": 2 }
+        ],
+        "request_mode": "pointing",
+        "request_type": "point",
+        "suggestion_accepted": false,
+        "gender": "female",
+        "age_bracket": "35-44",
+        "substitution_event": {
+          "occurred": false
+        },
+        "duration_seconds": 30,
+        "campaign_influenced": false,
+        "handshake_score": 0.65,
+        "is_tbwa_client": true,
+        "payment_method": "cash",
+        "customer_type": "regular",
+        "store_type": "residential",
+        "economic_class": "D"
+      },
+      {
+        "id": "txn_{{timestamp}}_batch_002",
+        "store_id": "DAV_TOL_001",
+        "timestamp": "{{isoTimestamp}}",
+        "location": {
+          "barangay": "Toril",
+          "city": "Davao City",
+          "province": "Davao del Sur",
+          "region": "Region XI"
+        },
+        "product_category": "personal_care",
+        "brand_name": "Safeguard",
+        "sku": "SAFEGUARD_60G",
+        "units_per_transaction": 1,
+        "peso_value": 25.00,
+        "basket_size": 2,
+        "combo_basket": [
+          { "sku": "SAFEGUARD_60G", "quantity": 1 },
+          { "sku": "COLGATE_25G", "quantity": 1 }
+        ],
+        "request_mode": "verbal",
+        "request_type": "unbranded",
+        "suggestion_accepted": true,
+        "gender": "male",
+        "age_bracket": "45-54",
+        "substitution_event": {
+          "occurred": false
+        },
+        "duration_seconds": 50,
+        "campaign_influenced": true,
+        "handshake_score": 0.90,
+        "is_tbwa_client": false,
+        "payment_method": "maya",
+        "customer_type": "new",
+        "store_type": "rural",
+        "economic_class": "E"
+      }
+    ],
+    "source_id": "bruno_test_batch"
+  }
+}
+
+vars:pre-request {
+  timestamp: new Date().getTime()
+  isoTimestamp: new Date().toISOString()
+}
+
+assert {
+  res.status: eq 200
+  res.body.processed: eq 2
+  res.body.errors: eq 0
+}
+
+tests {
+  test("Should process batch transactions", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.processed).to.equal(2);
+    expect(res.body.errors).to.equal(0);
+    expect(res.body.results).to.have.lengthOf(2);
+    expect(res.body.results[0].status).to.equal("success");
+    expect(res.body.results[1].status).to.equal("success");
+  });
+}

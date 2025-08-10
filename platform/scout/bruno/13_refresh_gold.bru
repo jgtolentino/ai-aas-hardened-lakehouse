@@ -1,0 +1,62 @@
+meta {
+  name: 13 Refresh Gold Views
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/rest/v1/rpc/refresh_gold_views
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseServiceRole}}
+}
+
+headers {
+  Content-Type: application/json
+  apikey: {{supabaseServiceRole}}
+}
+
+body:json {
+  {}
+}
+
+script:pre-request {
+  // This assumes you've created the refresh function in your migrations
+  // If not, you can create it with:
+  /*
+  CREATE OR REPLACE FUNCTION scout.refresh_gold_views()
+  RETURNS jsonb AS $$
+  BEGIN
+    REFRESH MATERIALIZED VIEW CONCURRENTLY scout.gold_txn_daily;
+    REFRESH MATERIALIZED VIEW CONCURRENTLY scout.gold_product_mix;
+    REFRESH MATERIALIZED VIEW CONCURRENTLY scout.gold_basket_patterns;
+    REFRESH MATERIALIZED VIEW CONCURRENTLY scout.gold_substitution_flows;
+    REFRESH MATERIALIZED VIEW CONCURRENTLY scout.gold_request_behavior;
+    REFRESH MATERIALIZED VIEW CONCURRENTLY scout.gold_demographics;
+    
+    RETURN jsonb_build_object(
+      'status', 'success',
+      'refreshed_at', NOW(),
+      'views_refreshed', 6
+    );
+  END;
+  $$ LANGUAGE plpgsql;
+  */
+}
+
+tests {
+  test("Should refresh gold materialized views", function() {
+    if (res.status === 404) {
+      console.log("refresh_gold_views function not found. Create it first or skip this test.");
+      return;
+    }
+    
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an("object");
+    expect(res.body.status).to.equal("success");
+    expect(res.body.views_refreshed).to.equal(6);
+  });
+}

@@ -1,0 +1,106 @@
+# ===================================================================
+# Apache Superset Helm values overlay (production)
+# Repo: https://apache.github.io/superset  Chart: apache/superset
+# ===================================================================
+
+# Point Superset to load our config file from pythonpath
+env:
+  SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+  # Comma-separated list of embedding origins you allow (no trailing slashes)
+  EMBED_ALLOWED_ORIGINS: "https://scout.tbwa.com,https://analytics.tbwa.com"
+
+# Pull MAPBOX_API_KEY from secret (no key in git)
+extraEnvRaw:
+  - name: MAPBOX_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: superset-mapbox
+        key: MAPBOX_API_KEY
+
+# Add/override config via a ConfigMap the chart mounts on PYTHONPATH
+configOverrides:
+  superset_config.py: |
+    import os
+
+    # --- Security & CSP ---
+    WTF_CSRF_ENABLED = True
+    TALISMAN_ENABLED = True
+
+    def _split_origins(val):
+        return [o.strip() for o in (val or "").split(",") if o.strip()]
+
+    _origins = _split_origins(os.getenv("EMBED_ALLOWED_ORIGINS", "")) or ["https://scout.tbwa.com"]
+
+    CONTENT_SECURITY_POLICY = {
+        "default-src": ["'self'"],
+        "style-src": ["'self'", "'unsafe-inline'", "https://api.mapbox.com", "https://*.mapbox.com", "https://*.tiles.mapbox.com"],
+        "script-src": ["'self'", "https://api.mapbox.com", "https://*.mapbox.com"],
+        "img-src": ["'self'", "data:", "https://api.mapbox.com", "https://*.mapbox.com", "https://*.tiles.mapbox.com"],
+        "connect-src": ["'self'", "https://api.mapbox.com", "https://events.mapbox.com", "https://*.mapbox.com", "https://*.tiles.mapbox.com"],
+        "frame-ancestors": _origins,
+    }
+    PUBLIC_ROLE_LIKE = None
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+
+    # --- Mapbox for Deck.gl ---
+    MAPBOX_API_KEY = os.getenv("MAPBOX_API_KEY", "")
+
+    # --- Feature Flags for Geospatial ---
+    FEATURE_FLAGS = {
+        "ENABLE_DECK_GL_VISUALIZATIONS": True,
+        "ENABLE_GEOSPATIAL_VISUALIZATIONS": True,
+        "ENABLE_JAVASCRIPT_CONTROLS": True,
+    }
+
+    # --- Cache (Redis) keeps choropleth snappy ---
+    from datetime import timedelta
+    CACHE_CONFIG = {
+        "CACHE_TYPE": "RedisCache",
+        "CACHE_DEFAULT_TIMEOUT": 300,
+        "CACHE_KEY_PREFIX": "superset_",
+        "CACHE_REDIS_HOST": os.getenv("REDIS_HOST", "redis"),
+        "CACHE_REDIS_PORT": int(os.getenv("REDIS_PORT", "6379")),
+        "CACHE_REDIS_DB": int(os.getenv("REDIS_DB", "1")),
+    }
+
+    # Map tile cache for better performance
+    MAP_TILE_CACHE_CONFIG = {
+        "CACHE_TYPE": "RedisCache",
+        "CACHE_DEFAULT_TIMEOUT": 86400,  # 24 hours
+        "CACHE_KEY_PREFIX": "superset_map_tiles",
+        "CACHE_REDIS_HOST": os.getenv("REDIS_HOST", "redis"),
+        "CACHE_REDIS_PORT": int(os.getenv("REDIS_PORT", "6379")),
+        "CACHE_REDIS_DB": int(os.getenv("REDIS_DB", "2")),
+    }
+
+    # --- Performance Settings ---
+    ROW_LIMIT = 50000
+    CSV_EXPORT = True
+    
+    # Limit geometry sizes
+    MAX_GEOMETRY_SIZE_MB = 50
+    MAX_MAP_FEATURES = 10000
+
+    # --- PostGIS Database Configuration ---
+    from sqlalchemy.dialects.postgresql import GEOGRAPHY, GEOMETRY
+    CUSTOM_TYPES = {
+        "GEOGRAPHY": GEOGRAPHY,
+        "GEOMETRY": GEOMETRY,
+    }
+
+# Pods pick up envFrom the secret (works for worker/beat/node)
+supersetNode:
+  extraEnvFrom:
+    - secretRef:
+        name: superset-mapbox
+
+# If you run Celery workers, keep them in sync
+supersetWorker:
+  extraEnvFrom:
+    - secretRef:
+        name: superset-mapbox
+supersetCeleryBeat:
+  extraEnvFrom:
+    - secretRef:
+        name: superset-mapbox

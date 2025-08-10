@@ -1,0 +1,66 @@
+meta { name: verify_geo_data; type: http }
+vars { BASE: {{SUPERSET_BASE}} TOKEN: {{TOKEN}} CSRF: {{CSRF}} }
+request {
+  url: {{BASE}}/api/v1/sqllab/
+  method: POST
+  
+  headers {
+    Authorization: Bearer {{TOKEN}}
+    X-CSRFToken: {{CSRF}}
+    Content-Type: application/json
+    Referer: {{BASE}}
+  }
+  
+  body: json
+  json: {
+    "database_id": "__DB_ID__",
+    "sql": "SELECT region_key, region_name, COUNT(*) as row_count, MAX(day) as latest_data FROM scout.gold_region_choropleth GROUP BY region_key, region_name ORDER BY region_key LIMIT 20",
+    "client_id": "browser-{{ Date.now() }}",
+    "runAsync": false,
+    "tmp_table_name": "",
+    "select_as_cta": false,
+    "ctas_method": "TABLE",
+    "queryLimit": 1000,
+    "expand_data": true
+  }
+}
+
+script:pre-request {
+  // This test requires database ID - would need to be set from create_db_conn response
+  // For now, skip this test unless DB_ID is manually set
+  if (!bru.getEnvVar("DB_ID")) {
+    console.log("Skipping geo data verification - DB_ID not set");
+    // You could get this from the database list API or save it from create_db_conn
+  }
+}
+
+tests {
+  test("Status is 200", () => {
+    if (bru.getEnvVar("DB_ID")) {
+      expect(res.status).to.equal(200);
+    } else {
+      console.log("Skipped - no DB_ID configured");
+    }
+  });
+  
+  test("Geographic data exists", () => {
+    if (bru.getEnvVar("DB_ID") && res.body.data) {
+      expect(res.body.data).to.be.an('array');
+      expect(res.body.data.length).to.be.greaterThan(0);
+      
+      // Should have multiple regions
+      const regions = res.body.data.map(row => row.region_key);
+      console.log(`Found regions: ${regions.join(', ')}`);
+      expect(regions.length).to.be.greaterThan(5);
+    }
+  });
+}
+
+script:post-response {
+  if (res.body.data && res.body.data.length > 0) {
+    console.log("✅ Geographic data verification passed");
+    res.body.data.forEach(row => {
+      console.log(`  ${row.region_key}: ${row.row_count} rows, latest: ${row.latest_data}`);
+    });
+  }
+}

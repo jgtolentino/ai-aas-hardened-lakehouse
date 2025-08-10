@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scout-alerting-rules
+  namespace: monitoring
+data:
+  scout-slos.yaml: |
+    groups:
+    - name: scout_slos
+      interval: 30s
+      rules:
+      # Data Freshness SLO
+      - alert: DataFreshnessViolation
+        expr: (time() - max(scout_last_transaction_timestamp)) > 3600
+        for: 5m
+        labels:
+          severity: critical
+          team: data-platform
+        annotations:
+          summary: "Scout data freshness SLO violation"
+          description: "No new transactions received for {{ $value | humanizeDuration }}"
+      
+      # API Latency SLO
+      - alert: APILatencyHigh
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(http_request_duration_seconds_bucket{service="scout-api"}[5m])) 
+            by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Scout API p95 latency > 2s"
+          description: "95th percentile latency is {{ $value }}s"
+      
+      # Edge Function Error Rate
+      - alert: EdgeFunctionErrors
+        expr: |
+          sum(rate(edge_function_errors_total[5m])) 
+          / sum(rate(edge_function_requests_total[5m])) > 0.001
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Edge function error rate > 0.1%"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+      
+      # MV Refresh Failures
+      - alert: MVRefreshFailures
+        expr: |
+          sum(increase(mv_refresh_failures_total[15m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: data-platform
+        annotations:
+          summary: "Materialized view refresh failures detected"
+          description: "{{ $value }} refresh failures in the last 15 minutes"
+      
+      # Disk Usage (MinIO)
+      - alert: MinIODiskUsageHigh
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/data"} 
+          / node_filesystem_size_bytes{mountpoint="/data"}) < 0.1
+        for: 15m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "MinIO disk usage > 90%"
+          description: "Only {{ $value | humanizePercentage }} disk space remaining"
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: scout-slo-alerts
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: scout.slos
+    interval: 30s
+    rules:
+    - alert: ScoutDataFreshness
+      expr: (time() - max(scout_last_transaction_timestamp)) > 3600
+      for: 5m
+      labels:
+        severity: critical
+        slo: data-freshness
+      annotations:
+        summary: "Scout data freshness SLO violation"
+        description: "No transactions for {{ $value | humanizeDuration }}"
+        runbook_url: "https://wiki.example.com/runbooks/scout-data-freshness"

@@ -1,20 +1,61 @@
 apiVersion: batch/v1
 kind: Job
-metadata: { name: minio-make-bucket, namespace: aaas }
+metadata:
+  name: minio-make-bucket
+  namespace: aaas
 spec:
   template:
     spec:
-      restartPolicy: OnFailure
+      restartPolicy: Never
       containers:
-        - name: mc
-          image: quay.io/minio/mc:RELEASE.2025-03-20T00-00-00Z
-          env:
-            - name: MINIO_ROOT_USER
-              valueFrom: { secretKeyRef: { name: minio-keys, key: access_key } }
-            - name: MINIO_ROOT_PASSWORD
-              valueFrom: { secretKeyRef: { name: minio-keys, key: secret_key } }
-          command: ["/bin/sh","-lc"]
-          args:
-            - >
-              mc alias set lake http://minio.aaas.svc.cluster.local:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD &&
-              mc mb -p lake/lakehouse || true;
+      - name: mc
+        image: minio/mc:RELEASE.2024-01-05T05-04-32Z
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Configuring MinIO client..."
+          mc alias set minio http://minio.aaas.svc.cluster.local:9000 minioadmin minioadmin
+          
+          echo "Creating lakehouse bucket..."
+          mc mb minio/lakehouse || echo "Bucket already exists"
+          
+          echo "Setting bucket policy..."
+          cat > /tmp/bucket-policy.json <<EOF
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {"AWS": ["*"]},
+                "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+                "Resource": ["arn:aws:s3:::lakehouse/*"]
+              },
+              {
+                "Effect": "Allow",
+                "Principal": {"AWS": ["*"]},
+                "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+                "Resource": ["arn:aws:s3:::lakehouse"]
+              }
+            ]
+          }
+          EOF
+          
+          mc anonymous set-json /tmp/bucket-policy.json minio/lakehouse
+          
+          echo "Creating directory structure..."
+          for layer in bronze silver gold platinum; do
+            echo "Creating /$layer directory..."
+            mc cp /dev/null minio/lakehouse/$layer/.keep
+          done
+          
+          echo "Bucket initialization complete!"
+          mc ls -r minio/lakehouse/
+        resources:
+          limits:
+            memory: 256Mi
+            cpu: 200m
+          requests:
+            memory: 128Mi
+            cpu: 100m

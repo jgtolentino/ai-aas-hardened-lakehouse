@@ -1,0 +1,11 @@
+meta { name: csrf; type: http }
+vars { BASE: {{SUPERSET_BASE}} TOKEN: {{TOKEN}} }
+request {
+  url: {{BASE}}/api/v1/security/csrf_token/
+  method: GET
+  headers: { Authorization: Bearer {{TOKEN}} }
+}
+test {
+  jmespath: body.result.csrf_token
+  save: { name: CSRF, value: "{{res.body.result.csrf_token}}" }
+}

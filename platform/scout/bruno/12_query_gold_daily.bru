@@ -1,0 +1,56 @@
+meta {
+  name: 12 Query Gold Daily View
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/rest/v1/gold_txn_daily?region=eq.{{region}}&day=gte.{{dateFrom}}&day=lte.{{dateTo}}&select=day,time_of_day,region,barangay,product_category,brand_name,transaction_count,total_peso,avg_basket_size,suggestion_acceptance_rate&order=day.desc,total_peso.desc
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseServiceRole}}
+}
+
+headers {
+  apikey: {{supabaseServiceRole}}
+  Accept: application/json
+  Range: 0-99
+}
+
+tests {
+  test("Should retrieve gold aggregated data", function() {
+    expect(res.status).to.be.oneOf([200, 206]); // 206 for partial content with Range header
+    expect(res.body).to.be.an("array");
+    
+    if (res.body.length > 0) {
+      const record = res.body[0];
+      expect(record).to.have.property("day");
+      expect(record).to.have.property("region");
+      expect(record).to.have.property("transaction_count");
+      expect(record).to.have.property("total_peso");
+      expect(record).to.have.property("avg_basket_size");
+      expect(record).to.have.property("suggestion_acceptance_rate");
+    }
+  });
+  
+  test("Should have data for specified region", function() {
+    const regionFilter = bru.getEnvVar("region");
+    res.body.forEach(record => {
+      expect(record.region).to.equal(regionFilter);
+    });
+  });
+  
+  test("Should be within date range", function() {
+    const dateFrom = new Date(bru.getEnvVar("dateFrom"));
+    const dateTo = new Date(bru.getEnvVar("dateTo"));
+    
+    res.body.forEach(record => {
+      const recordDate = new Date(record.day);
+      expect(recordDate).to.be.at.least(dateFrom);
+      expect(recordDate).to.be.at.most(dateTo);
+    });
+  });
+}

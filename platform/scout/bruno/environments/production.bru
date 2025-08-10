@@ -1,0 +1,45 @@
+vars {
+  # Production environment configuration
+  # Update these values for your production deployment
+  
+  # Supabase Configuration
+  SUPABASE_URL: https://cxzllzyxwpyptfretryc.supabase.co
+  SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4emxsenlwdHlwdGZyZXRyeWMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY5NzQ4NDg2NCwiZXhwIjoyMDEzMDYwODY0fQ.example_key
+  SUPABASE_SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4emxsenlwdHlwdGZyZXRyeWMiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjk3NDg0ODY0LCJleHAiOjIwMTMwNjA4NjR9.service_key
+  
+  # Superset Configuration
+  SUPERSET_BASE: https://superset.your-domain.com
+  SUPERSET_USERNAME: admin
+  SUPERSET_PASSWORD: your_admin_password
+  
+  # Scout Analytics Database (for direct SQL tests)
+  SCOUT_DB_HOST: your-postgres-host.com
+  SCOUT_DB_PORT: 5432
+  SCOUT_DB_NAME: scout_analytics
+  SCOUT_DB_USER: scout_viewer
+  SCOUT_DB_PASSWORD: your_db_password
+  
+  # Test Data Configuration
+  TEST_STORE_ID: STORE001
+  TEST_REGION: NCR
+  TEST_DATE_FROM: 2024-01-01
+  TEST_DATE_TO: 2024-01-31
+  
+  # Performance Thresholds (in milliseconds)
+  PERF_THRESHOLD_API: 1000
+  PERF_THRESHOLD_QUERY: 1500
+  PERF_THRESHOLD_CHOROPLETH: 2500
+  
+  # Feature Flags
+  ENABLE_PERFORMANCE_TESTS: true
+  ENABLE_NEGATIVE_TESTS: true
+  ENABLE_CHOROPLETH_TESTS: true
+  
+  # Timeout Configuration
+  REQUEST_TIMEOUT: 30000
+  
+  # Expected Data Counts (for validation)
+  EXPECTED_REGIONS: 17
+  EXPECTED_PROVINCES: 80
+  EXPECTED_CITIES: 1600
+}

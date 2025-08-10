@@ -1,0 +1,474 @@
+# Scout Dashboard - Superset Assets Bundle
+# Import via: superset import-dashboards -p scout_dashboard.yaml
+
+version: 1.0.0
+databases:
+  - database_name: "Scout Analytics"
+    sqlalchemy_uri: "postgresql://username:password@host:5432/postgres"
+    allow_run_async: true
+    allow_ctas: true
+    allow_cvas: true
+    expose_in_sqllab: true
+    extra: |
+      {
+        "schemas_allowed_for_csv_upload": ["scout"],
+        "version": "1.4",
+        "allows_virtual_table_explore": true
+      }
+
+datasets:
+  # Core transaction dataset
+  - table_name: "silver_transactions"
+    database: "Scout Analytics"
+    schema: "scout"
+    columns:
+      - column_name: "ts"
+        type: "TIMESTAMP"
+        is_temporal: true
+        is_dttm: true
+      - column_name: "region"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "province"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "city"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "barangay"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "product_category"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "brand_name"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "time_of_day"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "peso_value"
+        type: "NUMERIC"
+        filterable: true
+      - column_name: "units_per_transaction"
+        type: "INTEGER"
+        filterable: true
+      - column_name: "basket_size"
+        type: "INTEGER"
+        filterable: true
+      - column_name: "request_mode"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "request_type"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "suggestion_accepted"
+        type: "BOOLEAN"
+        filterable: true
+      - column_name: "gender"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "age_bracket"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "is_tbwa_client"
+        type: "BOOLEAN"
+        filterable: true
+    metrics:
+      - metric_name: "total_revenue"
+        expression: "SUM(peso_value)"
+        metric_type: "sum"
+      - metric_name: "transaction_count"
+        expression: "COUNT(DISTINCT id)"
+        metric_type: "count_distinct"
+      - metric_name: "avg_basket_size"
+        expression: "AVG(basket_size)"
+        metric_type: "avg"
+      - metric_name: "suggestion_acceptance_rate"
+        expression: "SUM(CASE WHEN suggestion_accepted THEN 1 ELSE 0 END)::FLOAT / COUNT(*)"
+        metric_type: "expression"
+
+  # Gold aggregates
+  - table_name: "gold_txn_daily"
+    database: "Scout Analytics"
+    schema: "scout"
+    columns:
+      - column_name: "day"
+        type: "DATE"
+        is_temporal: true
+        is_dttm: true
+      - column_name: "time_of_day"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "region"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "barangay"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "product_category"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "brand_name"
+        type: "VARCHAR"
+        groupby: true
+      - column_name: "total_peso"
+        type: "NUMERIC"
+      - column_name: "transaction_count"
+        type: "INTEGER"
+      - column_name: "avg_basket_size"
+        type: "NUMERIC"
+      - column_name: "suggestion_acceptance_rate"
+        type: "NUMERIC"
+
+  - table_name: "gold_product_mix"
+    database: "Scout Analytics"
+    schema: "scout"
+    
+  - table_name: "gold_basket_patterns"
+    database: "Scout Analytics"
+    schema: "scout"
+    
+  - table_name: "gold_substitution_flows"
+    database: "Scout Analytics"
+    schema: "scout"
+    
+  - table_name: "gold_demographics"
+    database: "Scout Analytics"
+    schema: "scout"
+
+  - table_name: "platinum_ai_panel_metrics"
+    database: "Scout Analytics"
+    schema: "scout"
+
+charts:
+  # 1. Transaction Trends
+  - slice_name: "Daily Revenue Trend"
+    viz_type: "line"
+    datasource_type: "table"
+    datasource_name: "scout.gold_txn_daily"
+    params:
+      time_range: "Last 30 days"
+      time_grain_sqla: "P1D"
+      metrics: ["total_peso"]
+      groupby: ["region"]
+      timeseries_limit_metric: "total_peso"
+      line_interpolation: "linear"
+      x_axis_label: "Date"
+      y_axis_label: "Revenue (₱)"
+      show_legend: true
+
+  - slice_name: "Time of Day Heatmap"
+    viz_type: "heatmap"
+    datasource_type: "table"
+    datasource_name: "scout.gold_txn_daily"
+    params:
+      all_columns_x: "time_of_day"
+      all_columns_y: "region"
+      metric: "transaction_count"
+      linear_color_scheme: "blue_white_yellow"
+      normalize_across: "heatmap"
+
+  - slice_name: "Geographic Performance Map"
+    viz_type: "world_map"
+    datasource_type: "table"
+    datasource_name: "scout.gold_txn_daily"
+    params:
+      entity: "barangay"
+      metric: "total_peso"
+      country_fieldtype: "name"
+
+  # 2. Product Mix
+  - slice_name: "Top 20 SKUs by Revenue"
+    viz_type: "dist_bar"
+    datasource_type: "table"
+    datasource_name: "scout.gold_product_mix"
+    params:
+      metrics: ["total_revenue"]
+      groupby: ["product_name"]
+      row_limit: 20
+      order_desc: true
+      show_legend: false
+      x_axis_label: "Revenue (₱)"
+      show_bar_value: true
+
+  - slice_name: "Category Revenue Distribution"
+    viz_type: "pie"
+    datasource_type: "table"
+    datasource_name: "scout.gold_product_mix"
+    params:
+      metrics: ["total_revenue"]
+      groupby: ["product_category"]
+      donut: true
+      show_legend: true
+      label_type: "percent"
+
+  - slice_name: "Pareto Analysis - 80/20 Rule"
+    viz_type: "mixed_timeseries"
+    datasource_type: "table"
+    datasource_name: "scout.gold_product_mix"
+    params:
+      metrics: ["total_revenue", "revenue_cumulative_pct"]
+      groupby: ["rank_in_category"]
+      limit: 50
+
+  # 3. Basket Analysis
+  - slice_name: "Basket Co-occurrence Sankey"
+    viz_type: "sankey"
+    datasource_type: "table"
+    datasource_name: "scout.gold_basket_patterns"
+    params:
+      groupby: ["product_a", "product_b"]
+      metric: "co_occurrence_count"
+      row_limit: 50
+
+  - slice_name: "Average Basket Size by Region"
+    viz_type: "box_plot"
+    datasource_type: "table"
+    datasource_name: "scout.silver_transactions"
+    params:
+      metrics: ["basket_size"]
+      groupby: ["region"]
+      whisker_options: "Min/max (no outliers)"
+
+  # 4. Substitution Analysis
+  - slice_name: "Substitution Flow Diagram"
+    viz_type: "sankey"
+    datasource_type: "table"
+    datasource_name: "scout.gold_substitution_flows"
+    params:
+      groupby: ["from_product", "to_product"]
+      metric: "substitution_count"
+      row_limit: 30
+
+  # 5. Consumer Behavior
+  - slice_name: "Request Mode Distribution"
+    viz_type: "sunburst"
+    datasource_type: "table"
+    datasource_name: "scout.gold_request_behavior"
+    params:
+      groupby: ["request_mode", "request_type"]
+      metric: "request_count"
+
+  - slice_name: "Suggestion Acceptance by Category"
+    viz_type: "bar"
+    datasource_type: "table"
+    datasource_name: "scout.gold_request_behavior"
+    params:
+      metrics: ["acceptance_rate"]
+      groupby: ["product_category"]
+      y_axis_format: ".1%"
+
+  # 6. Demographics
+  - slice_name: "Customer Demographics Tree"
+    viz_type: "treemap"
+    datasource_type: "table"
+    datasource_name: "scout.gold_demographics"
+    params:
+      groupby: ["gender", "age_bracket", "economic_class"]
+      metric: "total_spend"
+      treemap_ratio: 1.618
+
+  - slice_name: "Age Distribution by Gender"
+    viz_type: "histogram"
+    datasource_type: "table"
+    datasource_name: "scout.gold_demographics"
+    params:
+      all_columns_x: ["age_bracket"]
+      row_limit: 10000
+      groupby: ["gender"]
+
+  # 7. AI Recommendation Panel
+  - slice_name: "AI Insights Panel"
+    viz_type: "markup"
+    datasource_type: "table"
+    datasource_name: "scout.platinum_ai_panel_metrics"
+    params:
+      markup_type: "html"
+      code: |
+        <div class="ai-panel">
+          <h3>🎯 Today's Recommendations</h3>
+          <div class="metrics-grid">
+            {% for row in data %}
+            <div class="metric-card {{ row.momentum_status|lower }}">
+              <h4>{{ row.brand_name }} - {{ row.product_category }}</h4>
+              <div class="kpis">
+                <span>Revenue: ₱{{ row.revenue_today|round(0) }}</span>
+                <span>Growth: {{ (row.revenue_wow_growth * 100)|round(1) }}%</span>
+                <span>Rank: #{{ row.revenue_rank_in_region }}</span>
+              </div>
+              <div class="recommendation">
+                {% if row.momentum_status == 'HIGH_MOMENTUM' %}
+                  📈 Hot seller! Ensure stock availability
+                {% elif row.momentum_status == 'DECLINING' %}
+                  📉 Consider promotional push
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <style>
+          .ai-panel { padding: 20px; }
+          .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+          .metric-card { padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
+          .metric-card.high_momentum { background: #e8f5e9; border-color: #4caf50; }
+          .metric-card.declining { background: #ffebee; border-color: #f44336; }
+          .kpis { display: flex; justify-content: space-between; margin: 10px 0; font-size: 14px; }
+          .recommendation { font-style: italic; color: #666; margin-top: 10px; }
+        </style>
+
+dashboard:
+  dashboard_title: "Scout Sari-sari Intelligence Dashboard"
+  slug: "scout-dashboard"
+  description: "Real-time visibility into sari-sari store transactions and consumer behavior"
+  position_json: |
+    {
+      "DASHBOARD_VERSION_KEY": "v2",
+      "GRID_ID": {
+        "children": [
+          {
+            "id": "TABS-1",
+            "type": "TABS",
+            "children": [
+              {
+                "id": "TAB-trends",
+                "type": "TAB",
+                "meta": { "text": "Transaction Trends" },
+                "children": [
+                  {
+                    "id": "ROW-1",
+                    "type": "ROW",
+                    "children": [
+                      { "id": "CHART-revenue-trend", "type": "CHART", "meta": { "chartId": 1, "width": 8, "height": 50 } },
+                      { "id": "CHART-time-heatmap", "type": "CHART", "meta": { "chartId": 2, "width": 4, "height": 50 } }
+                    ]
+                  },
+                  {
+                    "id": "ROW-2",
+                    "type": "ROW",
+                    "children": [
+                      { "id": "CHART-geo-map", "type": "CHART", "meta": { "chartId": 3, "width": 12, "height": 60 } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "TAB-products",
+                "type": "TAB",
+                "meta": { "text": "Product Mix & SKU Analysis" },
+                "children": [
+                  {
+                    "id": "ROW-3",
+                    "type": "ROW",
+                    "children": [
+                      { "id": "CHART-top-skus", "type": "CHART", "meta": { "chartId": 4, "width": 6, "height": 50 } },
+                      { "id": "CHART-category-pie", "type": "CHART", "meta": { "chartId": 5, "width": 6, "height": 50 } }
+                    ]
+                  },
+                  {
+                    "id": "ROW-4",
+                    "type": "ROW",
+                    "children": [
+                      { "id": "CHART-pareto", "type": "CHART", "meta": { "chartId": 6, "width": 12, "height": 40 } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "TAB-basket",
+                "type": "TAB",
+                "meta": { "text": "Basket & Substitution" },
+                "children": [
+                  {
+                    "id": "ROW-5",
+                    "type": "ROW",
+                    "children": [
+                      { "id": "CHART-basket-sankey", "type": "CHART", "meta": { "chartId": 7, "width": 8, "height": 60 } },
+                      { "id": "CHART-basket-size", "type": "CHART", "meta": { "chartId": 8, "width": 4, "height": 60 } }
+                    ]
+                  },
+                  {
+                    "id": "ROW-6",
+                    "type": "ROW",
+                    "children": [
+                      { "id": "CHART-substitution", "type": "CHART", "meta": { "chartId": 9, "width": 12, "height": 50 } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "TAB-behavior",
+                "type": "TAB",
+                "meta": { "text": "Consumer Behavior" },
+                "children": [
+                  {
+                    "id": "ROW-7",
+                    "type": "ROW",
+                    "children": [
+                      { "id": "CHART-request-mode", "type": "CHART", "meta": { "chartId": 10, "width": 6, "height": 50 } },
+                      { "id": "CHART-acceptance", "type": "CHART", "meta": { "chartId": 11, "width": 6, "height": 50 } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "TAB-demographics",
+                "type": "TAB",
+                "meta": { "text": "Consumer Profiling" },
+                "children": [
+                  {
+                    "id": "ROW-8",
+                    "type": "ROW",
+                    "children": [
+                      { "id": "CHART-demo-tree", "type": "CHART", "meta": { "chartId": 12, "width": 7, "height": 60 } },
+                      { "id": "CHART-age-dist", "type": "CHART", "meta": { "chartId": 13, "width": 5, "height": 60 } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "TAB-ai",
+                "type": "TAB",
+                "meta": { "text": "AI Recommendations" },
+                "children": [
+                  {
+                    "id": "ROW-9",
+                    "type": "ROW",
+                    "children": [
+                      { "id": "CHART-ai-panel", "type": "CHART", "meta": { "chartId": 14, "width": 12, "height": 100 } }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  
+  filters:
+    - column: "ts"
+      name: "Date Range"
+      type: "time_range"
+      default_value: "Last 7 days"
+    - column: "region"
+      name: "Region"
+      type: "filter_select"
+      multiple: true
+    - column: "barangay"
+      name: "Barangay"
+      type: "filter_select"
+      multiple: true
+    - column: "product_category"
+      name: "Category"
+      type: "filter_select"
+      multiple: true
+    - column: "is_tbwa_client"
+      name: "TBWA Client"
+      type: "filter_select"
+      default_value: ["true", "false"]
+    - column: "time_of_day"
+      name: "Time of Day"
+      type: "filter_select"
+      multiple: true

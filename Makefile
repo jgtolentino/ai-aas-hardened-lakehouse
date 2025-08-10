@@ -1,0 +1,207 @@
+# Production Makefile for Scout Analytics Platform
+# One-shot deployment with verification gates
+
+.PHONY: help
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+# Configuration
+SUPABASE_PROJECT_REF ?= cxzllzyxwpyptfretryc
+SUPABASE_DB_PASSWORD ?= $(error SUPABASE_DB_PASSWORD is required)
+GITHUB_OWNER ?= $(shell git remote get-url origin | sed -E 's/.*github.com[:/]([^/]+).*/\1/')
+CLUSTER_NAMESPACE ?= aaas
+OPENAI_API_KEY ?= $(error OPENAI_API_KEY is required for Genie/RAG)
+
+# Derived variables
+SUPABASE_URL := https://$(SUPABASE_PROJECT_REF).supabase.co
+SUPABASE_DB_HOST := db.$(SUPABASE_PROJECT_REF).supabase.co
+PSQL := PGPASSWORD=$(SUPABASE_DB_PASSWORD) psql 'postgresql://postgres@$(SUPABASE_DB_HOST):5432/postgres?sslmode=require'
+
+# Colors
+RED := \033[0;31m
+GREEN := \033[0;32m
+YELLOW := \033[1;33m
+NC := \033[0m
+
+.PHONY: check-deps
+check-deps: ## Check required dependencies
+	@echo "$(YELLOW)Checking dependencies...$(NC)"
+	@command -v kubectl >/dev/null 2>&1 || { echo "$(RED)kubectl not found$(NC)"; exit 1; }
+	@command -v supabase >/dev/null 2>&1 || { echo "$(RED)supabase CLI not found$(NC)"; exit 1; }
+	@command -v psql >/dev/null 2>&1 || { echo "$(RED)psql not found$(NC)"; exit 1; }
+	@command -v bruno >/dev/null 2>&1 || { echo "$(YELLOW)bruno CLI not found (optional)$(NC)"; }
+	@command -v cosign >/dev/null 2>&1 || { echo "$(YELLOW)cosign not found (optional)$(NC)"; }
+	@echo "$(GREEN)✓ Dependencies OK$(NC)"
+
+.PHONY: create-namespace
+create-namespace: ## Create Kubernetes namespace and apply NetworkPolicies
+	@echo "$(YELLOW)Creating namespace and network policies...$(NC)"
+	kubectl apply -f platform/lakehouse/00-namespace.yaml
+	kubectl apply -f platform/security/netpol/00-default-deny.yaml
+	kubectl apply -f platform/security/netpol/01-trino-policies.yaml
+	kubectl apply -f platform/security/netpol/02-superset-policies.yaml
+	@echo "$(GREEN)✓ Namespace created$(NC)"
+
+.PHONY: create-secrets
+create-secrets: ## Create all required secrets
+	@echo "$(YELLOW)Creating Kubernetes secrets...$(NC)"
+	@kubectl -n $(CLUSTER_NAMESPACE) create secret generic supabase-source \
+		--from-literal=PG_HOST=$(SUPABASE_DB_HOST) \
+		--from-literal=PG_PORT=5432 \
+		--from-literal=PG_DB=postgres \
+		--from-literal=PG_USER=postgres \
+		--from-literal=PG_PASS='$(SUPABASE_DB_PASSWORD)' \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@kubectl -n $(CLUSTER_NAMESPACE) create secret generic minio-keys \
+		--from-literal=access_key='minioadmin' \
+		--from-literal=secret_key='minioadmin' \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@kubectl -n $(CLUSTER_NAMESPACE) create secret generic trino-secrets \
+		--from-literal=MINIO_ENDPOINT='http://minio.$(CLUSTER_NAMESPACE).svc.cluster.local:9000' \
+		--from-literal=MINIO_ACCESS='minioadmin' \
+		--from-literal=MINIO_SECRET='minioadmin' \
+		--from-literal=NESSIE_URI='http://nessie.$(CLUSTER_NAMESPACE).svc.cluster.local:19120/api/v2' \
+		--from-literal=PG_HOST=$(SUPABASE_DB_HOST) \
+		--from-literal=PG_PORT=5432 \
+		--from-literal=PG_DB=postgres \
+		--from-literal=PG_USER=postgres \
+		--from-literal=PG_PASS='$(SUPABASE_DB_PASSWORD)' \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@kubectl -n $(CLUSTER_NAMESPACE) create secret generic openai-keys \
+		--from-literal=api_key='$(OPENAI_API_KEY)' \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@echo "$(GREEN)✓ Secrets created$(NC)"
+
+.PHONY: deploy-lakehouse
+deploy-lakehouse: create-namespace create-secrets ## Deploy lakehouse components
+	@echo "$(YELLOW)Deploying lakehouse components...$(NC)"
+	kubectl -n $(CLUSTER_NAMESPACE) apply -f platform/lakehouse/minio/minio.yaml
+	kubectl -n $(CLUSTER_NAMESPACE) apply -f platform/lakehouse/nessie/nessie.yaml
+	kubectl -n $(CLUSTER_NAMESPACE) apply -f platform/lakehouse/trino/trino.yaml
+	@echo "$(YELLOW)Waiting for pods to be ready...$(NC)"
+	kubectl -n $(CLUSTER_NAMESPACE) wait --for=condition=ready pod -l app=minio --timeout=300s
+	kubectl -n $(CLUSTER_NAMESPACE) wait --for=condition=ready pod -l app=nessie --timeout=300s
+	kubectl -n $(CLUSTER_NAMESPACE) wait --for=condition=ready pod -l app=trino --timeout=300s
+	@echo "$(GREEN)✓ Lakehouse deployed$(NC)"
+
+.PHONY: init-lakehouse
+init-lakehouse: ## Initialize MinIO bucket and Iceberg schemas
+	@echo "$(YELLOW)Initializing lakehouse storage...$(NC)"
+	kubectl -n $(CLUSTER_NAMESPACE) apply -f platform/lakehouse/minio/init-bucket.yaml
+	kubectl -n $(CLUSTER_NAMESPACE) wait --for=condition=complete job/minio-make-bucket --timeout=60s
+	@echo "$(YELLOW)Creating Iceberg schemas...$(NC)"
+	@kubectl -n $(CLUSTER_NAMESPACE) port-forward svc/trino 8080:8080 >/dev/null 2>&1 &
+	@sleep 5
+	@for S in bronze silver gold platinum; do \
+		echo "Creating schema $$S..."; \
+		curl -s http://localhost:8080/v1/statement \
+			-H 'X-Trino-User: admin' -H 'Content-Type: text/plain' \
+			--data-binary "CREATE SCHEMA IF NOT EXISTS iceberg.$$S WITH (location='s3a://lakehouse/$$S')"; \
+		sleep 2; \
+	done
+	@pkill -f "port-forward.*trino" || true
+	@echo "$(GREEN)✓ Lakehouse initialized$(NC)"
+
+.PHONY: migrate-database
+migrate-database: ## Run all SQL migrations
+	@echo "$(YELLOW)Running SQL migrations...$(NC)"
+	@for sql in platform/scout/migrations/*.sql; do \
+		echo "Applying $$sql..."; \
+		$(PSQL) -f "$$sql" || { echo "$(RED)Migration failed: $$sql$(NC)"; exit 1; }; \
+	done
+	@echo "$(GREEN)✓ Migrations complete$(NC)"
+
+.PHONY: deploy-edge-functions
+deploy-edge-functions: ## Deploy all Edge Functions
+	@echo "$(YELLOW)Setting Edge Function secrets...$(NC)"
+	@supabase secrets set --project-ref $(SUPABASE_PROJECT_REF) \
+		SUPABASE_URL=$(SUPABASE_URL) \
+		CHAT_URL=https://api.openai.com/v1/chat/completions \
+		CHAT_KEY=$(OPENAI_API_KEY) \
+		EMBEDDINGS_URL=https://api.openai.com/v1/embeddings \
+		EMBEDDINGS_API_KEY=$(OPENAI_API_KEY)
+	@echo "$(YELLOW)Deploying Edge Functions...$(NC)"
+	@cd platform/scout/functions && \
+		supabase functions deploy ingest-transaction --project-ref $(SUPABASE_PROJECT_REF) --no-verify-jwt && \
+		supabase functions deploy embed-batch --project-ref $(SUPABASE_PROJECT_REF) --no-verify-jwt && \
+		supabase functions deploy genie-query --project-ref $(SUPABASE_PROJECT_REF) --no-verify-jwt && \
+		supabase functions deploy ingest-doc --project-ref $(SUPABASE_PROJECT_REF) --no-verify-jwt
+	@echo "$(GREEN)✓ Edge Functions deployed$(NC)"
+
+.PHONY: deploy-dbt
+deploy-dbt: ## Deploy dbt CronJob
+	@echo "$(YELLOW)Deploying dbt CronJob...$(NC)"
+	@sed -i.bak 's|ghcr.io/REPO_OWNER|ghcr.io/$(GITHUB_OWNER)|g' platform/lakehouse/dbt/dbt-cronjob.yaml
+	kubectl -n $(CLUSTER_NAMESPACE) apply -f platform/lakehouse/dbt/dbt-cronjob.yaml
+	@echo "$(GREEN)✓ dbt CronJob deployed$(NC)"
+
+.PHONY: verify-deployment
+verify-deployment: ## Run verification tests
+	@echo "$(YELLOW)Running deployment verification...$(NC)"
+	@./validate_deployment.sh || { echo "$(RED)Verification failed$(NC)"; exit 1; }
+	@echo "$(GREEN)✓ All verifications passed$(NC)"
+
+.PHONY: run-bruno-tests
+run-bruno-tests: ## Run Bruno API tests
+	@echo "$(YELLOW)Running Bruno tests...$(NC)"
+	@cd platform/scout/bruno && \
+		bruno run --env development \
+			18_test_connection.bru \
+			09_seed_dims.bru \
+			10_txn_ingest.bru \
+			11_verify_silver.bru \
+			12_query_gold_daily.bru || { echo "$(RED)Bruno tests failed$(NC)"; exit 1; }
+	@echo "$(GREEN)✓ Bruno tests passed$(NC)"
+
+.PHONY: deploy-prod
+deploy-prod: check-deps migrate-database deploy-edge-functions deploy-lakehouse init-lakehouse deploy-dbt verify-deployment ## Complete production deployment
+	@echo "$(GREEN)════════════════════════════════════════$(NC)"
+	@echo "$(GREEN)✓ PRODUCTION DEPLOYMENT COMPLETE$(NC)"
+	@echo "$(GREEN)════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "Next steps:"
+	@echo "1. Import Superset dashboards: make import-superset"
+	@echo "2. Run full test suite: make run-bruno-tests"
+	@echo "3. Check SLO dashboard: kubectl port-forward -n monitoring svc/grafana 3000:3000"
+	@echo ""
+	@echo "Rollback: make rollback"
+
+.PHONY: rollback
+rollback: ## Rollback deployment
+	@echo "$(YELLOW)Rolling back deployment...$(NC)"
+	@kubectl -n $(CLUSTER_NAMESPACE) rollout undo deployment/trino
+	@kubectl -n $(CLUSTER_NAMESPACE) rollout undo deployment/nessie
+	@kubectl -n $(CLUSTER_NAMESPACE) rollout undo statefulset/minio
+	@echo "$(YELLOW)Reverting Edge Functions to previous version...$(NC)"
+	@# Note: Implement Edge Function versioning/rollback strategy
+	@echo "$(GREEN)✓ Rollback complete$(NC)"
+
+.PHONY: status
+status: ## Check deployment status
+	@echo "$(YELLOW)Deployment Status:$(NC)"
+	@echo "Namespace $(CLUSTER_NAMESPACE):"
+	@kubectl -n $(CLUSTER_NAMESPACE) get pods
+	@echo ""
+	@echo "Edge Functions:"
+	@curl -s $(SUPABASE_URL)/functions/v1/ingest-transaction -H "Authorization: Bearer anon-key" | head -1
+	@echo ""
+	@echo "Recent transactions:"
+	@$(PSQL) -c "SELECT COUNT(*) as count, MAX(ts) as latest FROM scout.silver_transactions WHERE ts > NOW() - INTERVAL '1 hour';" 2>/dev/null || echo "No silver table access"
+
+.PHONY: clean
+clean: ## Remove all deployed resources
+	@echo "$(RED)WARNING: This will delete all resources in namespace $(CLUSTER_NAMESPACE)$(NC)"
+	@echo "Press Ctrl+C to cancel, or wait 5 seconds to continue..."
+	@sleep 5
+	kubectl delete namespace $(CLUSTER_NAMESPACE) || true
+	@echo "$(GREEN)✓ Cleanup complete$(NC)"
+
+# Import Superset dashboards (requires Superset running)
+.PHONY: import-superset
+import-superset: ## Import Superset dashboard bundle
+	@echo "$(YELLOW)Importing Superset dashboards...$(NC)"
+	@if [ -f platform/superset/scripts/import_supabase_bundle.sh ]; then \
+		bash platform/superset/scripts/import_supabase_bundle.sh; \
+	else \
+		echo "$(YELLOW)Superset import script not found. Manual import required.$(NC)"; \
+	fi

@@ -1,0 +1,88 @@
+meta {
+  name: Valid Transaction - Full
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/functions/v1/ingest-transaction
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseAnonKey}}
+}
+
+headers {
+  Content-Type: application/json
+  apikey: {{supabaseAnonKey}}
+}
+
+body:json {
+  {
+    "transactions": {
+      "id": "txn_{{timestamp}}_001",
+      "store_id": "MNL_QC_001",
+      "timestamp": "{{isoTimestamp}}",
+      "location": {
+        "barangay": "Barangay Loyola Heights",
+        "city": "Quezon City",
+        "province": "Metro Manila",
+        "region": "NCR"
+      },
+      "product_category": "beverages",
+      "brand_name": "Coca-Cola",
+      "sku": "COKE_SAMMA_250ML",
+      "units_per_transaction": 2,
+      "peso_value": 30.00,
+      "basket_size": 3,
+      "combo_basket": [
+        { "sku": "COKE_SAMMA_250ML", "quantity": 2 },
+        { "sku": "SKYFLAKES_25G", "quantity": 1 }
+      ],
+      "request_mode": "verbal",
+      "request_type": "branded",
+      "suggestion_accepted": true,
+      "gender": "female",
+      "age_bracket": "25-34",
+      "substitution_event": {
+        "occurred": false
+      },
+      "duration_seconds": 45,
+      "campaign_influenced": true,
+      "handshake_score": 0.85,
+      "is_tbwa_client": true,
+      "payment_method": "cash",
+      "customer_type": "regular",
+      "store_type": "urban_medium",
+      "economic_class": "C"
+    },
+    "source_id": "bruno_test"
+  }
+}
+
+vars:pre-request {
+  timestamp: new Date().getTime()
+  isoTimestamp: new Date().toISOString()
+}
+
+assert {
+  res.status: eq 200
+  res.body.processed: eq 1
+  res.body.errors: eq 0
+  res.body.results[0].status: eq success
+}
+
+tests {
+  test("Should process valid transaction", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.processed).to.equal(1);
+    expect(res.body.results[0].status).to.equal("success");
+    expect(res.body.results[0].id).to.include("txn_");
+  });
+
+  test("Should return ingest_id", function() {
+    expect(res.body.results[0].ingest_id).to.be.a("number");
+  });
+}

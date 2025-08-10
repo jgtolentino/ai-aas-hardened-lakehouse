@@ -1,0 +1,84 @@
+meta {
+  name: Transaction with Substitution
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/functions/v1/ingest-transaction
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseAnonKey}}
+}
+
+headers {
+  Content-Type: application/json
+  apikey: {{supabaseAnonKey}}
+}
+
+body:json {
+  {
+    "transactions": {
+      "id": "txn_{{timestamp}}_sub",
+      "store_id": "MNL_BGC_002",
+      "timestamp": "{{isoTimestamp}}",
+      "location": {
+        "barangay": "Fort Bonifacio",
+        "city": "Taguig",
+        "province": "Metro Manila",
+        "region": "NCR"
+      },
+      "product_category": "beverages",
+      "brand_name": "Pepsi",
+      "sku": "PEPSI_250ML",
+      "units_per_transaction": 1,
+      "peso_value": 15.00,
+      "basket_size": 1,
+      "combo_basket": [
+        { "sku": "PEPSI_250ML", "quantity": 1 }
+      ],
+      "request_mode": "verbal",
+      "request_type": "branded",
+      "suggestion_accepted": true,
+      "gender": "male",
+      "age_bracket": "18-24",
+      "substitution_event": {
+        "occurred": true,
+        "from_sku": "COKE_250ML",
+        "to_sku": "PEPSI_250ML",
+        "reason": "stockout"
+      },
+      "duration_seconds": 60,
+      "campaign_influenced": false,
+      "handshake_score": 0.75,
+      "is_tbwa_client": false,
+      "payment_method": "gcash",
+      "customer_type": "occasional",
+      "store_type": "urban_high",
+      "economic_class": "B"
+    },
+    "source_id": "bruno_test"
+  }
+}
+
+vars:pre-request {
+  timestamp: new Date().getTime()
+  isoTimestamp: new Date().toISOString()
+}
+
+assert {
+  res.status: eq 200
+  res.body.processed: eq 1
+  res.body.errors: eq 0
+}
+
+tests {
+  test("Should process substitution event", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.processed).to.equal(1);
+    expect(res.body.results[0].status).to.equal("success");
+  });
+}

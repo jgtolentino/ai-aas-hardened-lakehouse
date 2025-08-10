@@ -1,0 +1,97 @@
+slice_name: "City/Municipality Sales Intensity Map"
+viz_type: "deck_geojson"
+datasource_id: __CITYMUN_CHOROPLETH_DATASET_ID__
+datasource_type: "table"
+description: "Detailed city/municipality level sales performance across the Philippines"
+params:
+  datasource: "__CITYMUN_CHOROPLETH_DATASET_ID__"
+  viz_type: "deck_geojson"
+  time_range: "Last 90 days"
+  time_grain_sqla: "P1D"
+  metrics:
+    - "sum_peso_total"
+  adhoc_filters:
+    - clause: "WHERE"
+      subject: "peso_total"
+      operator: ">"
+      comparator: 0
+      expressionType: "SIMPLE"
+  groupby: []
+  row_limit: 10000
+  
+  # Deck.gl GeoJSON configuration
+  geojson: "geojson"
+  
+  # Map configuration
+  autozoom: true
+  
+  # Viewport (will auto-adjust based on filtered data)
+  viewport:
+    longitude: 121.0
+    latitude: 14.5
+    zoom: 6
+    bearing: 0
+    pitch: 0
+    
+  # Visual styling
+  fill_color_picker:
+    r: 255
+    g: 0
+    b: 0
+    a: 1
+    
+  stroke_color_picker:
+    r: 0
+    g: 0
+    b: 0
+    a: 1
+    
+  filled: true
+  stroked: true
+  extruded: false
+  
+  line_width: 5
+  line_width_unit: "pixels"
+  
+  opacity: 0.7
+  
+  # Color scheme for choropleth
+  color_scheme: "yellowOrangeRed"
+  
+  # Legend
+  legend_position: "tr"
+  legend_format: ",.0f"
+  
+  # Rich tooltip
+  rich_tooltip: true
+  tooltip:
+    - "citymun_name"
+    - "region_key"
+    - "sum_peso_total"
+    - "sum_txn_count"
+    - "active_stores"
+    - "income_class"
+    
+  # JS columns for client-side filtering
+  js_columns:
+    - "citymun_psgc"
+    - "citymun_name"
+    - "province_psgc"
+    - "region_key"
+    - "is_city"
+    - "income_class"
+    - "beverages_sales"
+    - "snacks_sales"
+    - "personal_care_sales"
+    - "household_sales"
+    
+  # Map style
+  mapbox_style: "mapbox://styles/mapbox/light-v10"
+  
+  # JS data postprocessing (optional custom filtering)
+  js_data_mutator: |
+    // Filter out areas with very low sales for performance
+    data = data.filter(d => d.peso_total > 1000);
+    return data;
+  
+cache_timeout: 600

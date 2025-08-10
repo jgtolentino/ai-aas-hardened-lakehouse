@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Cloud Wire: Superset ⇄ Supabase API Integration",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

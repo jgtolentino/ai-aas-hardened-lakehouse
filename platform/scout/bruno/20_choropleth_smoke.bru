@@ -1,0 +1,101 @@
+meta {
+  name: 20_choropleth_smoke
+  type: http
+  seq: 20
+}
+
+vars {
+  SUPERSET_BASE: {{SUPERSET_BASE}}
+  TOKEN: {{TOKEN}}
+}
+
+# Test ADM3 Choropleth Chart Exists and Loads
+# This verifies the geographic visualization is properly configured
+
+request {
+  url: {{SUPERSET_BASE}}/api/v1/chart/
+  method: GET
+  
+  headers {
+    Authorization: Bearer {{TOKEN}}
+    X-CSRFToken: {{CSRF_TOKEN}}
+  }
+  
+  params:query {
+    q: {"filters":[{"col":"slice_name","opr":"ct","value":"Choropleth"}]}
+  }
+}
+
+script:pre-request {
+  // Ensure we have auth token
+  if (!bru.getVar("TOKEN")) {
+    throw new Error("No auth token available. Run login first.");
+  }
+}
+
+tests {
+  test("Status is 200", () => {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Response has choropleth charts", () => {
+    expect(res.body).to.have.property('result');
+    expect(res.body.result).to.be.an('array');
+    
+    // Find choropleth charts
+    const choroplethCharts = res.body.result.filter(chart => 
+      chart.slice_name && chart.slice_name.toLowerCase().includes('choropleth')
+    );
+    
+    expect(choroplethCharts.length).to.be.greaterThan(0);
+    console.log(`Found ${choroplethCharts.length} choropleth charts`);
+    
+    // Check for expected charts
+    const expectedCharts = [
+      'Philippines Regional Sales Heatmap',
+      'City/Municipality Sales Intensity Map'
+    ];
+    
+    expectedCharts.forEach(expectedName => {
+      const found = choroplethCharts.find(c => c.slice_name === expectedName);
+      if (!found) {
+        console.warn(`Warning: Expected chart '${expectedName}' not found`);
+      } else {
+        console.log(`✓ Found chart: ${expectedName} (ID: ${found.id})`);
+      }
+    });
+  });
+  
+  test("Charts have deck_geojson viz type", () => {
+    const choroplethCharts = res.body.result.filter(chart => 
+      chart.slice_name && chart.slice_name.toLowerCase().includes('choropleth')
+    );
+    
+    choroplethCharts.forEach(chart => {
+      expect(chart.viz_type).to.equal('deck_geojson');
+    });
+  });
+  
+  test("Charts reference geographic datasets", () => {
+    const choroplethCharts = res.body.result.filter(chart => 
+      chart.slice_name && chart.slice_name.toLowerCase().includes('choropleth')
+    );
+    
+    choroplethCharts.forEach(chart => {
+      expect(chart).to.have.property('datasource_id');
+      expect(chart.datasource_id).to.be.greaterThan(0);
+    });
+  });
+}
+
+script:post-response {
+  // Save the first choropleth chart ID for detailed testing
+  const choroplethCharts = res.body.result.filter(chart => 
+    chart.slice_name && chart.slice_name.toLowerCase().includes('choropleth')
+  );
+  
+  if (choroplethCharts.length > 0) {
+    bru.setVar("CHOROPLETH_CHART_ID", choroplethCharts[0].id);
+    console.log(`Saved chart ID ${choroplethCharts[0].id} for detailed testing`);
+  }
+}

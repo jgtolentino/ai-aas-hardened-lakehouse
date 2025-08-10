@@ -1,0 +1,82 @@
+meta {
+  name: 17 Superset Guest Token
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{supersetBase}}/api/v1/security/guest_token
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{superset_access_token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+  X-CSRFToken: {{superset_csrf_token}}
+  Cookie: {{superset_cookies}}
+}
+
+body:json {
+  {
+    "resources": [
+      {
+        "type": "dashboard",
+        "id": "{{dashboardUuid}}"
+      }
+    ],
+    "rls": [
+      {
+        "clause": "region = '{{region}}'"
+      }
+    ],
+    "user": {
+      "username": "guest_{{timestamp}}",
+      "first_name": "Guest",
+      "last_name": "User"
+    }
+  }
+}
+
+vars:pre-request {
+  timestamp: new Date().getTime()
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.token) {
+    // Store guest token for embedding
+    bru.setVar("superset_guest_token", res.body.token);
+    
+    // Generate embed URL
+    const embedUrl = `${bru.getEnvVar("supersetBase")}/embedded/${bru.getEnvVar("dashboardUuid")}`;
+    console.log("Embed URL:", embedUrl);
+    console.log("Guest Token:", res.body.token);
+  }
+}
+
+tests {
+  test("Should get guest token for embedding", function() {
+    if (!bru.getVar("superset_csrf_token")) {
+      console.log("No CSRF token. Run previous steps first.");
+      return;
+    }
+    
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property("token");
+    
+    const guestToken = res.body.token;
+    expect(guestToken).to.be.a("string");
+    expect(guestToken.length).to.be.greaterThan(0);
+    
+    console.log(`
+      To embed the dashboard:
+      1. Use guest token: ${guestToken}
+      2. Dashboard UUID: ${bru.getEnvVar("dashboardUuid")}
+      3. Base URL: ${bru.getEnvVar("supersetBase")}
+    `);
+  });
+}

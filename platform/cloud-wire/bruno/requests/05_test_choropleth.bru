@@ -1,0 +1,80 @@
+meta { name: test_choropleth; type: http }
+vars { BASE: {{SUPERSET_BASE}} TOKEN: {{TOKEN}} CSRF: {{CSRF}} }
+request {
+  url: {{BASE}}/api/v1/chart/
+  method: GET
+  
+  headers {
+    Authorization: Bearer {{TOKEN}}
+    X-CSRFToken: {{CSRF}}
+  }
+  
+  params:query {
+    q: {"filters":[{"col":"slice_name","opr":"ct","value":"Philippines Regional Sales Heatmap (Cloud)"}]}
+  }
+}
+
+script:pre-request {
+  // Ensure we have auth token
+  if (!bru.getVar("TOKEN")) {
+    throw new Error("No auth token available. Run login first.");
+  }
+}
+
+tests {
+  test("Status is 200", () => {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Choropleth chart exists", () => {
+    expect(res.body).to.have.property('result');
+    expect(res.body.result).to.be.an('array');
+    expect(res.body.result.length).to.be.greaterThan(0);
+    
+    const chart = res.body.result[0];
+    expect(chart.slice_name).to.equal("Philippines Regional Sales Heatmap (Cloud)");
+    expect(chart.viz_type).to.equal("deck_geojson");
+    
+    console.log(`✅ Found choropleth chart: ${chart.slice_name} (ID: ${chart.id})`);
+  });
+  
+  test("Chart has Mapbox configuration", () => {
+    const chart = res.body.result[0];
+    expect(chart).to.have.property('params');
+    
+    const params = JSON.parse(chart.params);
+    expect(params).to.have.property('mapbox_style');
+    expect(params.mapbox_style).to.include('mapbox://styles/');
+    
+    console.log(`✅ Mapbox style configured: ${params.mapbox_style}`);
+  });
+  
+  test("Chart has GeoJSON column", () => {
+    const chart = res.body.result[0];
+    const params = JSON.parse(chart.params);
+    
+    expect(params).to.have.property('geojson');
+    expect(params.geojson).to.equal('geojson');
+    
+    console.log("✅ GeoJSON column configured");
+  });
+  
+  test("Chart has Philippine viewport", () => {
+    const chart = res.body.result[0];
+    const params = JSON.parse(chart.params);
+    
+    expect(params).to.have.property('viewport');
+    expect(params.viewport.longitude).to.be.within(116, 127);
+    expect(params.viewport.latitude).to.be.within(4, 22);
+    
+    console.log(`✅ Viewport: ${params.viewport.longitude}, ${params.viewport.latitude}`);
+  });
+}
+
+script:post-response {
+  if (res.body.result && res.body.result.length > 0) {
+    const chartId = res.body.result[0].id;
+    bru.setVar("CHOROPLETH_CHART_ID", chartId);
+    console.log(`Saved choropleth chart ID: ${chartId}`);
+  }
+}

@@ -1,0 +1,83 @@
+meta {
+  name: Invalid - Missing Required Fields
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/functions/v1/ingest-transaction
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseAnonKey}}
+}
+
+headers {
+  Content-Type: application/json
+  apikey: {{supabaseAnonKey}}
+}
+
+body:json {
+  {
+    "transactions": {
+      "id": "txn_{{timestamp}}_invalid",
+      "store_id": "MNL_QC_001",
+      "timestamp": "{{isoTimestamp}}",
+      "location": {
+        "barangay": "Barangay Loyola Heights",
+        "city": "Quezon City"
+        // Missing province and region
+      },
+      "product_category": "beverages",
+      "brand_name": "Coca-Cola",
+      "sku": "COKE_SAMMA_250ML",
+      // Missing units_per_transaction
+      "basket_size": 1,
+      "combo_basket": [
+        { "sku": "COKE_SAMMA_250ML", "quantity": 1 }
+      ],
+      "request_mode": "verbal",
+      // Missing request_type
+      "suggestion_accepted": true,
+      "gender": "female",
+      "age_bracket": "25-34",
+      "substitution_event": {
+        "occurred": false
+      },
+      "duration_seconds": 45,
+      "campaign_influenced": true,
+      "handshake_score": 0.85,
+      "is_tbwa_client": true,
+      "payment_method": "cash",
+      "customer_type": "regular",
+      "store_type": "urban_medium",
+      "economic_class": "C"
+    },
+    "source_id": "bruno_test_invalid"
+  }
+}
+
+vars:pre-request {
+  timestamp: new Date().getTime()
+  isoTimestamp: new Date().toISOString()
+}
+
+assert {
+  res.status: eq 400
+  res.body.errors: gt 0
+}
+
+tests {
+  test("Should reject transaction with missing fields", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.errors).to.be.greaterThan(0);
+    expect(res.body.processed).to.equal(0);
+  });
+
+  test("Should return validation errors", function() {
+    expect(res.body.errors[0].status).to.equal("error");
+    expect(res.body.errors[0].error).to.include("Required");
+  });
+}

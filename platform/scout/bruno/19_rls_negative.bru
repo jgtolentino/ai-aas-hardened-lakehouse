@@ -1,0 +1,24 @@
+meta {
+  name: 19_rls_negative
+  type: http
+  seq: 19
+}
+
+get {
+  url: {{SUPABASE_URL}}/rest/v1/scout.silver_transactions?select=id&limit=1
+  body: none
+  auth: none
+}
+
+headers {
+  apikey: {{SUPABASE_ANON}}
+  Authorization: Bearer {{SUPABASE_ANON}}
+  Accept: application/json
+}
+
+tests {
+  test("RLS blocks anon from silver data", function() {
+    // Expect denial by RLS (401/403) or empty with policy; prefer deny
+    expect(res.status).to.be.oneOf([401, 403]);
+  });
+}

@@ -1,0 +1,118 @@
+table_name: "gold_region_choropleth"
+schema: "scout"
+database_name: "Scout Supabase"
+description: "Regional sales metrics with geographic boundaries for choropleth visualization"
+is_sqllab_view: false
+columns:
+  - column_name: region_key
+    verbose_name: Region Key
+    type: TEXT
+    groupby: true
+    filterable: true
+  - column_name: region_name
+    verbose_name: Region Name
+    type: TEXT
+    groupby: true
+    filterable: true
+  - column_name: day
+    verbose_name: Date
+    is_dttm: true
+    type: TIMESTAMP
+    python_date_format: "%Y-%m-%d"
+  - column_name: txn_count
+    verbose_name: Transaction Count
+    type: BIGINT
+    metric: true
+  - column_name: active_stores
+    verbose_name: Active Stores
+    type: BIGINT
+    metric: true
+  - column_name: new_customers
+    verbose_name: New Customers
+    type: BIGINT
+    metric: true
+  - column_name: peso_total
+    verbose_name: Total Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: avg_transaction_value
+    verbose_name: Avg Transaction (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: avg_basket_size
+    verbose_name: Avg Basket Size
+    type: NUMERIC
+    metric: true
+    d3format: ",.1f"
+  - column_name: morning_sales
+    verbose_name: Morning Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: afternoon_sales
+    verbose_name: Afternoon Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: evening_sales
+    verbose_name: Evening Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: night_sales
+    verbose_name: Night Sales (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: campaign_influenced_txns
+    verbose_name: Campaign Influenced
+    type: BIGINT
+    metric: true
+  - column_name: avg_handshake_score
+    verbose_name: Avg Handshake Score
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: revenue_per_capita
+    verbose_name: Revenue per Capita (₱)
+    type: NUMERIC
+    metric: true
+    d3format: ",.2f"
+  - column_name: geom
+    verbose_name: Geometry
+    is_spatial: true
+    type: GEOMETRY
+  # Virtual column for Deck.gl GeoJSON visualization
+  - column_name: geojson
+    verbose_name: GeoJSON
+    type: TEXT
+    expression: "ST_AsGeoJSON(geom)"
+    is_dttm: false
+metrics:
+  - metric_name: sum_peso_total
+    expression: "SUM(peso_total)"
+    metric_type: sum
+    verbose_name: "Total Sales (₱)"
+    d3format: ",.2f"
+  - metric_name: sum_txn_count
+    expression: "SUM(txn_count)"
+    metric_type: sum
+    verbose_name: "Total Transactions"
+    d3format: ",.0f"
+  - metric_name: avg_ticket_size
+    expression: "NULLIF(SUM(peso_total),0)/NULLIF(SUM(txn_count),0)"
+    metric_type: avg
+    verbose_name: "Average Ticket Size (₱)"
+    d3format: ",.2f"
+  - metric_name: store_productivity
+    expression: "NULLIF(SUM(peso_total),0)/NULLIF(MAX(active_stores),0)"
+    metric_type: avg
+    verbose_name: "Sales per Store (₱)"
+    d3format: ",.2f"
+  - metric_name: campaign_effectiveness
+    expression: "100.0 * NULLIF(SUM(campaign_influenced_txns),0)/NULLIF(SUM(txn_count),0)"
+    metric_type: avg
+    verbose_name: "Campaign Effectiveness (%)"
+    d3format: ",.1f"

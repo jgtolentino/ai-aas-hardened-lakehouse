@@ -1,0 +1,36 @@
+meta {
+  name: 18 Test Connection
+  type: http
+  seq: 18
+}
+
+get {
+  url: {{baseUrl}}/rest/v1/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseServiceRole}}
+}
+
+headers {
+  apikey: {{supabaseServiceRole}}
+  Accept: application/json
+}
+
+tests {
+  test("Should connect to Supabase", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property("swagger");
+    expect(res.body.swagger).to.equal("2.0");
+    expect(res.body).to.have.property("info");
+    expect(res.body.info.title).to.include("PostgREST");
+  });
+  
+  test("Should have valid auth token", function() {
+    // If we get 200, the service role token is valid
+    expect(res.status).to.not.equal(401);
+    expect(res.status).to.not.equal(403);
+  });
+}

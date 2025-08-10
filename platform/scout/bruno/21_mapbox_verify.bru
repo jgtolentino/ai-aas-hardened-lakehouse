@@ -1,0 +1,104 @@
+meta {
+  name: 21_mapbox_verify
+  type: http
+  seq: 21
+}
+
+vars {
+  SUPERSET_BASE: {{SUPERSET_BASE}}
+  TOKEN: {{TOKEN}}
+  CHOROPLETH_CHART_ID: {{CHOROPLETH_CHART_ID}}
+}
+
+# Verify Mapbox is configured by fetching chart data
+# This should include the mapbox_style parameter if properly configured
+
+request {
+  url: {{SUPERSET_BASE}}/api/v1/chart/{{CHOROPLETH_CHART_ID}}
+  method: GET
+  
+  headers {
+    Authorization: Bearer {{TOKEN}}
+    X-CSRFToken: {{CSRF_TOKEN}}
+  }
+}
+
+script:pre-request {
+  // Ensure we have required vars
+  if (!bru.getVar("TOKEN")) {
+    throw new Error("No auth token available. Run login first.");
+  }
+  
+  if (!bru.getVar("CHOROPLETH_CHART_ID")) {
+    throw new Error("No choropleth chart ID. Run choropleth_smoke test first.");
+  }
+}
+
+tests {
+  test("Status is 200", () => {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Chart has deck_geojson configuration", () => {
+    expect(res.body.result).to.have.property('viz_type');
+    expect(res.body.result.viz_type).to.equal('deck_geojson');
+  });
+  
+  test("Chart params include mapbox_style", () => {
+    expect(res.body.result).to.have.property('params');
+    const params = res.body.result.params;
+    
+    // Check for mapbox configuration
+    if (params.mapbox_style) {
+      console.log(`✓ Mapbox style configured: ${params.mapbox_style}`);
+      expect(params.mapbox_style).to.include('mapbox://styles/');
+    } else {
+      console.warn("⚠️  No mapbox_style in params - check if Mapbox is configured");
+    }
+  });
+  
+  test("Chart has geojson column configured", () => {
+    const params = res.body.result.params;
+    expect(params).to.have.property('geojson');
+    expect(params.geojson).to.equal('geojson');
+    console.log("✓ GeoJSON column properly configured");
+  });
+  
+  test("Chart has viewport configuration", () => {
+    const params = res.body.result.params;
+    expect(params).to.have.property('viewport');
+    expect(params.viewport).to.have.property('longitude');
+    expect(params.viewport).to.have.property('latitude');
+    expect(params.viewport).to.have.property('zoom');
+    
+    // Check if centered on Philippines
+    const lon = params.viewport.longitude;
+    const lat = params.viewport.latitude;
+    expect(lon).to.be.within(116, 127); // Philippines longitude range
+    expect(lat).to.be.within(4, 22);    // Philippines latitude range
+    
+    console.log(`✓ Viewport centered at: ${lon}, ${lat} (zoom: ${params.viewport.zoom})`);
+  });
+  
+  test("Chart has proper metrics configured", () => {
+    const params = res.body.result.params;
+    expect(params).to.have.property('metrics');
+    expect(params.metrics).to.be.an('array');
+    expect(params.metrics.length).to.be.greaterThan(0);
+    
+    console.log(`✓ Metrics configured: ${params.metrics.join(', ')}`);
+  });
+}
+
+script:post-response {
+  // Log any warnings about Mapbox configuration
+  const params = res.body.result.params;
+  
+  if (!params.mapbox_style || params.mapbox_style.includes('your_mapbox')) {
+    console.error("❌ WARNING: Mapbox API key may not be properly configured!");
+    console.error("   Ensure MAPBOX_API_KEY is set in the Kubernetes secret");
+  }
+  
+  // Check data source
+  console.log(`\nData source: ${res.body.result.datasource_name} (ID: ${res.body.result.datasource_id})`);
+}

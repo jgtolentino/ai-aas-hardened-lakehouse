@@ -1,0 +1,232 @@
+meta {
+  name: 09 Seed Dimensions
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/rest/v1/rpc/seed_scout_dimensions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseServiceRole}}
+}
+
+headers {
+  Content-Type: application/json
+  apikey: {{supabaseServiceRole}}
+  Prefer: return=representation
+}
+
+body:json {
+  {
+    "stores": [
+      {
+        "store_id": "MNL_QC_001",
+        "store_name": "Aling Maria Store - Loyola Heights",
+        "store_type": "urban_medium",
+        "barangay": "Loyola Heights",
+        "city": "Quezon City",
+        "province": "Metro Manila",
+        "region": "NCR",
+        "economic_class": "C"
+      },
+      {
+        "store_id": "MNL_BGC_002",
+        "store_name": "Kuya Ben Sari-sari - Fort",
+        "store_type": "urban_high",
+        "barangay": "Fort Bonifacio",
+        "city": "Taguig",
+        "province": "Metro Manila",
+        "region": "NCR",
+        "economic_class": "B"
+      },
+      {
+        "store_id": "CEB_LAP_001",
+        "store_name": "Nang Rosing Store",
+        "store_type": "residential",
+        "barangay": "Poblacion",
+        "city": "Lapu-Lapu City",
+        "province": "Cebu",
+        "region": "Region VII",
+        "economic_class": "D"
+      },
+      {
+        "store_id": "DAV_TOL_001",
+        "store_name": "Mang Juan Variety",
+        "store_type": "rural",
+        "barangay": "Toril",
+        "city": "Davao City",
+        "province": "Davao del Sur",
+        "region": "Region XI",
+        "economic_class": "E"
+      }
+    ],
+    "categories": [
+      {"category": "beverages", "category_group": "fmcg", "display_name": "Beverages"},
+      {"category": "snacks", "category_group": "fmcg", "display_name": "Snacks"},
+      {"category": "personal_care", "category_group": "fmcg", "display_name": "Personal Care"},
+      {"category": "household", "category_group": "fmcg", "display_name": "Household"},
+      {"category": "tobacco", "category_group": "controlled", "display_name": "Tobacco"},
+      {"category": "alcohol", "category_group": "controlled", "display_name": "Alcohol"}
+    ],
+    "brands": [
+      {"brand_name": "Coca-Cola", "brand_owner": "Coca-Cola Company", "is_tbwa_client": true},
+      {"brand_name": "Pepsi", "brand_owner": "PepsiCo", "is_tbwa_client": false},
+      {"brand_name": "Jack n Jill", "brand_owner": "URC", "is_tbwa_client": true},
+      {"brand_name": "Safeguard", "brand_owner": "P&G", "is_tbwa_client": false},
+      {"brand_name": "C2", "brand_owner": "URC", "is_tbwa_client": true}
+    ],
+    "skus": [
+      {
+        "sku": "COKE_SAMMA_250ML",
+        "product_name": "Coca-Cola Samma 250ml",
+        "brand_name": "Coca-Cola",
+        "category": "beverages",
+        "unit_price": 15.00
+      },
+      {
+        "sku": "COKE_250ML",
+        "product_name": "Coca-Cola 250ml",
+        "brand_name": "Coca-Cola",
+        "category": "beverages",
+        "unit_price": 15.00
+      },
+      {
+        "sku": "PEPSI_250ML",
+        "product_name": "Pepsi 250ml",
+        "brand_name": "Pepsi",
+        "category": "beverages",
+        "unit_price": 15.00
+      },
+      {
+        "sku": "SKYFLAKES_25G",
+        "product_name": "SkyFlakes Crackers 25g",
+        "brand_name": "Jack n Jill",
+        "category": "snacks",
+        "unit_price": 7.00
+      },
+      {
+        "sku": "PIATTOS_40G",
+        "product_name": "Piattos Cheese 40g",
+        "brand_name": "Jack n Jill",
+        "category": "snacks",
+        "unit_price": 20.00
+      },
+      {
+        "sku": "C2_APPLE_355ML",
+        "product_name": "C2 Apple 355ml",
+        "brand_name": "C2",
+        "category": "beverages",
+        "unit_price": 20.00
+      },
+      {
+        "sku": "SAFEGUARD_60G",
+        "product_name": "Safeguard Classic White 60g",
+        "brand_name": "Safeguard",
+        "category": "personal_care",
+        "unit_price": 25.00
+      },
+      {
+        "sku": "COLGATE_25G",
+        "product_name": "Colgate Toothpaste 25g",
+        "brand_name": "Colgate",
+        "category": "personal_care",
+        "unit_price": 15.00
+      }
+    ]
+  }
+}
+
+script:pre-request {
+  // Create the RPC function if it doesn't exist
+  const functionSQL = `
+  CREATE OR REPLACE FUNCTION seed_scout_dimensions(
+    stores jsonb,
+    categories jsonb,
+    brands jsonb,
+    skus jsonb
+  )
+  RETURNS jsonb
+  LANGUAGE plpgsql
+  AS $$
+  DECLARE
+    result jsonb;
+  BEGIN
+    -- Insert stores
+    INSERT INTO scout.dim_store (store_id, store_name, store_type, barangay, city, province, region, economic_class)
+    SELECT 
+      (s->>'store_id')::text,
+      (s->>'store_name')::text,
+      (s->>'store_type')::scout.store_type_t,
+      (s->>'barangay')::text,
+      (s->>'city')::text,
+      (s->>'province')::text,
+      (s->>'region')::text,
+      (s->>'economic_class')::scout.economic_class_t
+    FROM jsonb_array_elements(stores) s
+    ON CONFLICT (store_id) DO UPDATE
+    SET store_name = EXCLUDED.store_name,
+        updated_at = NOW();
+    
+    -- Insert categories
+    INSERT INTO scout.dim_category (category, category_group, display_name)
+    SELECT 
+      (c->>'category')::text,
+      (c->>'category_group')::text,
+      (c->>'display_name')::text
+    FROM jsonb_array_elements(categories) c
+    ON CONFLICT (category) DO NOTHING;
+    
+    -- Insert brands
+    INSERT INTO scout.dim_brand (brand_name, brand_owner, is_tbwa_client)
+    SELECT 
+      (b->>'brand_name')::text,
+      (b->>'brand_owner')::text,
+      (b->>'is_tbwa_client')::boolean
+    FROM jsonb_array_elements(brands) b
+    ON CONFLICT (brand_name) DO UPDATE
+    SET is_tbwa_client = EXCLUDED.is_tbwa_client;
+    
+    -- Insert SKUs
+    INSERT INTO scout.dim_sku (sku, product_name, brand_name, category, unit_price)
+    SELECT 
+      (s->>'sku')::text,
+      (s->>'product_name')::text,
+      (s->>'brand_name')::text,
+      (s->>'category')::text,
+      (s->>'unit_price')::numeric
+    FROM jsonb_array_elements(skus) s
+    ON CONFLICT (sku) DO UPDATE
+    SET unit_price = EXCLUDED.unit_price,
+        updated_at = NOW();
+    
+    result := jsonb_build_object(
+      'stores_count', jsonb_array_length(stores),
+      'categories_count', jsonb_array_length(categories),
+      'brands_count', jsonb_array_length(brands),
+      'skus_count', jsonb_array_length(skus),
+      'status', 'success'
+    );
+    
+    RETURN result;
+  END;
+  $$;
+  `;
+  
+  // Note: You may need to run this SQL manually first
+}
+
+tests {
+  test("Should seed all dimensions", function() {
+    expect(res.status).to.equal(200);
+    const result = res.body[0];
+    expect(result.stores_count).to.equal(4);
+    expect(result.categories_count).to.equal(6);
+    expect(result.brands_count).to.equal(5);
+    expect(result.skus_count).to.equal(8);
+    expect(result.status).to.equal("success");
+  });
+}

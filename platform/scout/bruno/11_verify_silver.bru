@@ -1,0 +1,55 @@
+meta {
+  name: 11 Verify Silver Tables
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/rest/v1/silver_transactions?id=eq.{{last_txn_id}}&select=id,store_id,ts,time_of_day,barangay,city,region,product_category,brand_name,sku,units_per_transaction,peso_value,basket_size,request_mode,request_type,suggestion_accepted,gender,age_bracket,is_tbwa_client
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{supabaseServiceRole}}
+}
+
+headers {
+  apikey: {{supabaseServiceRole}}
+  Accept: application/json
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.length > 0) {
+    // Get combo items for this transaction
+    const comboUrl = `${bru.getEnvVar("baseUrl")}/rest/v1/silver_combo_items?id=eq.${bru.getVar("last_txn_id")}&select=*`;
+    
+    // Note: In real Bruno, you'd make another request here
+    console.log("Next, verify combo items at:", comboUrl);
+  }
+}
+
+tests {
+  test("Should find transaction in silver layer", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an("array");
+    expect(res.body.length).to.equal(1);
+    
+    const txn = res.body[0];
+    expect(txn.id).to.equal(bru.getVar("last_txn_id"));
+    expect(txn.store_id).to.equal("MNL_QC_001");
+    expect(txn.time_of_day).to.be.oneOf(["morning", "afternoon", "evening", "night"]);
+    expect(txn.peso_value).to.equal("30");
+    expect(txn.basket_size).to.equal(3);
+    expect(txn.request_mode).to.equal("verbal");
+    expect(txn.suggestion_accepted).to.be.true;
+    expect(txn.is_tbwa_client).to.be.true;
+  });
+  
+  test("Should have correct geographic data", function() {
+    const txn = res.body[0];
+    expect(txn.barangay).to.equal("Loyola Heights");
+    expect(txn.city).to.equal("Quezon City");
+    expect(txn.region).to.equal("NCR");
+  });
+}

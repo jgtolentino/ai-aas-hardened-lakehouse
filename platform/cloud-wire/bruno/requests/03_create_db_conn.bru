@@ -1,0 +1,23 @@
+meta { name: create_db_conn; type: http }
+vars {
+  BASE: {{SUPERSET_BASE}} TOKEN: {{TOKEN}} CSRF: {{CSRF}}
+  SUPABASE_DB_NAME: {{SUPABASE_DB_NAME}}
+  SQLALCHEMY_URI: {{SUPABASE_DB_URI}}
+}
+request {
+  url: {{BASE}}/api/v1/database/
+  method: POST
+  headers: {
+    Authorization: Bearer {{TOKEN}}
+    X-CSRFToken: {{CSRF}}
+    Referer: {{BASE}}
+    Content-Type: application/json
+  }
+  body: json
+  json: {
+    "database_name": "{{SUPABASE_DB_NAME}}",
+    "sqlalchemy_uri": "{{SQLALCHEMY_URI}}",
+    "allow_ctas": true,
+    "allow_cvas": true
+  }
+}

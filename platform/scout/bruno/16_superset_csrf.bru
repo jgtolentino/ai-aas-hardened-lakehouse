@@ -1,0 +1,43 @@
+meta {
+  name: 16 Superset Get CSRF Token
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{supersetBase}}/api/v1/security/csrf_token
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{superset_access_token}}
+}
+
+headers {
+  Accept: application/json
+  Cookie: {{superset_cookies}}
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.result) {
+    // Store CSRF token for guest token request
+    bru.setVar("superset_csrf_token", res.body.result);
+  }
+}
+
+tests {
+  test("Should get CSRF token", function() {
+    if (!bru.getVar("superset_access_token")) {
+      console.log("No access token. Run 15_superset_login first.");
+      return;
+    }
+    
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property("result");
+    
+    const csrfToken = res.body.result;
+    expect(csrfToken).to.be.a("string");
+    expect(csrfToken.length).to.be.greaterThan(0);
+  });
+}

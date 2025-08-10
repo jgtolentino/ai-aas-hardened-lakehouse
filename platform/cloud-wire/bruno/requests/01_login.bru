@@ -1,0 +1,13 @@
+meta { name: login; type: http }
+vars { BASE: {{SUPERSET_BASE}} USER: {{SUPERSET_USER}} PASS: {{SUPERSET_PASSWORD}} }
+request {
+  url: {{BASE}}/api/v1/security/login
+  method: POST
+  headers: { Content-Type: application/json }
+  body: json
+  json: { "username":"{{USER}}","password":"{{PASS}}","provider":"db","refresh":true }
+}
+test {
+  jmespath: body.access_token
+  save: { name: TOKEN, value: "{{res.body.access_token}}" }
+}
