@@ -1,0 +1,5 @@
+# Add dashboard IDs (one per line) for cache warming
+# Example:
+# 42
+# 89
+# 156
