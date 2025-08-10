@@ -73,3 +73,7 @@ superset_cache/
 # Helm
 *.tgz
 charts/*.lock
+
+# Scout Analytics generated data
+tools/scout_seed_data/
+tools/.env
