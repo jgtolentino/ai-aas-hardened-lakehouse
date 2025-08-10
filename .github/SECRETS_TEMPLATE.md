@@ -93,11 +93,51 @@ gh secret set VERCEL_DOCS_PROJECT_ID --body "YOUR_DOCS_PROJECT_ID"
 gh secret set VERCEL_SCOUT_PROJECT_ID --body "YOUR_SCOUT_PROJECT_ID"
 ```
 
+### Notifications (Optional)
+- `SLACK_WEBHOOK_URL` - Slack incoming webhook URL for deployment notifications
+
+## Variables (not secrets)
+
+Set these in **Settings → Secrets and variables → Actions → Variables**:
+
+- `DOCS_PUBLIC_URL` - Public URL of deployed docs site
+  ```
+  https://docs.your-domain.com
+  ```
+- `SCOUT_PUBLIC_URL` - Public URL of Scout Dashboard
+  ```
+  https://scout.your-domain.com
+  ```
+
+## Setting Variables via GitHub CLI
+
+```bash
+# Set public URLs for smoke checks
+gh variable set DOCS_PUBLIC_URL --body "https://docs.example.com"
+gh variable set SCOUT_PUBLIC_URL --body "https://scout.example.com"
+```
+
 ## Verification
 
 After setting secrets, trigger a manual workflow run:
 ```bash
-gh workflow run ci.yml
+gh workflow run ci-production.yml
 ```
 
 Check the workflow logs for any missing secrets or configuration issues.
+
+## Post-Deployment Verification
+
+Run the verification script locally:
+```bash
+# Export required env vars
+export PGURI="postgresql://..."
+export SUPERSET_BASE="https://..."
+export SUPERSET_USER="admin"
+export SUPERSET_PASSWORD="..."
+export SUPABASE_URL="https://..."
+export SUPABASE_SERVICE_ROLE_KEY="..."
+
+# Run verification
+bash scripts/verify_deployment.sh
+```

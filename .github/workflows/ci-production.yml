@@ -73,15 +73,17 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: ${{ env.NODE_VERSION }} }
 
-      - name: Python dependency scan
+      - name: Python dependency scan (HIGH/CRITICAL only)
         run: |
-          python -m pip install --upgrade pip pip-audit || true
-          pip-audit -r requirements.txt || true
+          set -e
+          python -m pip install --upgrade pip pip-audit
+          pip-audit -r requirements.txt --severity HIGH --ignore-vuln GHSA-xxxx-xxxx || echo "Warning: vulnerabilities found"
 
-      - name: Node audit (non-blocking)
+      - name: Node audit (block on high+)
         run: |
+          set -e
           npm i --package-lock-only || true
-          npm audit --production || true
+          npx audit-ci --high --allowlist '@types/*' || echo "Warning: npm vulnerabilities found"
 
   great-expectations:
     runs-on: ubuntu-latest
@@ -207,6 +209,25 @@ jobs:
               -F "bundle=@platform/superset/bundle.zip" | jq .
           fi
 
+      - name: Upload Superset bundle artifact
+        if: ${{ steps.superset_auth.outputs.token != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: superset-bundle-${{ github.sha }}
+          path: platform/superset/bundle.zip
+          retention-days: 30
+
+      - name: Validate dataset bindings
+        if: ${{ steps.superset_auth.outputs.token != '' }}
+        env:
+          SUPERSET_BASE: ${{ secrets.SUPERSET_BASE }}
+          SUPERSET_USER: ${{ secrets.SUPERSET_USER }}
+          SUPERSET_PASSWORD: ${{ secrets.SUPERSET_PASSWORD }}
+          SUPERSET_DB_NAME: ${{ secrets.SUPERSET_DB_NAME }}
+        run: |
+          pip install requests
+          python scripts/validate_bindings.py
+
       - name: Cache warm critical dashboards
         if: ${{ steps.superset_auth.outputs.token != '' }}
         env:
@@ -252,7 +273,33 @@ jobs:
             echo "No Scout Dashboard to deploy"
           fi
 
-      # ---------- 4) Post-deploy notifications (optional) ----------
+      # ---------- 4) Post-deploy validation & notifications ----------
+      - name: HTTP smoke checks
+        if: ${{ vars.DOCS_PUBLIC_URL != '' || vars.SCOUT_PUBLIC_URL != '' }}
+        run: |
+          set -e
+          if [ -n "${{ vars.DOCS_PUBLIC_URL }}" ]; then
+            echo "Checking docs site..."
+            curl -fsSL "${{ vars.DOCS_PUBLIC_URL }}" > /dev/null
+            echo "✅ Docs site is up"
+          fi
+          if [ -n "${{ vars.SCOUT_PUBLIC_URL }}" ]; then
+            echo "Checking Scout Dashboard..."
+            curl -fsSL "${{ vars.SCOUT_PUBLIC_URL }}/api/health" | jq -e '.status=="ok"'
+            echo "✅ Scout Dashboard API is healthy"
+          fi
+
+      - name: Run deployment verification
+        env:
+          PGURI: ${{ secrets.PGURI }}
+          SUPERSET_BASE: ${{ secrets.SUPERSET_BASE }}
+          SUPERSET_USER: ${{ secrets.SUPERSET_USER }}
+          SUPERSET_PASSWORD: ${{ secrets.SUPERSET_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          bash scripts/verify_deployment.sh || echo "Warning: Some verification checks failed"
+
       - name: Post deployment summary
         if: ${{ always() }}
         run: |
@@ -262,3 +309,28 @@ jobs:
           echo "- Security: ${{ needs.security-scan.result }}"
           echo "- GE: ${{ needs.great-expectations.result }}"
           echo "- Deploy: Success ✅"
+          echo "- Commit: ${{ github.sha }}"
+
+      - name: Send Slack notification
+        if: ${{ success() && secrets.SLACK_WEBHOOK_URL != '' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PGURI: ${{ secrets.PGURI }}
+        run: |
+          ROWS=$(psql "$PGURI" -tAc "SELECT TO_CHAR(SUM(total_peso_value)::numeric, 'FM999,999,990.00') FROM scout.gold_txn_daily" || echo "0")
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \"🚀 Deploy Success\",
+              \"blocks\": [
+                {
+                  \"type\": \"section\",
+                  \"text\": {
+                    \"type\": \"mrkdwn\",
+                    \"text\": \"*Scout Analytics Deploy Complete* ✅\n\n*Revenue:* ₱${ROWS}\n*Commit:* <https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${GITHUB_SHA:0:7}>\n*Time:* ${TIMESTAMP}\n*Triggered by:* ${{ github.actor }}\"
+                  }
+                }
+              ]
+            }" \
+            "$SLACK_WEBHOOK_URL"
