@@ -1,14 +1,9 @@
+# CI-specific dbt profiles
+# Used in GitHub Actions without Kubernetes cluster
+
 trino_profile:
-  target: cluster
+  target: ci
   outputs:
-    cluster:
-      type: trino
-      host: trino.aaas.svc.cluster.local
-      port: 8080
-      user: dbt
-      catalog: iceberg
-      schema: default
-      http_scheme: http
     ci:
       type: trino
       host: localhost
@@ -17,8 +12,12 @@ trino_profile:
       catalog: memory
       schema: default
       http_scheme: http
-    # Mock profile for testing without real Trino
-    test:
+      
+# Alternative: Use PostgreSQL for CI testing
+scout:
+  target: ci_postgres  
+  outputs:
+    ci_postgres:
       type: postgres
       host: localhost
       port: 5432
@@ -27,3 +26,5 @@ trino_profile:
       database: postgres
       schema: scout
       threads: 1
+      keepalives_idle: 0
+      search_path: [scout]
