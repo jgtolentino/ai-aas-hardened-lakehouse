@@ -83,13 +83,23 @@ async function computePesoValue(
 ): Promise<number> {
   if (providedValue && providedValue > 0) return providedValue
   
-  const { data: skuData } = await supabase
-    .from('scout.dim_sku')
-    .select('unit_price')
-    .eq('sku', sku)
-    .single()
-  
-  return skuData?.unit_price ? skuData.unit_price * units : 0
+  try {
+    const { data: skuData, error } = await supabase
+      .from('scout.dim_sku')
+      .select('unit_price')
+      .eq('sku', sku)
+      .single()
+    
+    if (error) {
+      console.error('SKU lookup failed:', error)
+      return providedValue || 0  // Fallback to provided value or 0
+    }
+    
+    return skuData?.unit_price ? skuData.unit_price * units : (providedValue || 0)
+  } catch (err) {
+    console.error('Database error in computePesoValue:', err)
+    return providedValue || 0  // Fallback on any error
+  }
 }
 
 async function upsertDimensions(supabase: any, txn: Transaction) {
