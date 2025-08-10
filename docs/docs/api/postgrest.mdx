@@ -1,0 +1,96 @@
+# Database REST API (PostgREST)
+
+The Scout Analytics Platform exposes a comprehensive REST API through PostgREST for all database operations.
+
+## Base URL
+```
+https://cxzllzyxwpyptfretryc.supabase.co/rest/v1
+```
+
+## Authentication
+```http
+apikey: [SUPABASE_ANON_KEY]
+Authorization: Bearer [SUPABASE_ANON_KEY]
+```
+
+## OpenAPI Specification
+
+<details>
+<summary>View OpenAPI Spec</summary>
+
+The complete OpenAPI specification is available at:
+- JSON: [/openapi/postgrest.json](/openapi/postgrest.json)
+- Live: `https://cxzllzyxwpyptfretryc.supabase.co/rest/v1/`
+
+</details>
+
+## Common Endpoints
+
+### Transactions
+```http
+GET /silver_transactions?store_id=eq.S001&order=ts.desc&limit=10
+```
+
+### Stores
+```http
+GET /dim_store?region=eq.NCR
+```
+
+### RPC Functions
+```http
+POST /rpc/get_executive_kpis
+Content-Type: application/json
+
+{
+  "period": "last_30_days"
+}
+```
+
+## Query Operators
+
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `eq` | Equals | `?store_id=eq.S001` |
+| `gt` | Greater than | `?amount=gt.100` |
+| `gte` | Greater than or equal | `?date=gte.2024-01-01` |
+| `lt` | Less than | `?amount=lt.1000` |
+| `lte` | Less than or equal | `?date=lte.2024-12-31` |
+| `like` | Pattern matching | `?name=like.*Store*` |
+| `in` | In list | `?status=in.(active,pending)` |
+| `is` | IS (for NULL) | `?deleted_at=is.null` |
+
+## Response Format
+
+### Success Response
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "store_id": "S001",
+    "amount": 150.00,
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+### Error Response
+```json
+{
+  "message": "Column 'invalid_column' does not exist",
+  "code": "42703",
+  "details": null,
+  "hint": null
+}
+```
+
+## Rate Limiting
+- **Rate Limit**: 10,000 requests per hour
+- **Header**: `X-RateLimit-Remaining`
+- **Reset**: `X-RateLimit-Reset`
+
+## Best Practices
+1. Use column selection to minimize payload: `?select=id,name,amount`
+2. Apply filters server-side, not client-side
+3. Use pagination for large datasets: `?limit=100&offset=0`
+4. Enable RLS for security
+5. Use prepared statements via RPC for complex queries

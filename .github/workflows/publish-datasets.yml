@@ -1,0 +1,203 @@
+name: Publish Scout Datasets
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_refresh:
+        description: 'Force refresh all datasets (ignore cache)'
+        required: false
+        default: 'false'
+        type: boolean
+      datasets:
+        description: 'Specific datasets to publish (comma-separated, leave empty for all)'
+        required: false
+        default: ''
+        type: string
+  
+  schedule:
+    # Run daily at 02:15 UTC (after most ETL jobs complete)
+    - cron: '15 2 * * *'
+  
+  push:
+    paths:
+      - 'scripts/publish-datasets.ts'
+      - 'platform/scout/migrations/014_storage_policies.sql'
+      - '.github/workflows/publish-datasets.yml'
+
+env:
+  NODE_VERSION: '20'
+  
+jobs:
+  publish:
+    name: Publish Datasets to Storage
+    runs-on: ubuntu-latest
+    
+    # Set timeout to prevent runaway jobs
+    timeout-minutes: 30
+    
+    environment:
+      name: production
+      
+    env:
+      PGURI: ${{ secrets.PGURI }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          npm install -g tsx @supabase/supabase-js csv-parse
+          
+      - name: Verify environment variables
+        run: |
+          echo "Checking required environment variables..."
+          if [ -z "$PGURI" ]; then echo "❌ PGURI is not set"; exit 1; fi
+          if [ -z "$SUPABASE_URL" ]; then echo "❌ SUPABASE_URL is not set"; exit 1; fi
+          if [ -z "$SUPABASE_SERVICE_KEY" ]; then echo "❌ SUPABASE_SERVICE_KEY is not set"; exit 1; fi
+          echo "✅ All required environment variables are set"
+          
+      - name: Test database connection
+        run: |
+          echo "Testing database connection..."
+          psql "$PGURI" -c "SELECT version();" > /dev/null
+          echo "✅ Database connection successful"
+          
+      - name: Test Supabase connection
+        run: |
+          echo "Testing Supabase Storage access..."
+          curl -f -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+               -H "apikey: $SUPABASE_SERVICE_KEY" \
+               "$SUPABASE_URL/storage/v1/bucket" > /dev/null
+          echo "✅ Supabase connection successful"
+          
+      - name: Create storage bucket if needed
+        run: |
+          echo "Ensuring sample bucket exists..."
+          curl -X POST "$SUPABASE_URL/storage/v1/bucket" \
+               -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+               -H "apikey: $SUPABASE_SERVICE_KEY" \
+               -H "Content-Type: application/json" \
+               -d '{"id":"sample","name":"sample","public":false}' \
+               || echo "Bucket already exists or creation failed (expected)"
+               
+      - name: Run dataset publisher
+        id: publish
+        run: |
+          echo "🚀 Starting dataset publication..."
+          
+          # Set additional environment variables for the script
+          export FORCE_REFRESH="${{ github.event.inputs.force_refresh }}"
+          export SPECIFIC_DATASETS="${{ github.event.inputs.datasets }}"
+          
+          # Run the publisher with error handling
+          if tsx scripts/publish-datasets.ts; then
+            echo "✅ Dataset publication completed successfully"
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Dataset publication failed"
+            echo "success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+      - name: Verify published datasets
+        if: steps.publish.outputs.success == 'true'
+        run: |
+          echo "🔍 Verifying published datasets..."
+          
+          # Check if manifest was created
+          MANIFEST_URL="$SUPABASE_URL/storage/v1/object/sample/scout/v1/manifests/latest.json"
+          if curl -f -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+                  -H "apikey: $SUPABASE_SERVICE_KEY" \
+                  "$MANIFEST_URL" > manifest.json; then
+            echo "✅ Manifest file verified"
+            
+            # Extract some basic info from manifest
+            DATASET_COUNT=$(jq -r '.total_datasets' manifest.json)
+            TOTAL_SIZE_MB=$(jq -r '.integrity.total_size_bytes / 1024 / 1024 | floor' manifest.json)
+            GENERATED_AT=$(jq -r '.generated_at' manifest.json)
+            
+            echo "📊 Publication Summary:"
+            echo "  - Datasets: $DATASET_COUNT"
+            echo "  - Total Size: ${TOTAL_SIZE_MB}MB"
+            echo "  - Generated: $GENERATED_AT"
+            
+            # Set outputs for downstream jobs
+            echo "dataset_count=$DATASET_COUNT" >> $GITHUB_OUTPUT
+            echo "total_size_mb=$TOTAL_SIZE_MB" >> $GITHUB_OUTPUT
+            
+          else
+            echo "❌ Failed to verify manifest file"
+            exit 1
+          fi
+          
+      - name: Test dataset access
+        if: steps.publish.outputs.success == 'true'
+        run: |
+          echo "🧪 Testing dataset access..."
+          
+          # Test downloading a small dataset
+          if FIRST_DATASET=$(jq -r '.datasets | keys[0]' manifest.json); then
+            DATASET_PATH=$(jq -r ".datasets[\"$FIRST_DATASET\"].latest_csv" manifest.json)
+            DATASET_URL="$SUPABASE_URL/storage/v1/object/sample${DATASET_PATH}"
+            
+            if curl -f -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+                    -H "apikey: $SUPABASE_SERVICE_KEY" \
+                    "$DATASET_URL" > test_dataset.csv; then
+              ROW_COUNT=$(wc -l < test_dataset.csv)
+              echo "✅ Successfully downloaded test dataset: $FIRST_DATASET ($ROW_COUNT rows)"
+            else
+              echo "❌ Failed to download test dataset"
+              exit 1
+            fi
+          else
+            echo "❌ No datasets found in manifest"
+            exit 1
+          fi
+          
+      - name: Clean up temporary files
+        if: always()
+        run: |
+          rm -f manifest.json test_dataset.csv
+          
+      - name: Notify on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: |
+            🚨 Scout dataset publication failed!
+            
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref }}
+            Commit: ${{ github.sha }}
+            Workflow: ${{ github.workflow }}
+            
+            Please check the logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: env.SLACK_WEBHOOK_URL != null
+        
+      - name: Notify on success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: |
+            ✅ Scout datasets published successfully!
+            
+            📊 Summary:
+            - Datasets: ${{ steps.publish.outputs.dataset_count }}
+            - Total Size: ${{ steps.publish.outputs.total_size_mb }}MB
+            - Manifest: ${{ env.SUPABASE_URL }}/storage/v1/object/sample/scout/v1/manifests/latest.json
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: env.SLACK_WEBHOOK_URL != null
