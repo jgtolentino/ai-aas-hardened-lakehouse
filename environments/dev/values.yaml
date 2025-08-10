@@ -1,0 +1,63 @@
+# Development Environment - Helm Values
+# Local development with relaxed security and debug features
+
+replicaCount: 1
+
+image:
+  repository: scout-analytics
+  tag: "dev"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Development-specific features
+debug:
+  enabled: true
+  logLevel: "debug"
+  
+rateLimit:
+  enabled: false
+
+cache:
+  enabled: true
+  ttl: 60  # 1 minute for rapid iteration
+
+monitoring:
+  enabled: false
+
+security:
+  tls:
+    enabled: false
+  cors:
+    enabled: true
+    origins: ["http://localhost:*"]
+
+postgresql:
+  host: "localhost"
+  port: 5432
+  database: "postgres"
+  schema: "scout"
+  sslMode: "disable"
+
+superset:
+  baseUrl: "http://localhost:8088"
+  
+supabase:
+  url: "http://localhost:54321"
+  anonKey: "local-anon-key"

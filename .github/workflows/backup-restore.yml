@@ -1,0 +1,50 @@
+name: backup-restore
+on:
+  schedule: 
+    - cron: "0 20 * * 0"  # Weekly on Sunday at 8pm UTC
+  workflow_dispatch:  # Allow manual trigger
+jobs:
+  pg-backup-restore-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      
+      - name: Dump production database
+        run: |
+          pg_dump "$PGURI" -Fc -f backup.dump --verbose
+          ls -lh backup.dump
+        env: 
+          PGURI: ${{ secrets.PGURI }}
+      
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup.dump
+          retention-days: 7
+      
+      - name: Test restore (dry run)
+        if: ${{ secrets.PGURI_TEST != '' }}
+        run: |
+          # Create test database if needed
+          createdb -h localhost -U postgres test_restore || true
+          # Test restore to scratch DB
+          pg_restore -d "$PGURI_TEST" backup.dump --verbose --no-owner --no-privileges
+          # Verify key tables exist
+          psql "$PGURI_TEST" -c "SELECT COUNT(*) FROM scout.gold_txn_daily;"
+        env:
+          PGURI_TEST: ${{ secrets.PGURI_TEST }}
+      
+      - name: Backup summary
+        if: always()
+        run: |
+          echo "## Backup Summary"
+          echo "- Timestamp: $(date -u)"
+          echo "- Size: $(ls -lh backup.dump | awk '{print $5}')"
+          echo "- Run ID: ${{ github.run_id }}"
