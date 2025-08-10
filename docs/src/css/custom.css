@@ -1,0 +1,105 @@
+:root {
+  --ifm-color-primary: #2e8555;
+  --ifm-color-primary-dark: #29784c;
+  --ifm-color-primary-darker: #277148;
+  --ifm-color-primary-darkest: #205d3b;
+  --ifm-color-primary-light: #33925d;
+  --ifm-color-primary-lighter: #359962;
+  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary-dark: #21af90;
+  --ifm-color-primary-darker: #1fa588;
+  --ifm-color-primary-darkest: #1a8870;
+  --ifm-color-primary-light: #29d5b0;
+  --ifm-color-primary-lighter: #32d8b4;
+  --ifm-color-primary-lightest: #4fddbf;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--ifm-color-primary) 0%, var(--ifm-color-primary-dark) 100%);
+  color: white;
+}
+
+.markdown > h2 {
+  margin-top: 2rem;
+}
+
+.markdown > h3 {
+  margin-top: 1.5rem;
+}
+
+code {
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.3rem;
+}
+
+.prism-code {
+  font-size: 0.9rem;
+}
+
+/* Mermaid diagram styling */
+.docusaurus-mermaid-container {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+/* Table styling */
+table {
+  display: table;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+th {
+  background-color: var(--ifm-color-primary-darker);
+  color: white;
+  font-weight: 600;
+}
+
+/* Alert styling */
+.alert {
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.alert--info {
+  background-color: var(--ifm-color-info-contrast-background);
+  border-left: 4px solid var(--ifm-color-info);
+}
+
+.alert--warning {
+  background-color: var(--ifm-color-warning-contrast-background);
+  border-left: 4px solid var(--ifm-color-warning);
+}
+
+.alert--danger {
+  background-color: var(--ifm-color-danger-contrast-background);
+  border-left: 4px solid var(--ifm-color-danger);
+}
+
+/* Sidebar */
+.menu__link--active {
+  font-weight: 600;
+}
+
+/* Search */
+.DocSearch-Button {
+  border-radius: 0.5rem;
+}
+
+/* Footer */
+.footer {
+  background-color: var(--ifm-color-primary-darkest);
+}
+
+.footer__title {
+  color: white;
+  font-weight: 600;
+}

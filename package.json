@@ -1,0 +1,33 @@
+{
+  "name": "scout-analytics-platform",
+  "version": "1.0.0",
+  "description": "Enterprise Data Platform for Philippine Retail Intelligence",
+  "private": true,
+  "scripts": {
+    "scaffold:slice": "tsx scripts/scaffold-slice.ts",
+    "gen:slice": "tsx scripts/scaffold-slice.ts",
+    "docs:generate": "bash scripts/generate_docs.sh",
+    "docs:serve": "cd docs-site && npm start",
+    "docs:build": "cd docs-site && npm run build",
+    "test:connection": "tsx apps/web/src/test-connection.ts",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "turbo": "^1.11.0",
+    "@types/node": "^20.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.14.0"
+}

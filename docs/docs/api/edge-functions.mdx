@@ -1,0 +1,100 @@
+# Edge Functions API
+
+Scout Analytics provides serverless Edge Functions for specialized operations.
+
+## Base URL
+```
+https://cxzllzyxwpyptfretryc.supabase.co/functions/v1
+```
+
+## Available Functions
+
+### 1. Ingest Transaction
+Process and validate incoming transactions.
+
+```bash
+curl -X POST https://cxzllzyxwpyptfretryc.supabase.co/functions/v1/ingest-transaction \
+  -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "TXN-001",
+    "store_id": "S001",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "total_amount": 150.00,
+    "basket_size": 5
+  }'
+```
+
+### 2. Generate Embeddings
+Create vector embeddings for semantic search.
+
+```bash
+curl -X POST https://cxzllzyxwpyptfretryc.supabase.co/functions/v1/embed-batch \
+  -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "texts": ["Premium customer in Manila", "High-value transaction"],
+    "model": "text-embedding-3-small"
+  }'
+```
+
+### 3. Natural Language Query
+Convert natural language to SQL using AI.
+
+```bash
+curl -X POST https://cxzllzyxwpyptfretryc.supabase.co/functions/v1/genie-query \
+  -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Show me top 5 stores by revenue last month",
+    "include_explanation": true
+  }'
+```
+
+### 4. Document Ingestion
+Process documents for the knowledge base.
+
+```bash
+curl -X POST https://cxzllzyxwpyptfretryc.supabase.co/functions/v1/ingest-doc \
+  -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Q4 Sales Report",
+    "content": "Sales exceeded targets by 15%...",
+    "metadata": {"type": "report", "quarter": "Q4-2024"}
+  }'
+```
+
+## OpenAPI Specification
+
+The complete specification is available at:
+- [/openapi/edge-functions.json](/openapi/edge-functions.json)
+
+## Error Handling
+
+All functions return consistent error responses:
+
+```json
+{
+  "error": {
+    "message": "Validation failed",
+    "code": "VALIDATION_ERROR",
+    "details": {
+      "field": "store_id",
+      "reason": "Store not found"
+    }
+  }
+}
+```
+
+## Rate Limits
+- **Default**: 1,000 requests per hour
+- **Burst**: 50 requests per minute
+- **Headers**: Standard rate limit headers included
+
+## Best Practices
+1. Batch operations when possible
+2. Handle retries with exponential backoff
+3. Log correlation IDs for debugging
+4. Validate inputs client-side first
+5. Monitor function execution times

@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: Scout Analytics Platform API
+  version: 1.0.0
+  description: Auto-generated from Edge Functions and PostgREST
+
+servers:
+  - url: https://cxzllzyxwpyptfretryc.supabase.co
+    description: Production
+
+paths:
+  /functions/v1/ingest-transaction:
+    post:
+      summary: Ingest POS transaction
+      operationId: ingestTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+      responses:
+        '201':
+          description: Transaction ingested
+          
+  /rest/v1/silver_transactions_cleaned:
+    get:
+      summary: Query transactions
+      operationId: getTransactions
+      parameters:
+        - name: store_id
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Transaction list
+
+components:
+  schemas:
+    Transaction:
+      type: object
+      required: [store_id, amount]
+      properties:
+        store_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          minimum: 0
+          maximum: 1000000
