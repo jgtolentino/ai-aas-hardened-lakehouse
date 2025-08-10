@@ -59,3 +59,8 @@ spec:
           requests:
             memory: 128Mi
             cpu: 100m
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false

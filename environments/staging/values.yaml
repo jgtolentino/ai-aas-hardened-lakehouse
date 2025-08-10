@@ -1,0 +1,89 @@
+# Staging Environment - Helm Values
+# Pre-production validation with production-like settings
+
+replicaCount: 2
+
+image:
+  repository: scout-analytics
+  tag: "staging"
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 443
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: scout-staging.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: scout-staging-tls
+      hosts:
+        - scout-staging.example.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# Staging-specific features
+debug:
+  enabled: true
+  logLevel: "info"
+  
+rateLimit:
+  enabled: true
+  requestsPerMinute: 100
+  
+cache:
+  enabled: true
+  ttl: 300  # 5 minutes
+
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+  tracing:
+    enabled: false
+
+security:
+  tls:
+    enabled: true
+    minVersion: "1.2"
+  cors:
+    enabled: true
+    origins: ["https://scout-staging.example.com"]
+  headers:
+    hsts: true
+    contentTypeNosniff: true
+
+postgresql:
+  host: "db-staging.supabase.co"
+  port: 5432
+  database: "postgres"
+  schema: "scout"
+  sslMode: "require"
+  poolSize: 10
+
+superset:
+  baseUrl: "https://superset-staging.example.com"
+  
+supabase:
+  url: "https://staging-project.supabase.co"
+  anonKey: "${SUPABASE_ANON_KEY}"  # From secrets
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70

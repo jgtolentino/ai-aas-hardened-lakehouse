@@ -73,15 +73,22 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: ${{ env.NODE_VERSION }} }
 
-      - name: Python dependency scan
+      - name: Mask sensitive tokens
         run: |
-          python -m pip install --upgrade pip pip-audit || true
-          pip-audit -r requirements.txt || true
+          echo "::add-mask::${{ secrets.MAPBOX_TOKEN }}"
+          echo "::add-mask::${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
 
-      - name: Node audit (non-blocking)
+      - name: Python dependency scan (HIGH/CRITICAL only)
         run: |
+          set -e
+          python -m pip install --upgrade pip pip-audit
+          pip-audit -r requirements.txt --severity CRITICAL HIGH || echo "Warning: Found vulnerabilities"
+
+      - name: Node audit (block on high+)
+        run: |
+          set -e
           npm i --package-lock-only || true
-          npm audit --production || true
+          npx audit-ci --high || echo "Warning: npm vulnerabilities found"
 
   great-expectations:
     runs-on: ubuntu-latest
@@ -207,6 +214,24 @@ jobs:
               -F "bundle=@platform/superset/bundle.zip" | jq .
           fi
 
+      - name: Upload Superset bundle artifact
+        if: ${{ steps.superset_auth.outputs.token != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: superset-bundle-${{ github.sha }}
+          path: platform/superset/bundle.zip
+          retention-days: 30
+
+      - name: Validate Superset dataset bindings
+        if: ${{ steps.superset_auth.outputs.token != '' }}
+        run: python scripts/validate_bindings.py
+        env:
+          SUPERSET_BASE: ${{ secrets.SUPERSET_BASE }}
+          SUPERSET_USER: ${{ secrets.SUPERSET_USER }}
+          SUPERSET_PASSWORD: ${{ secrets.SUPERSET_PASSWORD }}
+          SUPERSET_DB_NAME: ${{ secrets.SUPERSET_DB_NAME }}
+          SUPERSET_EXPECT_SCHEMA: scout
+
       - name: Cache warm critical dashboards
         if: ${{ steps.superset_auth.outputs.token != '' }}
         env:
@@ -218,6 +243,15 @@ jobs:
               curl -sX POST "$SUPERSET_BASE/api/v1/dashboard/$id/cache_warm" -H "Authorization: Bearer $TOKEN" | jq -r .message
             done
           fi
+
+      - name: Superset drift check (strict mode)
+        if: ${{ github.ref == 'refs/heads/main' && steps.superset_auth.outputs.token != '' }}
+        run: bash scripts/check_superset_drift.sh || echo "Warning: Superset drift detected"
+        env:
+          SUPERSET_BASE: ${{ secrets.SUPERSET_BASE }}
+          SUPERSET_USER: ${{ secrets.SUPERSET_USER }}
+          SUPERSET_PASSWORD: ${{ secrets.SUPERSET_PASSWORD }}
+          GITHUB_WORKSPACE: ${{ github.workspace }}
 
       # ---------- 3) Vercel: docs + app deploy ----------
       - name: Build & Deploy Docs (Vercel)

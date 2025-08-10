@@ -1,0 +1,22 @@
+# Trivy Security Scanner Ignore File
+# Format: CVE-YYYY-NNNNN
+
+# False positives or accepted risks
+# Add specific CVEs here with justification comments
+
+# Ignore vulnerabilities in test/development files
+**/test/**
+**/tests/**
+**/__tests__/**
+**/node_modules/**
+**/.venv/**
+
+# Ignore specific CVEs that are mitigated or false positives
+# Example: CVE-2023-12345  # False positive in development dependency
+
+# Ignore low severity issues in documentation
+docs/**
+
+# Ignore vulnerabilities in example/demo code
+examples/**
+demo/**

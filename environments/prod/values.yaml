@@ -1,0 +1,153 @@
+# Production Environment - Helm Values
+# Production settings with high availability and security
+
+replicaCount: 3
+
+image:
+  repository: scout-analytics
+  tag: "stable"
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 443
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:..."
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+  hosts:
+    - host: scout.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: scout-prod-tls
+      hosts:
+        - scout.example.com
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Production features
+debug:
+  enabled: false
+  logLevel: "warning"
+  
+rateLimit:
+  enabled: true
+  requestsPerMinute: 60
+  requestsPerHour: 3000
+  
+cache:
+  enabled: true
+  ttl: 3600  # 1 hour
+  redis:
+    sentinelEnabled: true
+    sentinelMasterSet: "scout-cache"
+
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    port: 9090
+  tracing:
+    enabled: true
+    samplingRate: 0.1
+  healthcheck:
+    enabled: true
+    path: /health
+    intervalSeconds: 30
+
+security:
+  tls:
+    enabled: true
+    minVersion: "1.3"
+    cipherSuites:
+      - TLS_AES_256_GCM_SHA384
+      - TLS_CHACHA20_POLY1305_SHA256
+  cors:
+    enabled: true
+    origins: ["https://scout.example.com"]
+    credentials: true
+  headers:
+    hsts: true
+    hstsMaxAge: 31536000
+    hstsIncludeSubdomains: true
+    contentTypeNosniff: true
+    xFrameOptions: "DENY"
+    contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline';"
+
+postgresql:
+  host: "db.production.supabase.co"
+  port: 5432
+  database: "postgres"
+  schema: "scout"
+  sslMode: "require"
+  poolSize: 20
+  maxConnections: 100
+  connectionTimeout: 30
+
+superset:
+  baseUrl: "https://superset.example.com"
+  
+supabase:
+  url: "https://production-project.supabase.co"
+  anonKey: "${SUPABASE_ANON_KEY}"  # From secrets
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+  targetMemoryUtilizationPercentage: 70
+
+persistence:
+  enabled: true
+  storageClass: "gp3"
+  accessMode: ReadWriteOnce
+  size: 100Gi
+
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: 30  # days
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+priorityClassName: "high-priority"
+
+nodeSelector:
+  workload: "production"
+  
+tolerations:
+  - key: "production"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app
+              operator: In
+              values:
+                - scout-analytics
+        topologyKey: "kubernetes.io/hostname"

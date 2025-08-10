@@ -91,6 +91,13 @@ gh secret set VERCEL_TOKEN --body "YOUR_VERCEL_TOKEN"
 gh secret set VERCEL_ORG_ID --body "YOUR_ORG_ID"
 gh secret set VERCEL_DOCS_PROJECT_ID --body "YOUR_DOCS_PROJECT_ID"
 gh secret set VERCEL_SCOUT_PROJECT_ID --body "YOUR_SCOUT_PROJECT_ID"
+
+# Security tokens
+gh secret set MAPBOX_TOKEN --body "YOUR_MAPBOX_TOKEN"
+gh secret set PGURI_TEST --body "postgresql://postgres:pass@localhost:5432/test_restore"
+
+# Notifications
+gh secret set SLACK_WEBHOOK_URL --body "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
 ```
 
 ## Verification

@@ -1,0 +1,190 @@
+name: environment-matrix
+on:
+  pull_request:
+    paths:
+      - 'environments/**'
+      - '.github/workflows/environment-matrix.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'environments/**'
+
+jobs:
+  validate-environments:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Validate ${{ matrix.environment }} configuration
+        run: |
+          echo "Validating ${{ matrix.environment }} environment..."
+          
+          # Check required files exist
+          for file in values.yaml superset.env edge.env secrets.yaml.example; do
+            if [ ! -f "environments/${{ matrix.environment }}/$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+          
+          # Validate YAML syntax
+          if [ -f "environments/${{ matrix.environment }}/values.yaml" ]; then
+            python -c "import yaml; yaml.safe_load(open('environments/${{ matrix.environment }}/values.yaml'))"
+            echo "✅ values.yaml syntax valid"
+          fi
+          
+          # Check for common issues
+          echo "Checking for common configuration issues..."
+          
+          # No hardcoded secrets in non-dev environments
+          if [ "${{ matrix.environment }}" != "dev" ]; then
+            if grep -q "password.*=.*[a-zA-Z0-9]" "environments/${{ matrix.environment }}/superset.env" 2>/dev/null; then
+              echo "❌ Hardcoded passwords found in superset.env"
+              exit 1
+            fi
+            if grep -q "key.*=.*[a-zA-Z0-9]" "environments/${{ matrix.environment }}/edge.env" 2>/dev/null; then
+              echo "❌ Hardcoded keys found in edge.env"
+              exit 1
+            fi
+          fi
+          
+          # Production-specific checks
+          if [ "${{ matrix.environment }}" = "prod" ]; then
+            # Check for debug mode disabled
+            if grep -q "debug.*true\|DEBUG.*true" "environments/prod/"*.env 2>/dev/null; then
+              echo "❌ Debug mode enabled in production"
+              exit 1
+            fi
+            
+            # Check for proper TLS configuration
+            if ! grep -q "tls:.*enabled:.*true" "environments/prod/values.yaml"; then
+              echo "⚠️  TLS not enabled in production values.yaml"
+            fi
+            
+            # Check for rate limiting
+            if ! grep -q "RATE_LIMIT_ENABLED=true" "environments/prod/edge.env"; then
+              echo "❌ Rate limiting not enabled in production"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ ${{ matrix.environment }} environment validation passed"
+      
+      - name: Check environment consistency
+        if: matrix.environment == 'prod'
+        run: |
+          echo "Checking consistency across environments..."
+          
+          # Ensure key structure is consistent
+          for env in dev staging prod; do
+            echo "=== $env environment files ==="
+            ls -la environments/$env/
+          done
+          
+          # Compare file structures
+          diff -q <(ls environments/dev/) <(ls environments/staging/) || echo "⚠️  Dev/Staging file differences"
+          diff -q <(ls environments/staging/) <(ls environments/prod/) || echo "⚠️  Staging/Prod file differences"
+
+  environment-drift-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for environment drift
+        run: |
+          echo "Checking for configuration drift between environments..."
+          
+          # Extract and compare key settings
+          for env in dev staging prod; do
+            echo "=== $env key settings ==="
+            
+            # Extract database host
+            grep -E "host:|DATABASE_URL" environments/$env/*.{yaml,env} 2>/dev/null | head -5 || true
+            
+            # Extract API endpoints
+            grep -E "baseUrl:|SUPABASE_URL|url:" environments/$env/*.{yaml,env} 2>/dev/null | head -5 || true
+          done
+          
+      - name: Generate environment matrix report
+        run: |
+          cat > environment-matrix.md << 'EOF'
+          # Environment Configuration Matrix
+          
+          Generated: $(date)
+          
+          ## Environment Files
+          
+          | File | Dev | Staging | Prod |
+          |------|-----|---------|------|
+          EOF
+          
+          for file in values.yaml superset.env edge.env secrets.yaml.example; do
+            echo -n "| $file "
+            for env in dev staging prod; do
+              if [ -f "environments/$env/$file" ]; then
+                size=$(wc -l < "environments/$env/$file")
+                echo -n "| ✅ ($size lines) "
+              else
+                echo -n "| ❌ "
+              fi
+            done
+            echo "|" >> environment-matrix.md
+          done
+          
+          echo "" >> environment-matrix.md
+          echo "## Key Configuration Differences" >> environment-matrix.md
+          echo "" >> environment-matrix.md
+          
+          # Show replica counts
+          echo "### Replica Counts" >> environment-matrix.md
+          echo "| Environment | Replicas |" >> environment-matrix.md
+          echo "|-------------|----------|" >> environment-matrix.md
+          for env in dev staging prod; do
+            replicas=$(grep -E "replicaCount:|minReplicas:" environments/$env/values.yaml 2>/dev/null | head -1 | awk '{print $2}')
+            echo "| $env | ${replicas:-N/A} |" >> environment-matrix.md
+          done
+          
+      - name: Upload environment matrix report
+        uses: actions/upload-artifact@v4
+        with:
+          name: environment-matrix-report
+          path: environment-matrix.md
+          retention-days: 30
+
+  lint-configurations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: Install linters
+        run: |
+          pip install yamllint
+          npm install -g dotenv-linter
+      
+      - name: Lint YAML files
+        run: |
+          cat > .yamllint.yml << 'EOF'
+          extends: default
+          rules:
+            line-length:
+              max: 150
+            truthy:
+              allowed-values: ['true', 'false', 'on', 'off']
+          EOF
+          
+          yamllint -c .yamllint.yml environments/*/values.yaml || true
+      
+      - name: Lint env files
+        run: |
+          for env_file in environments/*/*.env; do
+            echo "Checking $env_file..."
+            dotenv-linter "$env_file" || true
+          done
