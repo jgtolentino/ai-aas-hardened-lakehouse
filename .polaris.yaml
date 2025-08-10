@@ -1,0 +1,41 @@
+# Polaris Configuration for AI/AAS Hardened Lakehouse
+checks:
+  # Reliability
+  cpuRequestsMissing: warning
+  cpuLimitsMissing: error
+  memoryRequestsMissing: warning
+  memoryLimitsMissing: error
+  readinessProbeMissing: warning
+  livenessProbeMissing: warning
+  
+  # Security
+  hostIPCSet: error
+  hostPIDSet: error
+  hostNetworkSet: error
+  hostPortSet: warning
+  runAsRootAllowed: error
+  runAsPrivileged: error
+  notReadOnlyRootFilesystem: warning
+  privilegeEscalationAllowed: error
+  
+  # Efficiency
+  cpuRequestTooLow: warning
+  cpuRequestTooHigh: warning
+  memoryRequestTooLow: warning
+  memoryRequestTooHigh: warning
+  
+  # Best Practices
+  tagNotSpecified: error
+  pullPolicyNotAlways: warning
+  priorityClassNotSet: ignore
+  
+exemptions:
+  - namespace: kube-system
+    justification: "System pods require elevated privileges"
+  - namespace: kube-public
+    justification: "Public namespace exempted"
+  - namespace: kube-node-lease
+    justification: "Node lease namespace exempted"
+  - controllerNames:
+    - "^minio$"
+    justification: "MinIO requires specific user/group for file permissions"
