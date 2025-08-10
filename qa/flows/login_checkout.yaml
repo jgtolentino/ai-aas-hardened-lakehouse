@@ -22,3 +22,4 @@ steps:
   - assert:
       condition: 'innerText("[data-test=total]").match(/\\₱?\\d+[\\.,]\\d{2}/)'
       message: "Total shows a currency amount"
+EOF < /dev/null

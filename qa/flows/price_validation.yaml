@@ -19,3 +19,4 @@ steps:
   - assert:
       condition: 'Number(normalizeCurrency(ctx.priceText)) === 89.50'
       message: "SKU456 price matches"
+EOF < /dev/null

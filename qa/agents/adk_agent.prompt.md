@@ -10,3 +10,4 @@ Tools (browser-use):
   screenshot(path), performance.metrics()
 
 Return machine-readable logs.
+EOF < /dev/null

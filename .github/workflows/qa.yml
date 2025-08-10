@@ -27,7 +27,7 @@ jobs:
       - run: npm i -g npm@latest
       
       - name: Install dependencies
-        run: npm ci
+        run: npm i
         working-directory: ./qa
         
       - name: Start Browser-Use MCP
@@ -48,8 +48,7 @@ jobs:
           exit 1
           
       - name: Run flows
-        run: npm run run
-        working-directory: ./qa
+        run: npm run --prefix ./qa run
         
       - name: Upload artifacts
         if: always()

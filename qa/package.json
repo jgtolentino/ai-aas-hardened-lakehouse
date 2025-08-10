@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "dev:mcp": "npx -y browser-use-mcp@latest --headless --port 5173",
-    "run": "tsx runner/index.ts",
-    "run:flow": "tsx runner/index.ts"
+    "run": "tsx qa/runner/index.ts",
+    "run:flow": "tsx qa/runner/index.ts qa/flows/login_checkout.yaml"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.0",
@@ -13,8 +13,6 @@
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.9",
-    "@types/node": "^20.0.0",
     "tsx": "^4.19.1",
     "typescript": "^5.5.4"
   }

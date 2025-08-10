@@ -2,24 +2,16 @@ name: QA-BrowserUse
 version: 1.0.0
 role: "AI QA Runner with Browser-Use MCP + Google ADK"
 entrypoint: "node qa/runner/index.js"
-capabilities: 
-  - browse
-  - click
-  - fill
-  - extract
-  - validate
+capabilities: [browse, click, fill, extract, validate]
 mcp:
-  requires: 
-    - browser-use
+  requires: [browser-use]
 env:
   - key: QA_BASE_URL
   - key: BROWSERS
   - key: SUPABASE_URL
   - key: SUPABASE_SERVICE_KEY
   - key: MCP_BROWSER_USE_URL
-outputs: 
-  - junit.xml
-  - report.json
-  - artifacts/*
+outputs: [junit.xml, report.json, artifacts/*]
 security:
   exec: "bruno"
+EOF < /dev/null
