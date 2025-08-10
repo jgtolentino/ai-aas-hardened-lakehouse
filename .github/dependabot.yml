@@ -16,13 +16,19 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"  # Reduced frequency
       day: "monday"
       time: "04:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3  # Max 3 PRs at a time
     labels:
       - "dependencies"
       - "python"
+    ignore:
+      # Ignore non-critical dependencies
+      - dependency-name: "pytest*"
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: "pandas"
+        update-types: ["version-update:semver-minor"]
       
   # Enable version updates for Docker
   - package-ecosystem: "docker"
