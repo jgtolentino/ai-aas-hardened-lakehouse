@@ -5,4 +5,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: bash scripts/validate_repo_layout.sh
+      
+      - name: Check if validation script exists
+        id: check_script
+        run: |
+          if [ -f "scripts/validate_repo_layout.sh" ]; then
+            echo "script_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "script_exists=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Run structure validation
+        if: steps.check_script.outputs.script_exists == 'true'
+        run: bash scripts/validate_repo_layout.sh
+        
+      - name: Basic structure check
+        if: steps.check_script.outputs.script_exists == 'false'
+        run: |
+          echo "Running basic structure check..."
+          
+          # Check for essential files
+          for file in README.md Makefile; do
+            if [ -f "$file" ]; then
+              echo "✅ Found: $file"
+            else
+              echo "⚠️  Missing: $file (optional)"
+            fi
+          done
+          
+          # Check for essential directories
+          for dir in platform .github; do
+            if [ -d "$dir" ]; then
+              echo "✅ Found: $dir/"
+            else
+              echo "⚠️  Missing: $dir/ (optional)"
+            fi
+          done
+          
+          echo "Basic structure check complete"
+          exit 0

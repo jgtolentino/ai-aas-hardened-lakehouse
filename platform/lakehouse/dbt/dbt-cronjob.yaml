@@ -15,7 +15,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: dbt-runner
-            image: ghcr.io/REPO_OWNER/scout-dbt-runner:main
+            image: ghcr.io/REPO_OWNER/scout-dbt-runner:v1.0.0
             command:
             - /bin/bash
             - -c
@@ -60,6 +60,11 @@ spec:
               limits:
                 memory: 2Gi
                 cpu: 2000m
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 1000
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
           volumes:
           - name: dbt-profiles
             configMap:
