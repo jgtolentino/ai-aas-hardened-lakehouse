@@ -1,0 +1,17 @@
+scout:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: trino
+      host: trino.aaas.svc.cluster.local
+      port: 8080
+      database: scout
+      schema: analytics
+      threads: 4
+    ci:
+      type: duckdb
+      path: ":memory:"
+      threads: 1
+      extensions:
+        - httpfs
+        - parquet
