@@ -1,0 +1,8 @@
+name: structure-check
+on: [pull_request]
+jobs:
+  shape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/validate_repo_layout.sh

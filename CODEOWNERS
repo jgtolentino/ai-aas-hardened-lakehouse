@@ -1,0 +1,24 @@
+# CODEOWNERS for ai-aas-hardened-lakehouse
+
+# Default owners for everything
+* @jgtolentino
+
+# Lakehouse core
+/platform/lakehouse/ @jgtolentino
+/platform/scout/migrations/ @jgtolentino
+
+# Superset assets
+/platform/superset/ @jgtolentino
+
+# Scout functions and Bruno tests
+/platform/scout/ @jgtolentino
+
+# Security / policies
+/platform/security/ @jgtolentino
+
+# CI/CD and GitHub Actions
+/.github/ @jgtolentino
+
+# Documentation
+/docs/ @jgtolentino
+/*.md @jgtolentino

@@ -205,3 +205,67 @@ import-superset: ## Import Superset dashboard bundle
 	else \
 		echo "$(YELLOW)Superset import script not found. Manual import required.$(NC)"; \
 	fi
+
+# Guard rail checks
+.PHONY: structure
+structure: ## Validate repository structure
+	bash scripts/validate_repo_layout.sh
+
+.PHONY: bindings
+bindings: ## Check Superset dataset bindings
+	python scripts/validate_bindings.py
+
+.PHONY: drift
+drift: ## Check for Superset asset drift
+	bash scripts/check_superset_drift.sh
+
+# Environment management
+.PHONY: env-dev
+env-dev: ## Load development environment
+	@echo "$(YELLOW)Loading development environment...$(NC)"
+	@cp environments/dev/secrets.yaml.example environments/dev/secrets.yaml 2>/dev/null || true
+	@echo "source environments/dev/edge.env" > .env.local
+	@echo "$(GREEN)✓ Development environment loaded$(NC)"
+	@echo "Run: source .env.local"
+
+.PHONY: env-staging
+env-staging: ## Load staging environment
+	@echo "$(YELLOW)Loading staging environment...$(NC)"
+	@if [ ! -f environments/staging/secrets.yaml ]; then \
+		echo "$(RED)Error: environments/staging/secrets.yaml not found$(NC)"; \
+		echo "Copy from secrets.yaml.example and fill in values"; \
+		exit 1; \
+	fi
+	@echo "source environments/staging/edge.env" > .env.local
+	@echo "$(GREEN)✓ Staging environment loaded$(NC)"
+	@echo "Run: source .env.local"
+
+.PHONY: env-prod
+env-prod: ## Load production environment (requires confirmation)
+	@echo "$(RED)WARNING: Loading production environment$(NC)"
+	@echo "Press Ctrl+C to cancel, or wait 3 seconds to continue..."
+	@sleep 3
+	@if [ ! -f environments/prod/secrets.yaml ]; then \
+		echo "$(RED)Error: environments/prod/secrets.yaml not found$(NC)"; \
+		echo "Copy from secrets.yaml.example and fill in vault references"; \
+		exit 1; \
+	fi
+	@echo "source environments/prod/edge.env" > .env.local
+	@echo "$(GREEN)✓ Production environment loaded$(NC)"
+	@echo "Run: source .env.local"
+
+.PHONY: deploy-env
+deploy-env: ## Deploy to current environment
+	@if [ -z "$$ENVIRONMENT" ]; then \
+		echo "$(RED)Error: ENVIRONMENT not set$(NC)"; \
+		echo "Run one of: make env-dev, make env-staging, make env-prod"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)Deploying to $$ENVIRONMENT environment...$(NC)"
+	@if [ -f "environments/$$ENVIRONMENT/values.yaml" ]; then \
+		helm upgrade --install scout ./helm/scout \
+			-f environments/$$ENVIRONMENT/values.yaml \
+			--namespace scout-$$ENVIRONMENT \
+			--create-namespace; \
+	fi
+	@echo "$(GREEN)✓ Deployed to $$ENVIRONMENT$(NC)"
