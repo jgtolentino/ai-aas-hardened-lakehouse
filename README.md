@@ -4,12 +4,28 @@ A production-ready, security-hardened data lakehouse platform with geographic vi
 
 ## 🚀 Features
 
+### Core Platform
 - **Complete ETL/ELT Pipeline**: Bronze → Silver → Gold → Platinum architecture
-- **Geographic Visualization**: PostGIS-powered choropleth maps with Mapbox integration
+- **Geographic Visualization**: PostGIS-powered choropleth maps with Mapbox integration  
 - **Security Hardened**: RLS, Gatekeeper policies, network isolation
 - **Cloud Native**: Kubernetes-ready with Helm charts
 - **API-First**: Automated deployment via Bruno API collections
 - **Performance Optimized**: GIST indexes, materialized views, <1.5s query SLA
+
+### Dataset Publisher & Management (New! 🎉)
+- **Usage Analytics Dashboard**: Comprehensive tracking of dataset downloads, API calls, and user engagement
+- **Dataset Versioning**: Semantic versioning with rollback capabilities and lineage tracking
+- **Cross-Region Replication**: Global dataset availability with cost optimization
+- **Subscription Notifications**: Multi-channel alerts (email, webhook, in-app, SMS, Slack)
+- **Parquet Export Support**: High-performance columnar format with schema validation
+- **Edge Device Integration**: Secure token-based uploads from Raspberry Pi devices
+- **Automated Testing**: Comprehensive test suites with CI/CD integration
+
+### Enterprise Features
+- **Multi-Tenant Support**: Complete data isolation with RLS policies
+- **Monitoring & Alerts**: Real-time dataset freshness and quality monitoring
+- **Cost Management**: Replication cost estimation and optimization
+- **API Documentation**: Auto-generated docs with OpenAPI integration
 
 ## 📊 Complete Data Stack
 
@@ -108,9 +124,15 @@ ai-aas-hardened-lakehouse/
 │   │   │   └── environments/
 │   │   │       ├── production.bru
 │   │   │       └── staging.bru
-│   │   ├── functions/                 # Edge functions
+│   │   ├── functions/                 # Edge functions  
 │   │   │   ├── embed-batch.ts         # Batch embeddings
 │   │   │   ├── genie-query.ts         # AI-powered queries
+│   │   │   ├── usage-analytics/       # Dataset usage tracking
+│   │   │   ├── dataset-versioning/    # Version control system
+│   │   │   ├── cross-region-replication/ # Multi-region sync
+│   │   │   ├── dataset-subscriptions/ # Notification system
+│   │   │   ├── export-parquet/        # Parquet format export
+│   │   │   └── superset-jwt-proxy/    # JWT authentication
 │   │   │   ├── ingest-doc.ts          # Document ingestion
 │   │   │   └── ingest-transaction.ts  # Transaction processing
 │   │   ├── migrations/                # Database migrations
@@ -126,7 +148,11 @@ ai-aas-hardened-lakehouse/
 │   │   │   ├── 010_geo_boundaries.sql        # PostGIS setup
 │   │   │   ├── 011_geo_normalizers.sql       # Name normalization
 │   │   │   ├── 012_geo_gold_views.sql        # Geographic views
-│   │   │   └── 013_geo_performance_indexes.sql # Spatial indexes
+│   │   │   ├── 013_geo_performance_indexes.sql # Spatial indexes
+│   │   │   ├── 022_usage_analytics_schema.sql # Usage tracking
+│   │   │   ├── 023_dataset_versioning_schema.sql # Version control
+│   │   │   ├── 024_cross_region_replication_schema.sql # Multi-region
+│   │   │   └── 025_dataset_subscription_schema.sql # Notifications
 │   │   ├── quality/                   # Data quality
 │   │   │   ├── checkpoints/
 │   │   │   ├── expectations/
