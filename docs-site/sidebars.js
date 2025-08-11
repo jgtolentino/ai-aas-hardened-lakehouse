@@ -1,53 +1,56 @@
 module.exports = {
-  docs: [
+  tutorialSidebar: [
     {
-      type: 'category',
-      label: 'Overview',
-      items: ['overview/introduction', 'overview/glossary'],
+      type: 'doc',
+      id: 'intro',
+      label: '🏠 Introduction',
     },
     {
       type: 'category',
-      label: 'Architecture',
+      label: '🏛️ Architecture',
+      collapsed: false,
       items: [
-        'architecture/solution-architecture',
-        'architecture/medallion',
-        'architecture/ai-foundry',
-        'architecture/network-topology',
+        'architecture/overview',
       ],
     },
     {
       type: 'category',
-      label: 'Data',
+      label: '🚀 Tutorials & Guides',
+      collapsed: false,
       items: [
-        'data/lineage',
-        'data/quality',
-        'data/privacy',
+        'tutorials/quickstart',
       ],
     },
     {
       type: 'category',
-      label: 'APIs',
+      label: '🔒 Security',
+      collapsed: false,
       items: [
-        'api/reference',
-        'api/authentication',
-        'api/examples',
+        'security/hardening-guide',
       ],
     },
     {
       type: 'category',
-      label: 'Operations',
+      label: '📚 API Reference',
+      collapsed: false,
       items: [
-        'operations/runbooks',
-        'operations/disaster-recovery',
+        'api-reference/sql-interfaces',
+      ],
+    },
+    {
+      type: 'category',
+      label: '🔧 Implementation',
+      collapsed: true,
+      items: [
+        'implementation/deployment',
+      ],
+    },
+    {
+      type: 'category',
+      label: '⚙️ Operations',
+      collapsed: true,
+      items: [
         'operations/monitoring',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Security',
-      items: [
-        'security/rbac',
-        'security/compliance',
       ],
     },
   ],

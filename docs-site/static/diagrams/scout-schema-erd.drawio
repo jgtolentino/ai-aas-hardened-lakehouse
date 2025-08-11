@@ -1,0 +1,160 @@
+<mxfile host="app.diagrams.net" modified="2025-01-11T12:00:00.000Z" agent="5.0" version="24.2.5" etag="scout-erd-123" type="device">
+  <diagram name="Scout Schema ERD" id="scout-schema-erd">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- Title -->
+        <mxCell id="title" value="Scout Schema - Entity Relationship Diagram" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="284" y="20" width="601" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- dim_store Table -->
+        <mxCell id="dim_store" value="" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="200" height="320" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_store_header" value="🏪 dim_store" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" vertex="1" parent="dim_store">
+          <mxGeometry y="30" width="200" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_store_pk" value="🔑 store_id (TEXT, PK)" style="text;strokeColor=none;fillColor=#fff2cc;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;" vertex="1" parent="dim_store">
+          <mxGeometry y="60" width="200" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_store_fields" value="store_name (TEXT)&#xa;store_code (TEXT)&#xa;channel (ENUM)&#xa;region (TEXT)&#xa;province (TEXT)&#xa;city (TEXT)&#xa;barangay (TEXT)&#xa;address (TEXT)&#xa;latitude (DECIMAL)&#xa;longitude (DECIMAL)&#xa;cluster_id (TEXT)&#xa;district_id (TEXT)&#xa;is_active (BOOLEAN)&#xa;opened_date (DATE)&#xa;closed_date (DATE)&#xa;store_size_sqm (INT)&#xa;staff_count (INT)&#xa;citymun_psgc (TEXT)&#xa;province_psgc (TEXT)&#xa;region_psgc (TEXT)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="dim_store">
+          <mxGeometry y="90" width="200" height="230" as="geometry"/>
+        </mxCell>
+        
+        <!-- dim_product Table -->
+        <mxCell id="dim_product" value="" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="300" y="80" width="200" height="280" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_product_header" value="📦 dim_product" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" vertex="1" parent="dim_product">
+          <mxGeometry y="30" width="200" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_product_pk" value="🔑 product_id (TEXT, PK)" style="text;strokeColor=none;fillColor=#fff2cc;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;" vertex="1" parent="dim_product">
+          <mxGeometry y="60" width="200" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_product_fields" value="product_name (TEXT)&#xa;product_code (TEXT)&#xa;barcode (TEXT)&#xa;category (ENUM)&#xa;subcategory (TEXT)&#xa;brand (TEXT)&#xa;supplier_id (TEXT)&#xa;unit_of_measure (TEXT)&#xa;pack_size (INTEGER)&#xa;unit_cost (DECIMAL)&#xa;srp (DECIMAL)&#xa;is_active (BOOLEAN)&#xa;launch_date (DATE)&#xa;discontinue_date (DATE)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="dim_product">
+          <mxGeometry y="90" width="200" height="190" as="geometry"/>
+        </mxCell>
+        
+        <!-- dim_customer Table -->
+        <mxCell id="dim_customer" value="" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="560" y="80" width="220" height="320" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_customer_header" value="👤 dim_customer" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" vertex="1" parent="dim_customer">
+          <mxGeometry y="30" width="220" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_customer_pk" value="🔑 customer_id (TEXT, PK)" style="text;strokeColor=none;fillColor=#fff2cc;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;" vertex="1" parent="dim_customer">
+          <mxGeometry y="60" width="220" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_customer_fields" value="customer_code (TEXT)&#xa;mobile_number (TEXT)&#xa;email (TEXT)&#xa;first_name (TEXT)&#xa;last_name (TEXT)&#xa;birthdate (DATE)&#xa;gender (TEXT)&#xa;customer_type (ENUM)&#xa;loyalty_tier (TEXT)&#xa;loyalty_points (INTEGER)&#xa;first_purchase_date (DATE)&#xa;last_purchase_date (DATE)&#xa;total_lifetime_value (DECIMAL)&#xa;preferred_store_id (TEXT)&#xa;preferred_payment (ENUM)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="dim_customer">
+          <mxGeometry y="90" width="220" height="230" as="geometry"/>
+        </mxCell>
+        
+        <!-- dim_campaign Table -->
+        <mxCell id="dim_campaign" value="" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="840" y="80" width="200" height="240" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_campaign_header" value="📢 dim_campaign" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" vertex="1" parent="dim_campaign">
+          <mxGeometry y="30" width="200" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_campaign_pk" value="🔑 campaign_id (TEXT, PK)" style="text;strokeColor=none;fillColor=#fff2cc;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;" vertex="1" parent="dim_campaign">
+          <mxGeometry y="60" width="200" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="dim_campaign_fields" value="campaign_name (TEXT)&#xa;campaign_type (TEXT)&#xa;start_date (DATE)&#xa;end_date (DATE)&#xa;budget (DECIMAL)&#xa;target_audience (JSONB)&#xa;discount_percentage (DECIMAL)&#xa;promo_code (TEXT)&#xa;is_active (BOOLEAN)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="dim_campaign">
+          <mxGeometry y="90" width="200" height="150" as="geometry"/>
+        </mxCell>
+        
+        <!-- fact_transactions Table (Central) -->
+        <mxCell id="fact_transactions" value="" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="380" y="450" width="240" height="320" as="geometry"/>
+        </mxCell>
+        <mxCell id="fact_transactions_header" value="💳 fact_transactions" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=16;" vertex="1" parent="fact_transactions">
+          <mxGeometry y="30" width="240" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="fact_transactions_pk" value="🔑 transaction_id (TEXT, PK)" style="text;strokeColor=none;fillColor=#fff2cc;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;" vertex="1" parent="fact_transactions">
+          <mxGeometry y="60" width="240" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="fact_transactions_fks" value="🔗 store_id (FK → dim_store)&#xa;🔗 customer_id (FK → dim_customer)&#xa;🔗 product_id (FK → dim_product)&#xa;🔗 campaign_id (FK → dim_campaign)" style="text;strokeColor=none;fillColor=#f0f0f0;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1;" vertex="1" parent="fact_transactions">
+          <mxGeometry y="90" width="240" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="fact_transactions_fields" value="transaction_date (DATE)&#xa;transaction_time (TIME)&#xa;time_of_day (ENUM)&#xa;quantity (INTEGER)&#xa;unit_price (DECIMAL)&#xa;discount_amount (DECIMAL)&#xa;total_amount (DECIMAL)&#xa;payment_method (ENUM)&#xa;is_loyalty_transaction (BOOLEAN)&#xa;weather_condition (TEXT)&#xa;is_weekend (BOOLEAN)&#xa;is_holiday (BOOLEAN)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="fact_transactions">
+          <mxGeometry y="150" width="240" height="170" as="geometry"/>
+        </mxCell>
+        
+        <!-- Relationship Lines -->
+        <!-- dim_store to fact_transactions -->
+        <mxCell id="rel_store" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9673a6;" edge="1" parent="1" source="dim_store_pk" target="fact_transactions_fks">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="140" y="420"/>
+              <mxPoint x="380" y="420"/>
+              <mxPoint x="380" y="570"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_store_label" value="1:N" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontStyle=1;" vertex="1" connectable="0" parent="rel_store">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- dim_product to fact_transactions -->
+        <mxCell id="rel_product" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1" source="dim_product_pk" target="fact_transactions_fks">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400" y="420"/>
+              <mxPoint x="500" y="420"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_product_label" value="1:N" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontStyle=1;" vertex="1" connectable="0" parent="rel_product">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- dim_customer to fact_transactions -->
+        <mxCell id="rel_customer" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#6c8ebf;" edge="1" parent="1" source="dim_customer_pk" target="fact_transactions_fks">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="670" y="420"/>
+              <mxPoint x="550" y="420"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_customer_label" value="1:N" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontStyle=1;" vertex="1" connectable="0" parent="rel_customer">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- dim_campaign to fact_transactions -->
+        <mxCell id="rel_campaign" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#b85450;" edge="1" parent="1" source="dim_campaign_pk" target="fact_transactions_fks">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="940" y="420"/>
+              <mxPoint x="620" y="420"/>
+              <mxPoint x="620" y="570"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_campaign_label" value="1:N" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontStyle=1;" vertex="1" connectable="0" parent="rel_campaign">
+          <mxGeometry x="-0.1" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Legend -->
+        <mxCell id="legend" value="Legend" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="450" width="200" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend_content" value="🔑 Primary Key&#xa;🔗 Foreign Key&#xa;💳 Fact Table (Orange)&#xa;🏪 Store Dimension (Purple)&#xa;📦 Product Dimension (Green)&#xa;👤 Customer Dimension (Blue)&#xa;📢 Campaign Dimension (Red)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="legend">
+          <mxGeometry y="26" width="200" height="114" as="geometry"/>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

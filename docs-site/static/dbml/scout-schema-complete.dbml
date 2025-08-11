@@ -1,0 +1,735 @@
+Project AIAASHardenedLakehouse {
+  database_type: 'PostgreSQL'
+  Note: '''
+    AI-AAS Hardened Lakehouse - Complete Schema with Data Dictionary
+    Medallion Architecture: Bronze → Silver → Gold → Platinum
+    Security: Row-Level Security (RLS) enabled
+    Performance: Optimized with strategic indexes
+    Version: 5.0
+  '''
+}
+
+/* ===================== ENUMS & TYPES ===================== */
+
+Enum channel_type {
+  store [note: 'Physical retail store']
+  ecommerce [note: 'Online/digital channel']
+  wholesale [note: 'B2B wholesale']
+  distributor [note: 'Distribution partner']
+}
+
+Enum product_category {
+  fmcg [note: 'Fast-moving consumer goods']
+  health [note: 'Health & wellness products']
+  beauty [note: 'Beauty & personal care']
+  food [note: 'Food & beverages']
+  electronics [note: 'Consumer electronics']
+  household [note: 'Household items']
+}
+
+Enum time_of_day {
+  dawn [note: '4am-6am']
+  morning [note: '6am-12pm']
+  afternoon [note: '12pm-6pm']
+  evening [note: '6pm-9pm']
+  night [note: '9pm-4am']
+}
+
+Enum customer_type {
+  regular [note: 'Regular customer']
+  loyalty [note: 'Loyalty program member']
+  vip [note: 'VIP customer']
+  new [note: 'First-time customer']
+}
+
+Enum payment_method {
+  cash [note: 'Cash payment']
+  card [note: 'Credit/debit card']
+  ewallet [note: 'E-wallet (GCash, PayMaya)']
+  bank_transfer [note: 'Bank transfer']
+  credit_term [note: 'Credit terms/invoice']
+}
+
+/* ===================== DIMENSIONAL TABLES (Master Data) ===================== */
+
+Table scout.dim_store {
+  store_id TEXT [pk, note: 'Unique store identifier']
+  store_name TEXT [not null, note: 'Store display name']
+  store_code TEXT [unique, note: 'Internal store code']
+  channel channel_type [default: 'store', note: 'Sales channel type']
+  
+  // Geographic hierarchy
+  region TEXT [note: 'Philippine region (NCR, Region I-XIII, etc.)']
+  province TEXT [note: 'Province name']
+  city TEXT [note: 'City/municipality name']
+  barangay TEXT [note: 'Barangay name']
+  address TEXT [note: 'Full street address']
+  
+  // Geospatial
+  latitude DECIMAL(10,8) [note: 'GPS latitude coordinate']
+  longitude DECIMAL(11,8) [note: 'GPS longitude coordinate']
+  
+  // Store attributes
+  cluster_id TEXT [note: 'Store cluster for analysis']
+  district_id TEXT [note: 'Sales district identifier']
+  is_active BOOLEAN [default: true, note: 'Store operational status']
+  opened_date DATE [note: 'Store opening date']
+  closed_date DATE [note: 'Store closure date (if applicable)']
+  store_size_sqm INTEGER [note: 'Store size in square meters']
+  staff_count INTEGER [note: 'Number of staff members']
+  
+  // Philippine Statistical Geographic Codes
+  citymun_psgc TEXT [note: 'City/Municipality PSGC code']
+  province_psgc TEXT [note: 'Province PSGC code']
+  region_psgc TEXT [note: 'Region PSGC code']
+  
+  // Metadata
+  created_at TIMESTAMP [default: `NOW()`, note: 'Record creation timestamp']
+  updated_at TIMESTAMP [default: `NOW()`, note: 'Last update timestamp']
+  
+  Note: 'Master store/outlet dimension table with Philippine geographic hierarchy'
+  
+  indexes {
+    (region, province, city)
+    (channel, is_active)
+    (latitude, longitude)
+  }
+}
+
+Table scout.dim_product {
+  product_id TEXT [pk, note: 'Unique product identifier']
+  product_name TEXT [not null, note: 'Product display name']
+  product_code TEXT [unique, note: 'Internal product code']
+  barcode TEXT [note: 'Product barcode/EAN']
+  category product_category [note: 'Product category classification']
+  subcategory TEXT [note: 'Product subcategory']
+  brand TEXT [note: 'Brand name']
+  supplier_id TEXT [note: 'Supplier identifier']
+  
+  // Product attributes
+  unit_of_measure TEXT [note: 'Sales unit (piece, box, case)']
+  pack_size INTEGER [note: 'Units per pack']
+  unit_cost DECIMAL(10,2) [note: 'Unit cost price']
+  srp DECIMAL(10,2) [note: 'Suggested retail price']
+  
+  // Status
+  is_active BOOLEAN [default: true, note: 'Product active status']
+  launch_date DATE [note: 'Product launch date']
+  discontinue_date DATE [note: 'Product discontinuation date']
+  
+  // Metadata
+  created_at TIMESTAMP [default: `NOW()`, note: 'Record creation timestamp']
+  updated_at TIMESTAMP [default: `NOW()`, note: 'Last update timestamp']
+  
+  Note: 'Master product dimension with category hierarchy and pricing'
+  
+  indexes {
+    (category, brand)
+    (barcode)
+    (is_active, category)
+  }
+}
+
+Table scout.dim_customer {
+  customer_id TEXT [pk, note: 'Unique customer identifier']
+  customer_code TEXT [unique, note: 'Customer reference code']
+  mobile_number TEXT [note: 'Mobile number (hashed for privacy)']
+  email TEXT [note: 'Email address (hashed for privacy)']
+  
+  // Demographics
+  first_name TEXT [note: 'Customer first name']
+  last_name TEXT [note: 'Customer last name']
+  birthdate DATE [note: 'Date of birth']
+  gender TEXT [note: 'Gender (M/F/Other)']
+  
+  // Customer classification
+  customer_type customer_type [note: 'Customer classification']
+  loyalty_tier TEXT [note: 'Loyalty program tier']
+  loyalty_points INTEGER [default: 0, note: 'Current loyalty points balance']
+  
+  // Activity tracking
+  first_purchase_date DATE [note: 'Date of first purchase']
+  last_purchase_date DATE [note: 'Date of most recent purchase']
+  total_lifetime_value DECIMAL(12,2) [note: 'Total spend lifetime']
+  
+  // Preferences
+  preferred_store_id TEXT [note: 'Most frequent store']
+  preferred_payment payment_method [note: 'Preferred payment method']
+  
+  // Metadata
+  created_at TIMESTAMP [default: `NOW()`, note: 'Record creation timestamp']
+  updated_at TIMESTAMP [default: `NOW()`, note: 'Last update timestamp']
+  
+  Note: 'Customer master data with privacy-compliant PII handling'
+  
+  indexes {
+    (customer_type, loyalty_tier)
+    (mobile_number)
+    (email)
+  }
+}
+
+Table scout.dim_campaign {
+  campaign_id TEXT [pk, note: 'Unique campaign identifier']
+  campaign_name TEXT [not null, note: 'Campaign display name']
+  campaign_type TEXT [note: 'Campaign type (promo, discount, bundle)']
+  
+  // Campaign period
+  start_date DATE [not null, note: 'Campaign start date']
+  end_date DATE [not null, note: 'Campaign end date']
+  
+  // Campaign details
+  budget DECIMAL(12,2) [note: 'Campaign budget allocation']
+  target_audience JSONB [note: 'Target audience criteria JSON']
+  discount_percentage DECIMAL(5,2) [note: 'Discount percentage offered']
+  promo_code TEXT [note: 'Promotional code']
+  
+  // Status
+  is_active BOOLEAN [default: true, note: 'Campaign active status']
+  
+  // Metadata
+  created_at TIMESTAMP [default: `NOW()`, note: 'Record creation timestamp']
+  updated_at TIMESTAMP [default: `NOW()`, note: 'Last update timestamp']
+  
+  Note: 'Marketing campaign dimension for tracking promotional effectiveness'
+  
+  indexes {
+    (start_date, end_date)
+    (is_active, campaign_type)
+  }
+}
+
+/* ===================== FACT TABLES ===================== */
+
+Table scout.fact_transactions {
+  transaction_id TEXT [pk, note: 'Unique transaction identifier']
+  store_id TEXT [ref: > scout.dim_store.store_id, note: 'Store where transaction occurred']
+  customer_id TEXT [ref: > scout.dim_customer.customer_id, note: 'Customer identifier (nullable)']
+  campaign_id TEXT [ref: > scout.dim_campaign.campaign_id, note: 'Associated campaign (nullable)']
+  
+  // Temporal
+  transaction_date DATE [not null, note: 'Transaction date']
+  transaction_time TIME [not null, note: 'Transaction time']
+  time_of_day time_of_day [note: 'Time of day classification']
+  
+  // Metrics
+  quantity INTEGER [not null, note: 'Total items purchased']
+  unit_price DECIMAL(10,2) [not null, note: 'Average unit price']
+  discount_amount DECIMAL(10,2) [default: 0, note: 'Total discount applied']
+  total_amount DECIMAL(10,2) [not null, note: 'Total transaction amount']
+  
+  // Transaction attributes
+  payment_method payment_method [note: 'Payment method used']
+  is_loyalty_transaction BOOLEAN [default: false, note: 'Loyalty program transaction flag']
+  
+  // Contextual data
+  weather_condition TEXT [note: 'Weather at time of transaction']
+  is_weekend BOOLEAN [note: 'Weekend flag']
+  is_holiday BOOLEAN [note: 'Holiday flag']
+  
+  // Metadata
+  created_at TIMESTAMP [default: `NOW()`, note: 'Record creation timestamp']
+  
+  Note: 'Core transaction fact table - grain: one row per receipt'
+  
+  indexes {
+    (transaction_date, store_id)
+    (customer_id, transaction_date)
+    (campaign_id)
+  }
+}
+
+Table scout.fact_transaction_items {
+  transaction_item_id TEXT [pk, note: 'Unique line item identifier']
+  transaction_id TEXT [ref: > scout.fact_transactions.transaction_id, note: 'Parent transaction']
+  product_id TEXT [ref: > scout.dim_product.product_id, note: 'Product purchased']
+  
+  // Line item details
+  line_number INTEGER [note: 'Line number on receipt']
+  quantity DECIMAL(10,3) [not null, note: 'Quantity purchased']
+  unit_price DECIMAL(10,2) [not null, note: 'Unit price at sale']
+  line_discount DECIMAL(10,2) [default: 0, note: 'Line-level discount']
+  line_total DECIMAL(10,2) [not null, note: 'Line total (qty * price - discount)']
+  
+  // Metadata
+  created_at TIMESTAMP [default: `NOW()`, note: 'Record creation timestamp']
+  
+  Note: 'Transaction line items - grain: one row per product per receipt'
+  
+  indexes {
+    (transaction_id, line_number)
+    (product_id, transaction_id)
+  }
+}
+
+/* ===================== BRONZE LAYER TABLES ===================== */
+
+Table scout.bronze_sales_raw {
+  id SERIAL [pk, note: 'Auto-increment primary key']
+  raw_data JSONB [not null, note: 'Raw JSON data from source systems']
+  source_system TEXT [not null, note: 'Source system identifier']
+  ingestion_timestamp TIMESTAMP [default: `NOW()`, note: 'Data ingestion timestamp']
+  processing_status TEXT [default: 'pending', note: 'Processing status (pending/processed/failed)']
+  error_message TEXT [note: 'Error details if processing failed']
+  
+  Note: 'Bronze layer: Raw data landing zone with no transformation'
+  
+  indexes {
+    (source_system, ingestion_timestamp)
+    (processing_status)
+  }
+}
+
+/* ===================== SILVER LAYER TABLES ===================== */
+
+Table scout.silver_transactions {
+  id TEXT [pk, note: 'Cleaned transaction ID']
+  ts TIMESTAMP [not null, note: 'Transaction timestamp']
+  
+  // Geographic attributes (cleaned)
+  region TEXT [note: 'Normalized region name']
+  province TEXT [note: 'Normalized province name']
+  city TEXT [note: 'Normalized city name']
+  barangay TEXT [note: 'Normalized barangay name']
+  
+  // Product attributes (cleaned)
+  product_category TEXT [note: 'Normalized product category']
+  brand_name TEXT [note: 'Normalized brand name']
+  sku TEXT [note: 'Stock keeping unit']
+  
+  // Store attributes
+  store_id TEXT [note: 'Store identifier']
+  store_type TEXT [note: 'Store type classification']
+  economic_class TEXT [note: 'Store economic classification (A/B/C/D/E)']
+  
+  // Transaction metrics
+  units_per_transaction INTEGER [note: 'Units sold in transaction']
+  peso_value DECIMAL(12,2) [note: 'Transaction value in PHP']
+  basket_size INTEGER [note: 'Number of unique SKUs']
+  duration_seconds INTEGER [note: 'Transaction duration']
+  
+  // Flags
+  is_tbwa_client BOOLEAN [note: 'TBWA client brand flag']
+  suggestion_accepted BOOLEAN [note: 'AI suggestion acceptance flag']
+  
+  // Metadata
+  created_at TIMESTAMP [default: `NOW()`, note: 'Record creation timestamp']
+  
+  Note: 'Silver layer: Cleaned, validated, and conformed transaction data'
+  
+  indexes {
+    (ts, region)
+    (product_category, brand_name)
+    (store_id, ts)
+  }
+}
+
+/* ===================== GOLD LAYER VIEWS (Analytics) ===================== */
+
+Table scout.gold_txn_daily /* VIEW */ {
+  day DATE [note: 'Transaction date']
+  time_of_day time_of_day [note: 'Time period classification']
+  
+  // Geographic dimensions
+  region TEXT [note: 'Region name']
+  province TEXT [note: 'Province name']
+  city TEXT [note: 'City name']
+  barangay TEXT [note: 'Barangay name']
+  
+  // Product dimensions
+  product_category TEXT [note: 'Product category']
+  brand_name TEXT [note: 'Brand name']
+  
+  // Store dimensions
+  store_type TEXT [note: 'Store type']
+  economic_class TEXT [note: 'Economic classification']
+  
+  // Metrics
+  transaction_count BIGINT [note: 'Number of transactions']
+  unique_stores BIGINT [note: 'Count of unique stores']
+  total_units BIGINT [note: 'Total units sold']
+  total_peso DECIMAL(14,2) [note: 'Total revenue in PHP']
+  avg_transaction_value DECIMAL(10,2) [note: 'Average transaction value']
+  avg_basket_size DECIMAL(10,2) [note: 'Average items per basket']
+  avg_duration_seconds DECIMAL(10,2) [note: 'Average transaction duration']
+  tbwa_brands BIGINT [note: 'Count of TBWA client brands']
+  suggestion_acceptance_rate DECIMAL(5,4) [note: 'AI suggestion acceptance rate']
+  
+  Note: '''
+    MATERIALIZED VIEW: Daily transaction aggregates for dashboards
+    Grain: One row per day × geography × product × store type
+    Refresh: Every 15 minutes via refresh_gold_views()
+  '''
+}
+
+Table scout.gold_product_mix /* VIEW */ {
+  // Dimensions
+  product_category TEXT [note: 'Product category']
+  brand_name TEXT [note: 'Brand name']
+  sku TEXT [note: 'Stock keeping unit']
+  product_name TEXT [note: 'Product display name']
+  
+  // Metrics
+  transaction_count BIGINT [note: 'Number of transactions']
+  total_units BIGINT [note: 'Total units sold']
+  total_revenue DECIMAL(14,2) [note: 'Total revenue in PHP']
+  avg_price DECIMAL(10,2) [note: 'Average selling price']
+  store_coverage BIGINT [note: 'Number of stores selling']
+  barangay_coverage BIGINT [note: 'Number of barangays reached']
+  
+  // Rankings
+  rank_in_category INTEGER [note: 'Revenue rank within category']
+  running_revenue DECIMAL(14,2) [note: 'Cumulative revenue (for Pareto)']
+  category_revenue DECIMAL(14,2) [note: 'Total category revenue']
+  revenue_cumulative_pct DECIMAL(5,4) [note: 'Cumulative revenue percentage']
+  is_pareto_80 BOOLEAN [note: 'Top 80% revenue contributor flag']
+  
+  Note: '''
+    MATERIALIZED VIEW: Product performance and Pareto analysis
+    Grain: One row per SKU
+    Use case: Product mix optimization, inventory planning
+  '''
+}
+
+Table scout.gold_basket_patterns /* VIEW */ {
+  // Product pairs
+  sku_a TEXT [note: 'First product in pair']
+  sku_b TEXT [note: 'Second product in pair']
+  product_a TEXT [note: 'First product name']
+  product_b TEXT [note: 'Second product name']
+  
+  // Metrics
+  co_occurrence_count BIGINT [note: 'Times bought together']
+  days_seen_together BIGINT [note: 'Number of days with co-occurrence']
+  lift DECIMAL(10,4) [note: 'Lift score (observed/expected)']
+  confidence_a_to_b DECIMAL(5,4) [note: 'P(B|A) confidence']
+  confidence_b_to_a DECIMAL(5,4) [note: 'P(A|B) confidence']
+  
+  Note: '''
+    MATERIALIZED VIEW: Market basket analysis for cross-sell
+    Grain: One row per product pair
+    Use case: Recommendation engine, bundle creation
+  '''
+}
+
+Table scout.gold_substitution_flows /* VIEW */ {
+  // Time window
+  week DATE [note: 'Week start date']
+  
+  // Products
+  from_sku TEXT [note: 'Original product SKU']
+  to_sku TEXT [note: 'Substitute product SKU']
+  from_product TEXT [note: 'Original product name']
+  to_product TEXT [note: 'Substitute product name']
+  
+  // Metrics
+  switch_count BIGINT [note: 'Number of customers who switched']
+  retention_rate DECIMAL(5,4) [note: 'Customers who stayed with original']
+  switch_revenue_impact DECIMAL(12,2) [note: 'Revenue impact of substitution']
+  
+  Note: '''
+    MATERIALIZED VIEW: Product substitution analysis
+    Grain: One row per product pair per week
+    Use case: Inventory optimization, competitive analysis
+  '''
+}
+
+/* ===================== PLATINUM LAYER (ML Features) ===================== */
+
+Table scout.platinum_features_sales_7d /* VIEW */ {
+  // Dimensions
+  day DATE [note: 'Feature date']
+  region TEXT [note: 'Region']
+  product_category TEXT [note: 'Product category']
+  brand_name TEXT [note: 'Brand name']
+  
+  // Raw metrics
+  daily_revenue DECIMAL(14,2) [note: 'Daily revenue']
+  daily_transactions BIGINT [note: 'Daily transaction count']
+  
+  // 7-day rolling features
+  revenue_7d_avg DECIMAL(14,2) [note: '7-day average revenue']
+  revenue_7d_sum DECIMAL(14,2) [note: '7-day total revenue']
+  revenue_7d_stddev DECIMAL(14,2) [note: '7-day revenue std deviation']
+  revenue_7d_max DECIMAL(14,2) [note: '7-day max revenue']
+  revenue_7d_min DECIMAL(14,2) [note: '7-day min revenue']
+  transactions_7d_avg DECIMAL(10,2) [note: '7-day average transactions']
+  basket_size_7d_avg DECIMAL(10,2) [note: '7-day average basket size']
+  
+  // Growth indicators
+  revenue_wow_growth DECIMAL(5,4) [note: 'Week-over-week growth rate']
+  
+  // Rankings
+  revenue_rank_in_region INTEGER [note: 'Daily rank within region']
+  revenue_percentile_in_category DECIMAL(5,4) [note: 'Percentile within category']
+  
+  Note: '''
+    MATERIALIZED VIEW: ML-ready rolling window features
+    Grain: One row per day × region × category × brand
+    Use case: Demand forecasting, anomaly detection
+  '''
+}
+
+Table scout.platinum_features_store_performance /* VIEW */ {
+  // Dimensions
+  store_id TEXT [note: 'Store identifier']
+  month DATE [note: 'Month start date']
+  
+  // Performance metrics
+  monthly_revenue DECIMAL(14,2) [note: 'Total monthly revenue']
+  monthly_transactions BIGINT [note: 'Monthly transaction count']
+  unique_customers BIGINT [note: 'Unique customer count']
+  unique_skus BIGINT [note: 'SKU variety sold']
+  
+  // Efficiency metrics
+  revenue_per_sqm DECIMAL(10,2) [note: 'Revenue per square meter']
+  transactions_per_staff DECIMAL(10,2) [note: 'Transactions per staff member']
+  
+  // Growth metrics
+  revenue_growth_mom DECIMAL(5,4) [note: 'Month-over-month growth']
+  revenue_growth_yoy DECIMAL(5,4) [note: 'Year-over-year growth']
+  
+  // ML features
+  seasonality_index DECIMAL(5,4) [note: 'Seasonal adjustment factor']
+  trend_strength DECIMAL(5,4) [note: 'Trend component strength']
+  
+  Note: '''
+    MATERIALIZED VIEW: Store-level ML features
+    Grain: One row per store per month
+    Use case: Store clustering, performance prediction
+  '''
+}
+
+/* ===================== ANALYTICS FUNCTIONS ===================== */
+
+Table scout.function_registry /* DOCUMENTATION */ {
+  function_name TEXT [pk, note: 'Function name']
+  signature TEXT [note: 'Function signature with parameters']
+  return_type TEXT [note: 'Return data type']
+  description TEXT [note: 'Function purpose and usage']
+  volatility TEXT [note: 'IMMUTABLE, STABLE, or VOLATILE']
+  security TEXT [note: 'DEFINER or INVOKER']
+  example_usage TEXT [note: 'Example SQL call']
+  
+  Note: '''
+    Documentation table for all analytics functions
+    Not a real table - for DBML documentation only
+  '''
+}
+
+/* Function definitions (documented inline) */
+// refresh_gold_views() - Refreshes all Gold layer materialized views
+// refresh_platinum_features() - Refreshes ML feature store  
+// get_store_kpis(store_id, date_from, date_to) - Returns store KPIs for date range
+// get_product_velocity(sku, region) - Calculates product sell-through rate
+// calculate_basket_affinity(sku_a, sku_b) - Computes product affinity metrics
+// predict_next_purchase(customer_id) - ML prediction for next purchase date
+// generate_substitution_matrix(category, region) - Creates product substitution matrix
+// calculate_store_vitality(store_id) - Computes composite store health score
+// get_campaign_lift(campaign_id) - Measures campaign effectiveness lift
+
+/* ===================== EXTENDED ANALYTICS VIEWS ===================== */
+
+Table scout.gold_store_performance /* VIEW */ {
+  // Dimensions
+  store_id TEXT [note: 'Store identifier']
+  store_name TEXT [note: 'Store display name']
+  month DATE [note: 'Performance month']
+  
+  // Performance metrics
+  total_revenue DECIMAL(14,2) [note: 'Monthly revenue']
+  transaction_count BIGINT [note: 'Monthly transactions']
+  unique_customers BIGINT [note: 'Distinct customers']
+  avg_basket_value DECIMAL(10,2) [note: 'Average basket value']
+  
+  // Efficiency metrics
+  revenue_per_sqm DECIMAL(10,2) [note: 'Revenue per square meter']
+  revenue_per_staff DECIMAL(10,2) [note: 'Revenue per staff member']
+  inventory_turnover DECIMAL(5,2) [note: 'Inventory turnover ratio']
+  
+  // Growth metrics
+  revenue_growth_mom DECIMAL(5,4) [note: 'Month-over-month growth']
+  revenue_growth_yoy DECIMAL(5,4) [note: 'Year-over-year growth']
+  
+  Note: '''
+    MATERIALIZED VIEW: Store-level monthly performance metrics
+    Grain: One row per store per month
+    Use case: Store performance dashboards, benchmarking
+  '''
+}
+
+Table scout.gold_campaign_effectiveness /* VIEW */ {
+  // Campaign info
+  campaign_id TEXT [note: 'Campaign identifier']
+  campaign_name TEXT [note: 'Campaign name']
+  campaign_type TEXT [note: 'Campaign type']
+  
+  // Performance metrics
+  exposed_customers BIGINT [note: 'Customers exposed to campaign']
+  converted_customers BIGINT [note: 'Customers who purchased']
+  conversion_rate DECIMAL(5,4) [note: 'Conversion percentage']
+  
+  // Revenue impact
+  incremental_revenue DECIMAL(14,2) [note: 'Additional revenue generated']
+  roi DECIMAL(10,2) [note: 'Return on investment']
+  cost_per_acquisition DECIMAL(10,2) [note: 'Cost per converted customer']
+  
+  // Lift analysis
+  control_group_revenue DECIMAL(14,2) [note: 'Control group baseline']
+  test_group_revenue DECIMAL(14,2) [note: 'Test group revenue']
+  lift_percentage DECIMAL(5,4) [note: 'Revenue lift percentage']
+  
+  Note: '''
+    MATERIALIZED VIEW: Marketing campaign effectiveness analysis
+    Grain: One row per campaign
+    Use case: Marketing ROI analysis, campaign optimization
+  '''
+}
+
+/* ===================== RLS & SECURITY ===================== */
+
+Table scout.user_permissions {
+  user_id UUID [pk, note: 'User identifier from auth system']
+  role TEXT [not null, note: 'User role (admin, analyst, viewer)']
+  
+  // Access controls
+  allowed_regions TEXT[] [note: 'Array of allowed regions']
+  allowed_brands TEXT[] [note: 'Array of allowed brands']
+  allowed_categories TEXT[] [note: 'Array of allowed categories']
+  
+  // Feature flags
+  can_export BOOLEAN [default: false, note: 'Data export permission']
+  can_view_pii BOOLEAN [default: false, note: 'PII viewing permission']
+  can_modify_data BOOLEAN [default: false, note: 'Data modification permission']
+  
+  // Metadata
+  created_at TIMESTAMP [default: `NOW()`, note: 'Permission grant timestamp']
+  expires_at TIMESTAMP [note: 'Permission expiration (nullable)']
+  
+  Note: 'User permission matrix for Row-Level Security implementation'
+  
+  indexes {
+    (user_id, role)
+    (expires_at)
+  }
+}
+
+/* ===================== AUDIT & COMPLIANCE ===================== */
+
+Table scout.audit_log {
+  audit_id UUID [pk, note: 'Unique audit entry identifier']
+  user_id UUID [note: 'User who performed action']
+  action TEXT [not null, note: 'Action performed (SELECT, INSERT, UPDATE, DELETE)']
+  table_name TEXT [not null, note: 'Table affected']
+  
+  // Audit details
+  row_id TEXT [note: 'Primary key of affected row']
+  old_values JSONB [note: 'Previous values (for UPDATE/DELETE)']
+  new_values JSONB [note: 'New values (for INSERT/UPDATE)']
+  
+  // Context
+  ip_address INET [note: 'Client IP address']
+  user_agent TEXT [note: 'Client user agent']
+  session_id TEXT [note: 'Session identifier']
+  
+  // Timestamps
+  created_at TIMESTAMP [default: `NOW()`, note: 'Audit timestamp']
+  
+  Note: '''
+    Comprehensive audit trail for compliance and security
+    Captures all data modifications for forensic analysis
+    Retention: 7 years per regulatory requirements
+  '''
+  
+  indexes {
+    (created_at, user_id)
+    (table_name, action)
+    (row_id)
+  }
+}
+
+/* ===================== DATA QUALITY MONITORING ===================== */
+
+Table scout.data_quality_metrics {
+  metric_id UUID [pk, note: 'Unique metric identifier']
+  check_name TEXT [not null, note: 'Quality check name']
+  table_name TEXT [not null, note: 'Table being monitored']
+  
+  // Quality metrics
+  total_rows BIGINT [note: 'Total row count']
+  null_count BIGINT [note: 'Count of null values']
+  duplicate_count BIGINT [note: 'Count of duplicates']
+  outlier_count BIGINT [note: 'Count of statistical outliers']
+  
+  // Validation results
+  validation_rules JSONB [note: 'Applied validation rules']
+  failed_validations JSONB [note: 'Failed validation details']
+  quality_score DECIMAL(5,2) [note: 'Overall quality score (0-100)']
+  
+  // Metadata
+  check_timestamp TIMESTAMP [default: `NOW()`, note: 'When check was run']
+  
+  Note: '''
+    Data quality monitoring and alerting
+    Tracks data quality metrics across all layers
+    Integrated with alerting for SLO violations
+  '''
+  
+  indexes {
+    (check_timestamp, table_name)
+    (quality_score)
+  }
+}
+
+/* ===================== RELATIONSHIPS ===================== */
+
+// Fact to Dimension relationships
+Ref: scout.fact_transactions.store_id > scout.dim_store.store_id
+Ref: scout.fact_transactions.customer_id > scout.dim_customer.customer_id
+Ref: scout.fact_transactions.campaign_id > scout.dim_campaign.campaign_id
+Ref: scout.fact_transaction_items.transaction_id > scout.fact_transactions.transaction_id
+Ref: scout.fact_transaction_items.product_id > scout.dim_product.product_id
+
+// Silver to dimension relationships (for lineage)
+Ref: scout.silver_transactions.store_id > scout.dim_store.store_id
+Ref: scout.silver_transactions.sku > scout.dim_product.product_code
+
+// Audit relationships
+Ref: scout.audit_log.user_id > scout.user_permissions.user_id
+
+/* ===================== PROJECT NOTES ===================== */
+
+Note: '''
+  Scout v5 Data Platform - Complete Schema Documentation
+  
+  Key Design Principles:
+  1. Medallion Architecture: Bronze → Silver → Gold → Platinum
+  2. Security-First: RLS, encryption, audit trails
+  3. Performance: Strategic indexes, materialized views
+  4. AI-Native: ML feature store, real-time recommendations
+  5. Philippine Market: PSGC codes, local payment methods
+  
+  Data Retention:
+  - Bronze: 90 days (raw data)
+  - Silver: 2 years (cleaned data)
+  - Gold: 5 years (aggregated metrics)
+  - Platinum: 1 year (ML features)
+  - Audit: 7 years (compliance)
+  
+  Performance SLOs:
+  - Query response: < 2s p95
+  - Data freshness: < 1 hour
+  - Availability: 99.9%
+  
+  Security Controls:
+  - Row-Level Security on all tables
+  - Column-level encryption for PII
+  - Comprehensive audit logging
+  - Role-based access control
+  
+  Integration Points:
+  - REST APIs via Edge Functions
+  - Real-time webhooks
+  - Batch exports to cloud storage
+  - Streaming to analytics platforms
+'''
