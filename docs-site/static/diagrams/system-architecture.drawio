@@ -1,0 +1,222 @@
+<mxfile host="app.diagrams.net" modified="2025-01-11T12:00:00.000Z" agent="5.0" version="24.2.5" etag="example123" type="device">
+  <diagram name="AI-AAS Lakehouse Architecture" id="lakehouse-architecture">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- Title -->
+        <mxCell id="title" value="AI-AAS Hardened Lakehouse Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="284" y="20" width="601" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Data Sources Layer -->
+        <mxCell id="sources-layer" value="Data Sources" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="1080" height="80" as="geometry"/>
+        </mxCell>
+        
+        <!-- Edge Devices -->
+        <mxCell id="edge-devices" value="Edge Devices&#xa;(Raspberry Pi)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="120" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- APIs -->
+        <mxCell id="apis" value="REST APIs&#xa;GraphQL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="240" y="100" width="120" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Streaming -->
+        <mxCell id="streaming" value="Streaming&#xa;(Kafka/EventHub)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="400" y="100" width="120" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Batch Files -->
+        <mxCell id="batch-files" value="Batch Files&#xa;(CSV, JSON, Parquet)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="100" width="120" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- ERP Systems -->
+        <mxCell id="erp-systems" value="ERP Systems&#xa;(SAP, Oracle)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="720" y="100" width="120" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- CRM -->
+        <mxCell id="crm" value="CRM&#xa;(Salesforce)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="880" y="100" width="120" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Security Layer -->
+        <mxCell id="security-layer" value="Security Layer (Zero Trust, Encryption, Authentication)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="180" width="1080" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Ingestion Layer -->
+        <mxCell id="ingestion-layer" value="Ingestion Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="1080" height="80" as="geometry"/>
+        </mxCell>
+        
+        <!-- Edge Functions -->
+        <mxCell id="edge-functions" value="Supabase&#xa;Edge Functions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="80" y="260" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- ETL Pipeline -->
+        <mxCell id="etl-pipeline" value="ETL Pipeline&#xa;(dbt, Airflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="280" y="260" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Real-time Stream -->
+        <mxCell id="realtime-stream" value="Real-time Stream&#xa;Processing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="480" y="260" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Data Validation -->
+        <mxCell id="data-validation" value="Data Quality&#xa;&amp; Validation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="680" y="260" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Error Handling -->
+        <mxCell id="error-handling" value="Error Handling&#xa;&amp; Retry Logic" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="880" y="260" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Storage Layer (Medallion Architecture) -->
+        <mxCell id="medallion-layer" value="Medallion Architecture (Storage Layer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="340" width="1080" height="120" as="geometry"/>
+        </mxCell>
+        
+        <!-- Bronze Layer -->
+        <mxCell id="bronze-layer" value="🥉 Bronze Layer&#xa;Raw Data&#xa;(MinIO S3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b87333;strokeColor=#5d4037;fontColor=white;" vertex="1" parent="1">
+          <mxGeometry x="100" y="370" width="180" height="60" as="geometry"/>
+        </mxCell>
+        
+        <!-- Silver Layer -->
+        <mxCell id="silver-layer" value="🥈 Silver Layer&#xa;Cleaned &amp; Validated&#xa;(Apache Iceberg)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c0c0c0;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="340" y="370" width="180" height="60" as="geometry"/>
+        </mxCell>
+        
+        <!-- Gold Layer -->
+        <mxCell id="gold-layer" value="🥇 Gold Layer&#xa;Business Ready&#xa;(Aggregated Views)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd700;strokeColor=#b8860b;" vertex="1" parent="1">
+          <mxGeometry x="580" y="370" width="180" height="60" as="geometry"/>
+        </mxCell>
+        
+        <!-- Platinum Layer -->
+        <mxCell id="platinum-layer" value="💎 Platinum Layer&#xa;AI/ML Features&#xa;(Feature Store)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1bee7;strokeColor=#8e24aa;" vertex="1" parent="1">
+          <mxGeometry x="820" y="370" width="180" height="60" as="geometry"/>
+        </mxCell>
+        
+        <!-- Compute Layer -->
+        <mxCell id="compute-layer" value="Compute Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d4e1f5;strokeColor=#6c8ebf;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="480" width="1080" height="80" as="geometry"/>
+        </mxCell>
+        
+        <!-- Trino -->
+        <mxCell id="trino" value="Trino&#xa;Distributed SQL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="100" y="500" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- PostgreSQL -->
+        <mxCell id="postgresql" value="PostgreSQL&#xa;+ PostGIS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="280" y="500" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Spark -->
+        <mxCell id="spark" value="Apache Spark&#xa;Big Data Processing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="460" y="500" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- dbt -->
+        <mxCell id="dbt" value="dbt&#xa;Data Transformation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="640" y="500" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Kubernetes -->
+        <mxCell id="kubernetes" value="Kubernetes&#xa;Orchestration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="820" y="500" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- AI/ML Layer -->
+        <mxCell id="ai-layer" value="AI/ML Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#8e24aa;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="580" width="1080" height="80" as="geometry"/>
+        </mxCell>
+        
+        <!-- ML Models -->
+        <mxCell id="ml-models" value="ML Models&#xa;(Training &amp; Serving)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3f51b5;" vertex="1" parent="1">
+          <mxGeometry x="100" y="600" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Feature Store -->
+        <mxCell id="feature-store" value="Feature Store&#xa;(ML Features)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3f51b5;" vertex="1" parent="1">
+          <mxGeometry x="280" y="600" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Model Registry -->
+        <mxCell id="model-registry" value="Model Registry&#xa;(MLflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3f51b5;" vertex="1" parent="1">
+          <mxGeometry x="460" y="600" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Inference API -->
+        <mxCell id="inference-api" value="Inference API&#xa;(Real-time Predictions)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3f51b5;" vertex="1" parent="1">
+          <mxGeometry x="640" y="600" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Monitoring -->
+        <mxCell id="model-monitoring" value="Model Monitoring&#xa;(Drift Detection)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3f51b5;" vertex="1" parent="1">
+          <mxGeometry x="820" y="600" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Visualization Layer -->
+        <mxCell id="viz-layer" value="Visualization &amp; API Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#4caf50;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="680" width="1080" height="80" as="geometry"/>
+        </mxCell>
+        
+        <!-- Apache Superset -->
+        <mxCell id="superset" value="Apache Superset&#xa;Dashboards" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="100" y="700" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- REST API -->
+        <mxCell id="rest-api" value="REST API&#xa;(PostgREST)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="280" y="700" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- GraphQL -->
+        <mxCell id="graphql" value="GraphQL&#xa;(Flexible Queries)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="460" y="700" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Embedded Analytics -->
+        <mxCell id="embedded" value="Embedded Analytics&#xa;(React Components)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="640" y="700" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Mapbox -->
+        <mxCell id="mapbox" value="Geographic Viz&#xa;(Mapbox/PostGIS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="820" y="700" width="140" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Arrows connecting layers -->
+        <mxCell id="arrow1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="sources-layer" target="ingestion-layer">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="arrow2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ingestion-layer" target="medallion-layer">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="arrow3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="medallion-layer" target="compute-layer">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="arrow4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="compute-layer" target="ai-layer">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="arrow5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ai-layer" target="viz-layer">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
