@@ -1,0 +1,20 @@
+# Superset JWT Proxy Configuration
+
+[env]
+# Superset connection settings
+SUPERSET_URL = "http://localhost:8088"
+SUPERSET_USERNAME = "admin"
+SUPERSET_PASSWORD = "admin"
+SUPERSET_JWT_SECRET = "your-superset-jwt-secret"
+SUPERSET_DB_ID = "1"
+
+# Lovable app integration
+LOVABLE_APP_URL = "https://your-lovable-app.lovable.app"
+LOVABLE_JWT_SECRET = "your-lovable-jwt-secret"
+
+# CORS configuration
+ALLOWED_ORIGINS = "https://*.lovable.app,http://localhost:3000"
+
+[build]
+# Import map for Deno dependencies
+# Defined in supabase/functions/import_map.json

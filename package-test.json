@@ -1,0 +1,87 @@
+{
+  "name": "scout-analytics-tests",
+  "version": "1.0.0",
+  "description": "Test suite for Scout Analytics Dataset Publisher",
+  "main": "tests/dataset-publisher.test.js",
+  "scripts": {
+    "test": "node tests/dataset-publisher.test.js",
+    "test:schema": "TEST_SUITE=schema node tests/dataset-publisher.test.js",
+    "test:ingestion": "TEST_SUITE=ingestion node tests/dataset-publisher.test.js",
+    "test:storage": "TEST_SUITE=storage node tests/dataset-publisher.test.js",
+    "test:etl": "TEST_SUITE=etl node tests/dataset-publisher.test.js",
+    "test:performance": "TEST_SUITE=performance node tests/dataset-publisher.test.js",
+    "test:security": "TEST_SUITE=security node tests/dataset-publisher.test.js",
+    "test:watch": "nodemon --exec 'npm test'",
+    "test:ci": "./scripts/run-tests.sh",
+    "test:local": "./scripts/run-tests.sh --verbose",
+    "test:cleanup": "rm -rf test-temp test-results",
+    "lint": "eslint tests/ scripts/ --ext .js",
+    "lint:fix": "eslint tests/ scripts/ --ext .js --fix"
+  },
+  "keywords": [
+    "testing",
+    "dataset-publisher", 
+    "supabase",
+    "medallion-architecture",
+    "etl",
+    "data-quality"
+  ],
+  "author": "TBWA Scout Analytics Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "eslint": "^8.57.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.3",
+    "supertest": "^6.3.4"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ai-aas-hardened-lakehouse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/ai-aas-hardened-lakehouse/issues"
+  },
+  "homepage": "https://github.com/your-org/ai-aas-hardened-lakehouse#readme",
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "tests/**/*.js",
+      "scripts/**/*.js",
+      "!**/node_modules/**",
+      "!**/test-temp/**"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ]
+  },
+  "eslintConfig": {
+    "extends": [
+      "standard"
+    ],
+    "env": {
+      "node": true,
+      "jest": true
+    },
+    "rules": {
+      "no-console": "off",
+      "semi": ["error", "always"]
+    }
+  }
+}

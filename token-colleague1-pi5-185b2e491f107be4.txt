@@ -1,0 +1,28 @@
+# ============================================
+# Storage Upload Token for: colleague1-pi5
+# ============================================
+
+Token ID: 185b2e491f107be4
+Created: Mon 11 Aug 2025 09:53:13 PST
+Expires: Wed 10 Sep 2025 09:53:13 PST
+Duration: 30 days
+
+## 1. Save this .env file:
+------- START .env -------
+SUPABASE_URL=https://cxzllzyxwpyptfretryc.supabase.co
+SUPABASE_STORAGE_TOKEN=..
+------- END .env -------
+
+## 2. Test upload command:
+curl -X POST "https://cxzllzyxwpyptfretryc.supabase.co/storage/v1/object/sample/scout/v1/test.txt" \
+  -H "Authorization: Bearer $SUPABASE_STORAGE_TOKEN" \
+  -H "Content-Type: text/plain" \
+  -d "Test upload from colleague1-pi5"
+
+## 3. Use edge-upload.sh script:
+./edge-upload.sh /path/to/datasets
+
+## Security Notes:
+- Can ONLY upload to scout/v1/* paths
+- Cannot delete files or access database
+- Expires automatically in 30 days
