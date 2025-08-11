@@ -4,13 +4,13 @@ title: Introduction
 slug: /
 ---
 
-# Scout Analytics Platform Documentation
+# AI-AAS Hardened Lakehouse
 
-Welcome to the **Scout Analytics Platform** documentation hub. This is your comprehensive guide to understanding, deploying, and operating our enterprise-grade data platform designed specifically for Philippine retail intelligence.
+Welcome to the **AI-AAS Hardened Lakehouse** documentation - your comprehensive guide to building and operating a production-ready, security-hardened data lakehouse platform with advanced AI/ML capabilities.
 
-## 🎯 Mission
+## 🚀 What is the AI-AAS Hardened Lakehouse?
 
-Scout Analytics Platform empowers Philippine FMCG companies and retailers with real-time market intelligence from 800,000+ sari-sari stores, enabling data-driven decisions that improve distribution efficiency by 15-20% while reducing costs by 70% compared to traditional enterprise platforms.
+The AI-AAS Hardened Lakehouse is a modern, cloud-native data platform that combines the best of data lakes and data warehouses while providing enterprise-grade security, scalability, and AI/ML capabilities. Built on proven open-source technologies and designed with a security-first approach.
 
 ## 🏗️ Platform Overview
 
