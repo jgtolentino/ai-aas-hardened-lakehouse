@@ -52,6 +52,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: '🚀 Operations',
       items: [
+        'operations/token-management',
         'operations/runbook-incidents',
         'operations/backup-restore',
         'operations/performance-tuning',

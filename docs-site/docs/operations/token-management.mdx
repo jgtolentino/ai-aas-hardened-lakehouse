@@ -1,0 +1,247 @@
+---
+title: Access Token Management
+description: Secure JWT token generation and management for AI-AAS Hardened Lakehouse
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Access Token Management
+
+Secure JWT token generation for Supabase access with role-based permissions and automatic expiration.
+
+## Overview
+
+The JWT token generator creates **HS256 Supabase-compatible tokens** with:
+- ✅ Role-based access control
+- ✅ Configurable TTL (Time To Live)
+- ✅ Local signature verification
+- ✅ No secret exposure in outputs
+- ✅ CSV and JSON export formats
+
+## Quick Start
+
+### 1. Prepare Collaborators List
+
+Create `collaborators.csv` with your team members:
+
+```csv
+email,role,ttl_hours
+alice@company.com,authenticated,720
+bob@company.com,authenticated,720
+carol@company.com,authenticated,168
+```
+
+### 2. Generate Tokens
+
+<Tabs>
+<TabItem value="bash" label="Bash Script" default>
+
+```bash
+# Set your Supabase JWT secret (from Dashboard > Project Settings > API)
+export SUPABASE_JWT_SECRET="your-secret-here"
+
+# Generate tokens
+./scripts/generate-tokens-cli.sh collaborators.csv
+```
+
+</TabItem>
+<TabItem value="env" label="Environment File">
+
+```bash
+# Load from .env file
+source .env
+
+# Generate tokens
+./scripts/generate-tokens-cli.sh collaborators.csv
+```
+
+</TabItem>
+<TabItem value="keychain" label="macOS Keychain">
+
+```bash
+# From keychain (secure)
+export SUPABASE_JWT_SECRET=$(security find-generic-password -w -s "supabase-jwt-secret")
+
+# Generate tokens
+./scripts/generate-tokens-cli.sh collaborators.csv
+```
+
+</TabItem>
+</Tabs>
+
+### 3. Distribution
+
+After generation, you'll find:
+- `dist/tokens.csv` - Spreadsheet format
+- `dist/tokens.json` - JSON format for APIs
+
+**Security**: Distribute tokens via secure channels (encrypted email, password managers, secure chat)
+
+## Token Structure
+
+Generated tokens include these Supabase-required claims:
+
+```json
+{
+  "sub": "alice@company.com",
+  "email": "alice@company.com", 
+  "role": "authenticated",
+  "aud": "authenticated",
+  "exp": 1735689600,
+  "iss": "supabase-jwt-cli"
+}
+```
+
+## Role Types
+
+| Role | Description | Access Level |
+|------|-------------|--------------|
+| `authenticated` | Standard user | Read/write data based on RLS policies |
+| `service_role` | Service account | Full database access (use sparingly) |
+| `anon` | Anonymous user | Public data only |
+
+## TTL Guidelines
+
+| Use Case | Recommended TTL | Hours |
+|----------|----------------|-------|
+| Short-term access | 7 days | 168 |
+| Standard access | 30 days | 720 |
+| Long-term projects | 90 days | 2160 |
+| Service accounts | 365 days | 8760 |
+
+## Security Features
+
+### 🔒 Local Verification
+- Tokens are verified locally before generation
+- HMAC-SHA256 signature validation
+- Base64URL encoding without padding
+
+### 🚫 No Secret Exposure
+- JWT secret never appears in output files
+- Error messages don't leak sensitive data
+- Clean separation of credentials and tokens
+
+### ⏰ Automatic Expiration
+- All tokens have explicit expiry dates
+- No indefinite access tokens
+- Unix timestamp format for precise control
+
+## Output Formats
+
+### CSV Format
+```csv
+email,role,ttl_hours,exp_unix,token
+alice@company.com,authenticated,720,1735689600,eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### JSON Format
+```json
+[
+  {
+    "email": "alice@company.com",
+    "role": "authenticated", 
+    "ttl_hours": 720,
+    "exp_unix": 1735689600,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+]
+```
+
+## Revocation & Rotation
+
+### Token Rotation
+Re-generate tokens periodically for enhanced security:
+
+```bash
+# Generate shorter-lived tokens for rotation
+echo "alice@company.com,authenticated,72" > temp.csv
+./scripts/generate-tokens-cli.sh temp.csv
+```
+
+### Revocation Lists
+For advanced use cases, implement a revocation Edge Function:
+
+```sql
+-- Create revocation table
+CREATE TABLE revoked_tokens (
+  jti TEXT PRIMARY KEY,
+  revoked_at TIMESTAMP DEFAULT NOW(),
+  reason TEXT
+);
+
+-- Add JTI claim to tokens (modify generator script)
+-- Check revocation in Edge Functions
+```
+
+## Troubleshooting
+
+### Missing Dependencies
+```bash
+# Install required tools
+brew install jq openssl python3
+```
+
+### Secret Issues
+```bash
+# Verify secret length (minimum 16 characters)
+echo ${#SUPABASE_JWT_SECRET}
+
+# Test secret format
+echo $SUPABASE_JWT_SECRET | base64 -d | wc -c
+```
+
+### Token Validation
+```bash
+# Decode token payload (for debugging)
+echo "your-token-here" | cut -d. -f2 | base64 -d | jq .
+```
+
+## Integration Examples
+
+### Edge Functions
+```typescript
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY,
+  {
+    global: {
+      headers: {
+        Authorization: `Bearer ${userToken}`
+      }
+    }
+  }
+)
+```
+
+### Client Applications
+```javascript
+// React/Next.js example
+const { data, error } = await supabase
+  .from('your_table')
+  .select('*')
+  .eq('user_id', userId)
+```
+
+## Best Practices
+
+1. **Principle of Least Privilege**: Use minimal required roles
+2. **Regular Rotation**: Rotate tokens every 30-90 days
+3. **Secure Storage**: Store tokens in password managers
+4. **Monitor Usage**: Log token usage in your applications
+5. **Clean Expiry**: Remove expired tokens from client storage
+
+## Support
+
+For issues with token generation:
+1. Check the [troubleshooting section](#troubleshooting)
+2. Verify your `SUPABASE_JWT_SECRET` is correct
+3. Ensure all dependencies are installed
+4. Review collaborators.csv format
+
+---
+
+**⚠️ Security Reminder**: Never commit tokens or secrets to version control. Use environment variables and secure distribution channels.
