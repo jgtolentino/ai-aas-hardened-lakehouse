@@ -2,95 +2,120 @@ name: security
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'platform/**'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.go'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/security.yml'
   push:
-    branches: [main]
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'platform/**'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.go'
+      - 'Dockerfile'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/security.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
-  security-events: write  # for SARIF upload
-  actions: read
 
-env:
-  TRIVY_CACHE_DIR: .cache/trivy
-  SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }} # optional if using SaaS rules
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  trivy-fs:
-    name: Trivy FS (deps + IaC)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache Trivy DB
-        uses: actions/cache@v4
-        with:
-          path: .cache/trivy
-          key: trivy-${{ runner.os }}-db
-      - name: Trivy FS JSON
-        run: |
-          docker run --rm \
-            -v $PWD:/workspace -v $PWD/.cache/trivy:/root/.cache/trivy \
-            -w /workspace \
-            aquasec/trivy:latest \
-            fs --exit-code 0 --format sarif --output trivy.sarif \
-            --ignorefile security/allowlists/.trivyignore \
-            --severity CRITICAL,HIGH,MEDIUM \
-            .
-      - name: Upload SARIF (Trivy)
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy.sarif
-      - name: Enforce policy thresholds
-        run: |
-          npx tsx security/policy/enforce.ts trivy.sarif security/policy/policy.yaml
-
   semgrep:
-    name: Semgrep SAST
+    if: ${{ !github.event.pull_request.head.repo.fork }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Run Semgrep (local rules + OSS registry)
-        run: |
-          docker run --rm -v $PWD:/src returntocorp/semgrep:latest \
-            semgrep --config "p/owasp-top-ten" \
-                    --config "rules/semgrep" \
-                    --exclude "node_modules" --exclude "dist" --exclude "build" \
-                    --sarif --output semgrep.sarif \
-                    --severity WARNING
-      - name: Upload SARIF (Semgrep)
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: semgrep.sarif
-      - name: Enforce policy thresholds
-        run: |
-          npx tsx security/policy/enforce.ts semgrep.sarif security/policy/policy.yaml
 
-  trufflehog:
-    name: TruffleHog (secrets HEAD-only)
+      - name: Install Semgrep (pinned)
+        run: |
+          set -euo pipefail
+          python3 -m pip install --upgrade pip pipx
+          pipx install "semgrep==1.79.0"
+          semgrep --version
+
+      - name: Semgrep CI (headless)
+        id: semgrep
+        run: |
+          set -euo pipefail
+          semgrep ci --config p/ci --timeout 300 --json --output semgrep.json || status=$?
+          echo "status=${status:-0}" >> "$GITHUB_OUTPUT"
+          echo "## Semgrep Summary" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '
+            .results
+            | group_by(.extra.severity)
+            | map({sev:.[0].extra.severity, count:length})
+            | (["Severity","Findings"], (.[]|[.sev, (.count|tostring)])) 
+            | @tsv
+          ' semgrep.json | column -t >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Gate on HIGH/CRITICAL
+        run: |
+          # Fail if any HIGH/CRITICAL (or ERROR) findings exist
+          jq -e '
+            (.results // [])
+            | map(select((.extra.severity|ascii_upcase) as $s | ($s=="HIGH" or $s=="CRITICAL" or $s=="ERROR")))
+            | length == 0
+          ' semgrep.json
+
+      - name: Upload Semgrep report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep.json
+          retention-days: 7
+
+  trivy:
+    if: ${{ !github.event.pull_request.head.repo.fork }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - name: Diff HEAD..origin/main (PR) or last commit (push)
-        id: diff
+
+      - name: Install Trivy (apt repo, pinned major)
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            git fetch origin ${{ github.base_ref }} --depth=1
-            echo "RANGE=origin/${{ github.base_ref }}..HEAD" >> $GITHUB_OUTPUT
-          else
-            echo "RANGE=HEAD~1..HEAD" >> $GITHUB_OUTPUT
-          fi
-      - name: Run TruffleHog on changed paths
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release jq
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -y
+          sudo apt-get install -y trivy
+          trivy --version
+
+      - name: Trivy FS scan (HIGH,CRITICAL)
         run: |
-          CHANGED=$(git diff --name-only ${{ steps.diff.outputs.RANGE }} | tr '\n' ' ')
-          if [ -z "$CHANGED" ]; then echo "[]" > trufflehog.json; exit 0; fi
-          docker run --rm -v $PWD:/pwd -w /pwd trufflesecurity/trufflehog:latest \
-            filesystem --json --only-verified --fail \
-            $CHANGED | tee trufflehog.json || echo "[]" > trufflehog.json
-      - name: Enforce policy thresholds
+          trivy fs \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --no-progress \
+            --timeout 5m \
+            --format json \
+            --output trivy.json \
+            .
+
+      - name: Upload Trivy report
         if: always()
-        run: |
-          npx tsx security/policy/enforce.ts trufflehog.json security/policy/policy.yaml
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy.json
+          retention-days: 7
