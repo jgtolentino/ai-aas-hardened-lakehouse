@@ -90,7 +90,8 @@ for (const file of files) {
   } catch {}
 }
 for (const a of agents) {
-  const base = slugify(a.name);
+  // Use filename (without extension) as slug for consistency with coverage checks
+  const base = path.basename(a.__src, path.extname(a.__src));
   fs.writeFileSync(path.join(DOCS, 'agents', `${base}.mdx`), mdxFor(a));
   fs.writeFileSync(path.join(WIKI, `${base}.md`), wikiFor(a));
 }

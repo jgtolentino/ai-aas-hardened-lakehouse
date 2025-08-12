@@ -1,13 +1,14 @@
 /* Custom styles for ai-aas-hardened-lakehouse docs */
+@import './azure-theme.css';
 
 :root {
-  --ifm-color-primary: #2563eb;
-  --ifm-color-primary-dark: #1d4ed8;
-  --ifm-color-primary-darker: #1e40af;
-  --ifm-color-primary-darkest: #1e3a8a;
-  --ifm-color-primary-light: #3b82f6;
-  --ifm-color-primary-lighter: #60a5fa;
-  --ifm-color-primary-lightest: #93c5fd;
+  --ifm-color-primary: #0078d4;
+  --ifm-color-primary-dark: #006bb3;
+  --ifm-color-primary-darker: #0062a3;
+  --ifm-color-primary-darkest: #005193;
+  --ifm-color-primary-light: #1a86e3;
+  --ifm-color-primary-lighter: #2f92e7;
+  --ifm-color-primary-lightest: #4ba0ec;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
