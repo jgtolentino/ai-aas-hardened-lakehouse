@@ -1,0 +1,80 @@
+metadata:
+  id: devstral-v1
+  name: Devstral
+  version: "1.0.0"
+  description: "System architecture and PRD generation agent"
+  author: "Pulser Team"
+  tags:
+    - architecture
+    - design
+    - documentation
+    - prd
+  status: active
+
+type: generator
+runtime: bruno
+
+capabilities:
+  - name: generate_prd
+    description: "Generate Product Requirements Documents"
+    inputSchema:
+      type: object
+      properties:
+        title:
+          type: string
+        requirements:
+          type: array
+          items:
+            type: string
+        context:
+          type: object
+      required:
+        - title
+        - requirements
+    permissions:
+      - file:write
+      - template:read
+
+  - name: design_architecture
+    description: "Design system architecture"
+    inputSchema:
+      type: object
+      properties:
+        systemName:
+          type: string
+        components:
+          type: array
+        constraints:
+          type: object
+    permissions:
+      - diagram:generate
+      - file:write
+
+  - name: scaffold_project
+    description: "Scaffold new project structure"
+    permissions:
+      - file:write
+      - directory:create
+      - template:read
+
+security:
+  sandboxed: true
+  allowedHosts: []
+  deniedActions:
+    - execute
+    - network
+  requiredPermissions:
+    - file:write
+    - template:read
+
+limits:
+  maxExecutionTime: 300000  # 5 minutes
+  maxMemoryMB: 512
+  maxConcurrent: 3
+
+routing:
+  priority: 80
+  patterns:
+    - "generate:prd"
+    - "design:architecture"
+    - "scaffold:*"

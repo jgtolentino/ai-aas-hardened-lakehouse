@@ -6,11 +6,14 @@
     "start": "docusaurus start",
     "build": "docusaurus build",
     "serve": "docusaurus serve",
-    "generate": "bash ../scripts/generate_docs.sh"
+    "generate": "bash ../scripts/generate_docs.sh",
+    "docs:fixpaths": "node scripts/fix-doc-image-paths.mjs",
+    "docs:preflight": "node scripts/docs-preflight.mjs"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.0.0",
-    "@docusaurus/preset-classic": "^3.0.0",
+    "@docusaurus/core": "^3.8.1",
+    "@docusaurus/preset-classic": "^3.8.1",
+    "@docusaurus/remark-plugin-npm2yarn": "^3.8.1",
     "@docusaurus/theme-mermaid": "^3.0.0",
     "redocusaurus": "^2.0.0"
   }

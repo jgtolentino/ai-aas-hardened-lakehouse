@@ -1,0 +1,20 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "main": "batch-process-eugene-json.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs:scout": "node scout-docs-writer.js",
+    "docs:scout:dev": "cd ../docs/neural-docs/scout-data-warehouse-docs && npm run dev",
+    "docs:scout:build": "cd ../docs/neural-docs/scout-data-warehouse-docs && npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.54.0",
+    "jszip": "^3.10.1",
+    "node-fetch": "^3.3.2"
+  }
+}

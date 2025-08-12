@@ -84,3 +84,62 @@ qa/.env
 artifacts/
 *.junit.xml
 *.report.json
+
+# TypeScript
+.tsbuildinfo
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Next.js
+.next/
+out/
+
+# Testing
+jest_html_reporters.html
+test-results/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Lock files (keep only one)
+package-lock.json
+yarn.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary
+.temp/
+.cache/
+.parcel-cache/
+
+# Documentation build
+docs-site/build/
+docs-site/.docusaurus/
+docs-site/.cache-loader/
+
+# Security scanning
+.trivy-cache/
+security-reports/
+
+# MCP temp files
+.mcp-cache/
+mcp-logs/

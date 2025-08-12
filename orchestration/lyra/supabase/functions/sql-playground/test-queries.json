@@ -1,0 +1,13 @@
+{
+  "valid": [
+    "SELECT 1 as test",
+    "EXPLAIN SELECT * FROM gold_brand_performance LIMIT 10",
+    "EXPLAIN ANALYZE SELECT brand_name, sum(revenue) FROM silver_transactions GROUP BY brand_name"
+  ],
+  "blocked": [
+    "UPDATE users SET name = 'hacked'",
+    "INSERT INTO test VALUES (1)",
+    "DELETE FROM important_table",
+    "DROP TABLE users"
+  ]
+}

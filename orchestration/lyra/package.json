@@ -1,0 +1,33 @@
+{
+  "name": "lyra-orchestration-scout-v5",
+  "version": "1.0.0",
+  "description": "Lyra orchestration system for Scout v5 parallel improvements",
+  "main": "scripts/orchestrator.js",
+  "type": "module",
+  "scripts": {
+    "orchestrate": "node scripts/orchestrator.js",
+    "test-all-scripts": "node scripts/test-all-scripts.js",
+    "validate-environment": "node scripts/validate-environment.js",
+    "generate-report": "node scripts/report/merge-gates.js"
+  },
+  "dependencies": {
+    "glob": "^10.3.10",
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "orchestration",
+    "scout",
+    "analytics", 
+    "parallel-deployment",
+    "lyra"
+  ],
+  "author": "AI-AAS Hardened Lakehouse Platform",
+  "license": "MIT"
+}

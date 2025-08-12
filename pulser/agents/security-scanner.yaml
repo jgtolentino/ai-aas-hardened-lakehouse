@@ -1,0 +1,84 @@
+metadata:
+  id: security-scanner-v1
+  name: SecurityScanner
+  version: "1.0.0"
+  description: "Security scanning and vulnerability assessment agent"
+  author: "Pulser Team"
+  tags:
+    - security
+    - scanning
+    - vulnerability
+    - compliance
+  status: active
+
+type: analyzer
+runtime: bruno
+
+capabilities:
+  - name: scan_repository
+    description: "Scan repository for security vulnerabilities"
+    inputSchema:
+      type: object
+      properties:
+        path:
+          type: string
+        scanners:
+          type: array
+          items:
+            type: string
+            enum: ["semgrep", "trivy", "gosec", "bandit", "eslint-security"]
+        severity:
+          type: string
+          enum: ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+      required:
+        - path
+        - scanners
+    permissions:
+      - file:read
+      - report:write
+
+  - name: audit_dependencies
+    description: "Audit project dependencies for vulnerabilities"
+    permissions:
+      - file:read
+      - network:npm
+      - report:write
+
+  - name: check_secrets
+    description: "Scan for exposed secrets and credentials"
+    permissions:
+      - file:read
+      - report:write
+
+  - name: compliance_check
+    description: "Check compliance with security policies"
+    permissions:
+      - file:read
+      - policy:read
+      - report:write
+
+security:
+  sandboxed: true
+  allowedHosts:
+    - "api.github.com"
+    - "registry.npmjs.org"
+    - "security.snyk.io"
+  deniedActions:
+    - execute
+    - write
+  requiredPermissions:
+    - file:read
+    - report:write
+
+limits:
+  maxExecutionTime: 600000  # 10 minutes
+  maxMemoryMB: 1024
+  maxConcurrent: 2
+
+routing:
+  priority: 90
+  patterns:
+    - "security:*"
+    - "scan:*"
+    - "audit:*"
+    - "compliance:*"

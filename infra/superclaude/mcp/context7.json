@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "context7-mcp",
+      "args": [
+        "--allow", "nextjs,react,postgres,vercel,cloudflare,supabase,typescript"
+      ],
+      "env": { 
+        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}",
+        "CONTEXT7_MODE": "read_only"
+      },
+      "permissions": { 
+        "filesystem": "deny", 
+        "network": "allowlist",
+        "allowedHosts": ["api.context7.ai", "docs.context7.ai"]
+      },
+      "rateLimit": {
+        "requests_per_minute": 60,
+        "burst_size": 10
+      }
+    }
+  }
+}
