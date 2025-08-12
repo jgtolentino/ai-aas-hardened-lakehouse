@@ -1,0 +1,28 @@
+name: DocsWriter
+role: "AI docs generator for Docusaurus + GitHub Wiki mirror"
+entrypoint:
+  type: shell
+  cmd: |
+    set -euo pipefail
+    pnpm install
+    pnpm -C docs-site install || true
+    node scripts/generate-agent-docs.mjs
+    pnpm docs:lint
+    pnpm docs:build
+    PNPMFILE=scripts/wiki-sync.sh bash scripts/wiki-sync.sh
+permissions:
+  filesystem:
+    - docs-site/**
+    - mcp/**
+    - agents/**
+    - scripts/**
+environment:
+  DOCUSAURUS_DIR: docs-site
+  WIKI_REPO: "https://github.com/jgtolentino/ai-aas-hardened-lakehouse.wiki.git"
+  WIKI_SRC: "docs-site/wiki"
+  WIKI_BRANCH: "master"
+routing:
+  model: gpt-5
+  fallback_model: gpt-4o-mini
+  max_tokens: 8000
+  temperature: 0.2

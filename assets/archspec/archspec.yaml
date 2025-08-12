@@ -1,0 +1,111 @@
+# Architecture Specification
+# Defines the system landscape for ai-aas-hardened-lakehouse
+
+nodes:
+  # Data Layer
+  - id: edge_inbox
+    label: "Edge Inbox"
+    tier: edge
+    description: "Edge device data collection point"
+  
+  - id: bronze
+    label: "Bronze Layer"
+    tier: data
+    description: "Raw data storage"
+  
+  - id: silver
+    label: "Silver Layer"
+    tier: data
+    description: "Cleansed and standardized data"
+  
+  - id: gold
+    label: "Gold Layer"
+    tier: data
+    description: "Business-ready analytics data"
+  
+  # Compute Layer
+  - id: etl_pipeline
+    label: "ETL Pipeline"
+    tier: compute
+    description: "Data transformation engine"
+  
+  - id: scout_api
+    label: "Scout API"
+    tier: compute
+    description: "Analytics API service"
+  
+  - id: pulser_agents
+    label: "Pulser Agents"
+    tier: compute
+    description: "AI agent orchestration"
+  
+  # Edge Layer
+  - id: scout_dashboard
+    label: "Scout Dashboard"
+    tier: edge
+    description: "Analytics UI"
+  
+  - id: github_wiki
+    label: "GitHub Wiki"
+    tier: edge
+    description: "Documentation portal"
+  
+  - id: docusaurus
+    label: "Docusaurus Site"
+    tier: edge
+    description: "Technical documentation"
+
+links:
+  - from: edge_inbox
+    to: bronze
+    label: "raw data"
+  
+  - from: bronze
+    to: etl_pipeline
+    label: "process"
+  
+  - from: etl_pipeline
+    to: silver
+    label: "cleanse"
+  
+  - from: silver
+    to: etl_pipeline
+    label: "transform"
+  
+  - from: etl_pipeline
+    to: gold
+    label: "aggregate"
+  
+  - from: gold
+    to: scout_api
+    label: "serve"
+  
+  - from: scout_api
+    to: scout_dashboard
+    label: "analytics"
+  
+  - from: pulser_agents
+    to: scout_api
+    label: "orchestrate"
+  
+  - from: pulser_agents
+    to: docusaurus
+    label: "generate docs"
+  
+  - from: docusaurus
+    to: github_wiki
+    label: "mirror"
+
+# Define tiers for styling
+tiers:
+  - name: edge
+    description: "External interfaces and data collection"
+    color: "#fee"
+  
+  - name: data
+    description: "Data storage layers"
+    color: "#eef"
+  
+  - name: compute
+    description: "Processing and transformation"
+    color: "#efe"

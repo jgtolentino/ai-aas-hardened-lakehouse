@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Enterprise Data Platform for Philippine Retail Intelligence",
   "private": true,
+  "type": "module",
   "scripts": {
     "scaffold:slice": "tsx scripts/scaffold-slice.ts",
     "gen:slice": "tsx scripts/scaffold-slice.ts",
@@ -14,12 +15,28 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "docs:gen": "node scripts/generate-agent-docs.mjs && pnpm icons:build && pnpm arch:build",
+    "docs:lint": "markdownlint \"docs-site/docs/**/*.mdx\"",
+    "docs:linkcheck": "npx linkinator docs-site/build -r --silent || true",
+    "wiki:sync": "bash scripts/wiki-sync.sh",
+    "icons:build": "node scripts/icons-build.mjs",
+    "diagrams:build": "node scripts/diagrams-build.mjs",
+    "arch:build": "node scripts/archspec-to-mermaid.mjs && pnpm diagrams:build",
+    "docs:fixpaths": "node scripts/fix-doc-image-paths.js",
+    "docs:preflight": "node scripts/docs-preflight.js"
   },
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^10.9.1",
+    "@svgr/core": "^8.1.0",
+    "@types/node": "^20.0.0",
+    "js-yaml": "^4.1.0",
+    "linkinator": "^6.1.4",
+    "markdownlint-cli": "^0.40.0",
+    "svg-sprite": "^2.0.4",
+    "svgo": "^3.3.2",
     "tsx": "^4.7.0",
-    "turbo": "^1.11.0",
-    "@types/node": "^20.0.0"
+    "turbo": "^1.11.0"
   },
   "workspaces": [
     "apps/*",
