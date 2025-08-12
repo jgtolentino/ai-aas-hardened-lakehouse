@@ -143,8 +143,11 @@ jobs:
       with:
         input: platform/lakehouse/trino/trino.yaml
     
+    - name: Install Polaris CLI
+      run: |
+        curl -L https://github.com/FairwindsOps/polaris/releases/download/8.5.0/polaris_linux_amd64.tar.gz | tar xz
+        sudo mv polaris /usr/local/bin/
+    
     - name: Run Polaris scan
-      uses: fairwindsops/polaris@v9.5.0
-      with:
-        config: .polaris.yaml
-        audit-path: platform/
+      run: |
+        polaris audit --config .polaris.yaml --audit-path platform/ --format=pretty
