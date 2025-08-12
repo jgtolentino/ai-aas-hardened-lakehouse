@@ -1,0 +1,16 @@
+name: Good First Issue
+description: Small, well-scoped task suitable for newcomers
+labels: ["good first issue","help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: "Keep scope < 2 hours. Provide acceptance criteria."
+  - type: textarea
+    id: context
+    attributes: { label: Context, placeholder: "What/why?" }
+  - type: textarea
+    id: steps
+    attributes: { label: Steps/Acceptance, placeholder: "- [ ] ..." }
+  - type: input
+    id: area
+    attributes: { label: Area (frontend/backend/data/security), placeholder: "backend" }

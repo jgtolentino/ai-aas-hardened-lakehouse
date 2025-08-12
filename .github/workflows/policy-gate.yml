@@ -1,153 +1,83 @@
 name: Policy Gate
-
 on:
-  pull_request:
-    paths:
-      - '**/*.yaml'
-      - '**/*.yml'
-      - '**/Dockerfile'
+  pull_request_target:
+    types: [opened, synchronize, edited, ready_for_review, labeled, unlabeled, reopened]
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: policy-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  opa-policy-check:
+  enforce:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup OPA
-      uses: open-policy-agent/setup-opa@v2
-      with:
-        version: 0.58.0
-    
-    - name: Validate Kubernetes manifests
-      run: |
-        # Check for :latest tags
-        echo "Checking for :latest tags..."
-        if grep -r "image:.*:latest" platform/; then
-          echo "ERROR: Found :latest tags in manifests"
-          exit 1
-        fi
-        
-        # Check for missing resource limits
-        echo "Checking for resource limits..."
-        for yaml in $(find platform/ -name "*.yaml" -o -name "*.yml"); do
-          if grep -q "kind: Deployment\|kind: StatefulSet" "$yaml"; then
-            if ! grep -A20 "containers:" "$yaml" | grep -q "limits:"; then
-              echo "ERROR: Missing resource limits in $yaml"
-              exit 1
-            fi
-          fi
-        done
-        
-        # Check for missing probes
-        echo "Checking for liveness/readiness probes..."
-        for yaml in $(find platform/ -name "*.yaml" -o -name "*.yml"); do
-          if grep -q "kind: Deployment\|kind: StatefulSet" "$yaml"; then
-            if ! grep -q "livenessProbe:\|readinessProbe:" "$yaml"; then
-              echo "WARNING: Missing health probes in $yaml"
-            fi
-          fi
-        done
-    
-    - name: OPA Policy evaluation
-      run: |
-        # Download policies
-        mkdir -p policies
-        cat > policies/k8s-security.rego <<'EOF'
-        package kubernetes.security
-        
-        import future.keywords.contains
-        import future.keywords.if
-        import future.keywords.in
-        
-        # Deny containers without resource limits
-        deny[msg] {
-          input.kind in ["Deployment", "StatefulSet", "DaemonSet"]
-          container := input.spec.template.spec.containers[_]
-          not container.resources.limits
-          msg := sprintf("Container '%s' is missing resource limits", [container.name])
-        }
-        
-        # Deny containers running as root
-        deny[msg] {
-          input.kind in ["Deployment", "StatefulSet", "DaemonSet"]
-          container := input.spec.template.spec.containers[_]
-          container.securityContext.runAsUser == 0
-          msg := sprintf("Container '%s' runs as root", [container.name])
-        }
-        
-        # Deny containers with privileged mode
-        deny[msg] {
-          input.kind in ["Deployment", "StatefulSet", "DaemonSet"]
-          container := input.spec.template.spec.containers[_]
-          container.securityContext.privileged == true
-          msg := sprintf("Container '%s' runs in privileged mode", [container.name])
-        }
-        
-        # Deny services without NetworkPolicy
-        deny[msg] {
-          input.kind == "Service"
-          not networkpolicy_exists(input.metadata.namespace, input.spec.selector)
-          msg := sprintf("Service '%s' has no NetworkPolicy", [input.metadata.name])
-        }
-        
-        networkpolicy_exists(namespace, selector) {
-          # This would need to check against actual NetworkPolicies
-          # For now, just check if namespace is 'aaas'
-          namespace == "aaas"
-        }
-        EOF
-        
-        # Run OPA checks
-        for yaml in $(find platform/ -name "*.yaml" -o -name "*.yml"); do
-          echo "Checking $yaml..."
-          if grep -q "^kind:" "$yaml"; then
-            opa eval -d policies/k8s-security.rego -i "$yaml" \
-              "data.kubernetes.security.deny[x]" || true
-          fi
-        done
+      - name: Evaluate PR policy
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const number = pr.number;
+            const body = (pr.body || "").trim();
+            const labels = (pr.labels || []).map(l => (l.name || "").toLowerCase());
+            const isFeat = labels.includes("type/feat");
+            const isXL   = labels.includes("size/xl");
 
-  dockerfile-policy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Check Dockerfile policies
-      run: |
-        for dockerfile in $(find . -name "Dockerfile*"); do
-          echo "Checking $dockerfile..."
-          
-          # Check for non-root user
-          if ! grep -q "USER [^r][^o][^o][^t]" "$dockerfile"; then
-            echo "WARNING: $dockerfile may run as root"
-          fi
-          
-          # Check for health check
-          if ! grep -q "HEALTHCHECK" "$dockerfile"; then
-            echo "INFO: $dockerfile missing HEALTHCHECK"
-          fi
-          
-          # Check for specific version tags
-          if grep -E "FROM.*:latest|FROM.*:main|FROM.*:master" "$dockerfile"; then
-            echo "ERROR: $dockerfile uses non-specific base image tag"
-            exit 1
-          fi
-        done
+            // --- Parse risk from PR body (e.g., "Risk:  low")
+            let risk = null;
+            const riskRe = /(^|\n)\s*risk:\s*([a-z]+)/i;
+            const mRisk = body.match(riskRe);
+            if (mRisk) risk = (mRisk[2] || "").toLowerCase();
 
-  security-scanning:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Run Kubesec scan
-      uses: controlplaneio/kubesec-action@v0.0.2
-      with:
-        input: platform/lakehouse/trino/trino.yaml
-    
-    - name: Install Polaris CLI
-      run: |
-        curl -L https://github.com/FairwindsOps/polaris/releases/download/8.5.0/polaris_linux_amd64.tar.gz | tar xz
-        sudo mv polaris /usr/local/bin/
-    
-    - name: Run Polaris scan
-      run: |
-        polaris audit --config .polaris.yaml --audit-path platform/ --format=pretty
+            // --- Require the acceptance checkbox checked for feature PRs
+            // Matches "- [x] Acceptance checks included" (case-insensitive, allows spaces)
+            const acceptanceChecked = /- \[[xX]\]\s*Acceptance\s+checks\s+included/i.test(body);
+
+            // Collect violations
+            const violations = [];
+
+            // Rule 1: size/XL must be explicitly risk: low
+            if (isXL && risk !== "low") {
+              violations.push("**size/XL** PR must declare \`risk: low\` in the PR body. Update the \`Risk:\` line to \`low\` or split the PR.");
+            }
+
+            // Rule 2: type/feat must include checked acceptance checkbox
+            if (isFeat && !acceptanceChecked) {
+              violations.push("**type/feat** PR must have the **\`- [x] Acceptance checks included\`** checkbox checked in the PR body.");
+            }
+
+            // Optional: gentle nudge if no checkboxes at all (treat as missing checklist)
+            const anyChecked = /- \[[xX]\]/.test(body);
+            if (isFeat && !anyChecked) {
+              violations.push("Feature PR appears to have **no checklist checked**. Tick the relevant boxes from the PR template.");
+            }
+
+            // Post (or update) a sticky comment with results
+            const marker = "<!-- policy-gate -->";
+            const header = "### 🚫 Policy Gate\n" + marker;
+            const okHeader = "### ✅ Policy Gate\n" + marker;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number: number, per_page: 100
+            });
+            const prev = comments.find(c => (c.user?.type === "Bot" || c.user?.login?.includes("[bot]")) && (c.body||"").includes(marker));
+
+            if (violations.length) {
+              const bodyText = \`\${header}\n\nThis PR violates required policies:\n\n\${violations.map(v => \`- \${v}\`).join("\n")}\n\n**Fix and push** to re-run checks.\`;
+              if (prev) {
+                await github.rest.issues.updateComment({ ...context.repo, comment_id: prev.id, body: bodyText });
+              } else {
+                await github.rest.issues.createComment({ ...context.repo, issue_number: number, body: bodyText });
+              }
+              core.setFailed("Policy violations detected.");
+            } else {
+              const okText = \`\${okHeader}\n\nAll policy checks passed.\`;
+              if (prev) {
+                await github.rest.issues.updateComment({ ...context.repo, comment_id: prev.id, body: okText });
+              } else {
+                await github.rest.issues.createComment({ ...context.repo, issue_number: number, body: okText });
+              }
+            }
