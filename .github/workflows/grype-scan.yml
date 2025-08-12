@@ -1,0 +1,241 @@
+# .github/workflows/grype-scan.yml
+name: Vulnerability Scanning
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'Dockerfile'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/grype-scan.yml'
+  schedule:
+    - cron: '45 03 * * *'  # Daily at 11:45 AM PH (UTC+8)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: vuln-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  grype-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Grype (pinned)
+        run: |
+          set -euo pipefail
+          GRYPE_VERSION="v0.83.0"
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | \
+            sh -s -- -b /usr/local/bin ${GRYPE_VERSION}
+          grype version
+
+      - name: Update vulnerability database
+        run: |
+          echo "Updating Grype vulnerability database..."
+          grype db update
+          grype db status
+
+      - name: Scan filesystem for vulnerabilities
+        id: scan-fs
+        run: |
+          echo "## Vulnerability Scan Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Filesystem Scan" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Run scan with multiple output formats
+          grype dir:. \
+            --fail-on high \
+            --only-fixed \
+            --output table \
+            --output json=grype-fs.json \
+            --output sarif=grype-fs.sarif \
+            --config .grype.yaml 2>&1 | tee grype-output.txt || scan_exit=$?
+          
+          # Extract summary metrics
+          if [ -f grype-fs.json ]; then
+            critical=$(jq '[.matches[] | select(.vulnerability.severity == "Critical")] | length' grype-fs.json)
+            high=$(jq '[.matches[] | select(.vulnerability.severity == "High")] | length' grype-fs.json)
+            medium=$(jq '[.matches[] | select(.vulnerability.severity == "Medium")] | length' grype-fs.json)
+            low=$(jq '[.matches[] | select(.vulnerability.severity == "Low")] | length' grype-fs.json)
+            
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "#### Severity Distribution" >> "$GITHUB_STEP_SUMMARY"
+            echo "- 🔴 Critical: $critical" >> "$GITHUB_STEP_SUMMARY"
+            echo "- 🟠 High: $high" >> "$GITHUB_STEP_SUMMARY"
+            echo "- 🟡 Medium: $medium" >> "$GITHUB_STEP_SUMMARY"
+            echo "- 🟢 Low: $low" >> "$GITHUB_STEP_SUMMARY"
+            
+            # Set output for badge
+            echo "critical=$critical" >> "$GITHUB_OUTPUT"
+            echo "high=$high" >> "$GITHUB_OUTPUT"
+            echo "total=$((critical + high + medium + low))" >> "$GITHUB_OUTPUT"
+          fi
+          
+          # Exit with scan result
+          exit ${scan_exit:-0}
+
+      - name: Scan container image (if Dockerfile exists)
+        if: ${{ hashFiles('Dockerfile') != '' }}
+        run: |
+          # Build image for scanning
+          docker build -t local/ai-aas:vuln-scan .
+          
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Container Image Scan" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Scan the built image
+          grype local/ai-aas:vuln-scan \
+            --fail-on critical \
+            --only-fixed \
+            --output table \
+            --output json=grype-container.json \
+            --output sarif=grype-container.sarif || container_exit=$?
+          
+          # Extract container-specific metrics
+          if [ -f grype-container.json ]; then
+            layers=$(jq '.source.image.layers | length' grype-container.json)
+            echo "- Image layers scanned: $layers" >> "$GITHUB_STEP_SUMMARY"
+            
+            # OS vulnerabilities vs app vulnerabilities
+            os_vulns=$(jq '[.matches[] | select(.artifact.type == "deb" or .artifact.type == "rpm")] | length' grype-container.json)
+            app_vulns=$(jq '[.matches[] | select(.artifact.type != "deb" and .artifact.type != "rpm")] | length' grype-container.json)
+            
+            echo "- OS package vulnerabilities: $os_vulns" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Application vulnerabilities: $app_vulns" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Create Grype config if missing
+        run: |
+          if [ ! -f .grype.yaml ]; then
+            cat > .grype.yaml <<'EOF'
+# .grype.yaml - Grype vulnerability scanner configuration
+log:
+  level: "info"
+
+# Vulnerability matching configuration
+match:
+  # Include vulnerabilities from these sources
+  vulnerability:
+    namespace:
+      - nvd
+      - github
+      - alpine
+      - debian
+      - redhat
+      - ubuntu
+  
+  # Package matching behavior
+  packages:
+    using-cpes: true
+    stock:
+      using-stock-matcher: true
+
+# Ignore specific vulnerabilities (false positives or accepted risks)
+ignore:
+  # Example: Ignore a specific CVE
+  # - vulnerability: CVE-2023-12345
+  #   reason: "False positive - not applicable to our usage"
+  
+  # Example: Ignore vulnerabilities in test files
+  # - package:
+  #     location: "**/test/**"
+  #   reason: "Test dependencies not used in production"
+
+# Database configuration
+db:
+  # Auto-update database
+  auto-update: true
+  
+  # Cache directory
+  cache-dir: /tmp/grype-cache
+
+# Output configuration
+output:
+  quiet: false
+EOF
+            echo "✅ Created default .grype.yaml configuration" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload vulnerability reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-reports-${{ github.sha }}
+          path: |
+            grype-*.json
+            grype-*.sarif
+            grype-output.txt
+            .grype.yaml
+          retention-days: 30
+
+      - name: Upload SARIF to GitHub Security
+        if: always() && github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: grype-fs.sarif
+          category: grype-filesystem
+
+      - name: Generate vulnerability badge data
+        if: always() && github.ref == 'refs/heads/main'
+        run: |
+          # Create badge JSON for shields.io
+          cat > vuln-badge.json <<EOF
+          {
+            "schemaVersion": 1,
+            "label": "vulnerabilities",
+            "message": "${{ steps.scan-fs.outputs.total }} found",
+            "color": "${{ steps.scan-fs.outputs.critical > 0 && 'critical' || steps.scan-fs.outputs.high > 0 && 'important' || 'success' }}"
+          }
+          EOF
+
+      - name: Check for specific vulnerable packages
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Known Vulnerable Packages Check" >> "$GITHUB_STEP_SUMMARY"
+          
+          # High-risk packages to monitor
+          high_risk_packages=(
+            "log4j"
+            "spring-core"
+            "jackson-databind"
+            "commons-text"
+            "lodash"
+            "minimist"
+          )
+          
+          found_risks=0
+          for pkg in "${high_risk_packages[@]}"; do
+            if jq -e ".matches[] | select(.artifact.name | contains(\"$pkg\"))" grype-fs.json >/dev/null 2>&1; then
+              echo "⚠️ Found vulnerabilities in high-risk package: $pkg" >> "$GITHUB_STEP_SUMMARY"
+              jq -r ".matches[] | select(.artifact.name | contains(\"$pkg\")) | \"  - \\(.vulnerability.id): \\(.vulnerability.severity)\"" grype-fs.json >> "$GITHUB_STEP_SUMMARY"
+              found_risks=1
+            fi
+          done
+          
+          if [ $found_risks -eq 0 ]; then
+            echo "✅ No high-risk packages with vulnerabilities found" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: AGPL-3.0, GPL-3.0, LGPL-3.0
+          comment-summary-in-pr: true

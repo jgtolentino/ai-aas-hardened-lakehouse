@@ -27,10 +27,13 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/security.yml'
+  schedule:
+    - cron: '17 02 * * *'  # daily 10:17 AM PH (UTC+8) ~ adjust as desired
   workflow_dispatch:
 
 permissions:
   contents: read
+  security-events: write
 
 concurrency:
   group: security-${{ github.ref }}
@@ -65,6 +68,16 @@ jobs:
             | (["Severity","Findings"], (.[]|[.sev, (.count|tostring)])) 
             | @tsv
           ' semgrep.json | column -t >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Semgrep SARIF (for GitHub Code Scanning)
+        run: |
+          set -euo pipefail
+          semgrep ci --config p/ci --timeout 300 --sarif --output semgrep.sarif || true
+
+      - name: Upload SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
 
       - name: Gate on HIGH/CRITICAL
         run: |

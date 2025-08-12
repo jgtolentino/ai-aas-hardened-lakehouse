@@ -1,1 +1,2 @@
 - [[DocsWriter]](./docswriter.md)
+- [[scout-docs-writer]](./scout-docs-writer.md)

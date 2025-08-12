@@ -1,0 +1,246 @@
+# .github/workflows/release-provenance.yml
+name: Release Provenance & Signatures
+
+on:
+  release:
+    types: [ published ]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to sign (e.g., v1.0.0)'
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write  # Required for OIDC signing
+
+jobs:
+  build-and-sign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      sbom-digest: ${{ steps.sbom.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cosign (pinned)
+        uses: sigstore/cosign-installer@v3.7.0
+        with:
+          cosign-release: 'v2.4.1'
+
+      - name: Install syft (for SBOM)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | \
+            sh -s -- -b /usr/local/bin v1.18.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION=${{ github.event.release.tag_name }}
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            VERSION=${{ github.ref_name }}
+          else
+            VERSION=${{ github.event.inputs.tag }}
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "## Release Version: ${VERSION}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build and push container image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Sign container image (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          echo "## Container Image Signing" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Sign the image with keyless signing (uses GitHub OIDC)
+          cosign sign --yes \
+            ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          
+          echo "✅ Image signed with keyless signature" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Digest: \`${{ steps.build.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate SBOM
+        id: sbom
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## SBOM Generation" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Generate SBOM for the container
+          syft ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }} \
+            --output spdx-json=sbom.spdx.json
+          
+          # Generate SBOM attestation
+          cosign attest --yes \
+            --predicate sbom.spdx.json \
+            --type spdxjson \
+            ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          
+          # Calculate SBOM digest
+          SBOM_DIGEST=$(sha256sum sbom.spdx.json | cut -d' ' -f1)
+          echo "digest=${SBOM_DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "✅ SBOM generated and attached as attestation" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate SLSA provenance
+        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.0.0
+        with:
+          image: ghcr.io/${{ github.repository }}
+          digest: ${{ steps.build.outputs.digest }}
+          registry-username: ${{ github.actor }}
+        secrets:
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create source code archive
+        run: |
+          # Create reproducible source archive
+          git archive --format=tar.gz \
+            --prefix=ai-aas-hardened-lakehouse-${{ steps.version.outputs.version }}/ \
+            -o source-${{ steps.version.outputs.version }}.tar.gz \
+            HEAD
+
+      - name: Sign source archive
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Source Code Signing" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Sign the source tarball
+          cosign sign-blob --yes \
+            --output-signature source-${{ steps.version.outputs.version }}.tar.gz.sig \
+            --output-certificate source-${{ steps.version.outputs.version }}.tar.gz.crt \
+            source-${{ steps.version.outputs.version }}.tar.gz
+          
+          echo "✅ Source archive signed" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create checksums
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Checksums" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Generate checksums for all artifacts
+          sha256sum source-*.tar.gz > SHA256SUMS
+          sha256sum sbom.spdx.json >> SHA256SUMS
+          
+          # Sign the checksum file
+          cosign sign-blob --yes \
+            --output-signature SHA256SUMS.sig \
+            --output-certificate SHA256SUMS.crt \
+            SHA256SUMS
+          
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload release artifacts
+        if: github.event_name == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Upload all signed artifacts to the release
+          gh release upload ${{ github.event.release.tag_name }} \
+            source-*.tar.gz \
+            source-*.tar.gz.sig \
+            source-*.tar.gz.crt \
+            sbom.spdx.json \
+            SHA256SUMS \
+            SHA256SUMS.sig \
+            SHA256SUMS.crt \
+            --clobber
+
+      - name: Create verification instructions
+        run: |
+          cat > VERIFY.md <<EOF
+          # Verification Instructions for ${{ steps.version.outputs.version }}
+          
+          ## Container Image Verification
+          
+          \`\`\`bash
+          # Verify container signature
+          cosign verify ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }} \
+            --certificate-identity https://github.com/${{ github.repository }}/.github/workflows/release-provenance.yml@refs/tags/${{ steps.version.outputs.version }} \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          
+          # Verify SBOM attestation
+          cosign verify-attestation ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }} \
+            --type spdxjson \
+            --certificate-identity https://github.com/${{ github.repository }}/.github/workflows/release-provenance.yml@refs/tags/${{ steps.version.outputs.version }} \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          \`\`\`
+          
+          ## Source Code Verification
+          
+          \`\`\`bash
+          # Verify source archive signature
+          cosign verify-blob \
+            --signature source-${{ steps.version.outputs.version }}.tar.gz.sig \
+            --certificate source-${{ steps.version.outputs.version }}.tar.gz.crt \
+            --certificate-identity https://github.com/${{ github.repository }}/.github/workflows/release-provenance.yml@refs/tags/${{ steps.version.outputs.version }} \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            source-${{ steps.version.outputs.version }}.tar.gz
+          
+          # Verify checksums
+          sha256sum -c SHA256SUMS
+          \`\`\`
+          
+          ## SLSA Provenance
+          
+          The container image includes SLSA provenance attestation that can be verified using:
+          
+          \`\`\`bash
+          cosign verify-attestation ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }} \
+            --type slsaprovenance \
+            --certificate-identity https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          \`\`\`
+          EOF
+          
+          # Upload verification instructions
+          if [ "${{ github.event_name }}" = "release" ]; then
+            gh release upload ${{ github.event.release.tag_name }} VERIFY.md --clobber
+          fi
+
+      - name: Summary
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## 🎉 Release Artifacts Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Signed Artifacts" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ Container image: \`ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ Source archive: \`source-${{ steps.version.outputs.version }}.tar.gz\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ SBOM: \`sbom.spdx.json\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ Checksums: \`SHA256SUMS\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Attestations" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ SBOM attestation attached to container" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ SLSA provenance generated" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "All artifacts are signed using Sigstore keyless signing with GitHub OIDC identity." >> "$GITHUB_STEP_SUMMARY"
