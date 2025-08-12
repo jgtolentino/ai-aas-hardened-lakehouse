@@ -1,0 +1,68 @@
+rules:
+  - id: no-hardcoded-secrets
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $SECRET = "..."
+          - pattern: |
+              $SECRET = '...'
+          - pattern: |
+              const $SECRET = "..."
+          - pattern: |
+              let $SECRET = "..."
+    pattern-not:
+      - pattern: |
+          $X = ""
+      - pattern: |
+          $X = "test"
+      - pattern: |
+          $X = "placeholder"
+    message: Hardcoded secret detected
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      category: security
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+
+  - id: sql-injection-risk
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $SQL = "SELECT * FROM " + $USER_INPUT
+          - pattern: |
+              $SQL = `SELECT * FROM ${$USER_INPUT}`
+          - pattern: |
+              db.query("SELECT * FROM " + $USER_INPUT)
+    message: Potential SQL injection vulnerability
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03:2021 - Injection"
+
+  - id: dangerous-eval
+    pattern: eval($X)
+    message: Use of eval() is dangerous and can lead to code injection
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      category: security
+      cwe: "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code"
+
+  - id: unsafe-html-rendering
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $EL.innerHTML = $USER_INPUT
+          - pattern: |
+              $EL.outerHTML = $USER_INPUT
+          - pattern: |
+              document.write($USER_INPUT)
+    message: Unsafe HTML rendering can lead to XSS attacks
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      category: security
+      cwe: "CWE-79: Cross-site Scripting (XSS)"
+      owasp: "A03:2021 - Injection"

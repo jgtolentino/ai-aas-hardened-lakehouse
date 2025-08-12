@@ -1,0 +1,47 @@
+{
+  "name": "@ai-aas/security",
+  "version": "1.0.0",
+  "description": "Security scanning and vulnerability detection for AI-AAS platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "security": "./dist/cli/security-cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint . --ext .ts,.tsx",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "events": "^3.3.0",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "jest": "^29.0.0",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "@ai-aas/bruno": "workspace:*"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "security",
+    "vulnerability",
+    "scanning",
+    "sast",
+    "dast",
+    "trivy",
+    "semgrep",
+    "trufflehog"
+  ],
+  "license": "MIT"
+}

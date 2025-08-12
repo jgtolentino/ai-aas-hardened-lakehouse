@@ -1,0 +1,24 @@
+# security/policy/policy.yaml
+fail_thresholds:
+  trivy:
+    CRITICAL: 0
+    HIGH: 0
+    MEDIUM: 10
+  semgrep:
+    ERROR: 0
+    WARNING: 20
+  trufflehog:
+    VERIFIED_FINDINGS: 0
+
+allowlist:
+  cves:
+    - CVE-0000-PLACEHOLDER  # sample
+  semgrep_rules:
+    - my.org.allow.temp-debug-logger
+  secrets:
+    patterns:
+      - '^TEST_[A-Z0-9_]+'
+    files:
+      - 'docs/examples/.*'
+expiry:
+  default_days: 90

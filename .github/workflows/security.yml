@@ -1,0 +1,96 @@
+name: security
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write  # for SARIF upload
+  actions: read
+
+env:
+  TRIVY_CACHE_DIR: .cache/trivy
+  SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }} # optional if using SaaS rules
+
+jobs:
+  trivy-fs:
+    name: Trivy FS (deps + IaC)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: .cache/trivy
+          key: trivy-${{ runner.os }}-db
+      - name: Trivy FS JSON
+        run: |
+          docker run --rm \
+            -v $PWD:/workspace -v $PWD/.cache/trivy:/root/.cache/trivy \
+            -w /workspace \
+            aquasec/trivy@sha256:7dc2d3f9c63f6e63d0f7b21a0d9d4e9e0d776b7a4b6d3a1b4cb6b2a6f5e37b39 \
+            fs --exit-code 0 --format sarif --output trivy.sarif \
+            --ignorefile security/allowlists/.trivyignore \
+            --severity CRITICAL,HIGH,MEDIUM \
+            .
+      - name: Upload SARIF (Trivy)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+      - name: Enforce policy thresholds
+        run: |
+          npx tsx security/policy/enforce.ts trivy.sarif security/policy/policy.yaml
+
+  semgrep:
+    name: Semgrep SAST
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Semgrep (local rules + OSS registry)
+        run: |
+          docker run --rm -v $PWD:/src returntocorp/semgrep@sha256:3a5608b3b8e0f2b6f2e3a9c7a7b6b3d1bfb8a0a2a45e9f0a9f2db46be8d9ae9a \
+            semgrep --config "p/owasp-top-ten" \
+                    --config "rules/semgrep" \
+                    --exclude "node_modules" --exclude "dist" --exclude "build" \
+                    --sarif --output semgrep.sarif \
+                    --severity WARNING
+      - name: Upload SARIF (Semgrep)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+      - name: Enforce policy thresholds
+        run: |
+          npx tsx security/policy/enforce.ts semgrep.sarif security/policy/policy.yaml
+
+  trufflehog:
+    name: TruffleHog (secrets HEAD-only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Diff HEAD..origin/main (PR) or last commit (push)
+        id: diff
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin ${{ github.base_ref }} --depth=1
+            echo "RANGE=origin/${{ github.base_ref }}..HEAD" >> $GITHUB_OUTPUT
+          else
+            echo "RANGE=HEAD~1..HEAD" >> $GITHUB_OUTPUT
+          fi
+      - name: Run TruffleHog on changed paths
+        run: |
+          CHANGED=$(git diff --name-only ${{ steps.diff.outputs.RANGE }} | tr '\n' ' ')
+          if [ -z "$CHANGED" ]; then echo "[]" > trufflehog.json; exit 0; fi
+          docker run --rm -v $PWD:/pwd -w /pwd trufflesecurity/trufflehog@sha256:2f2a1a7c6e38de8e0d4a0fb0b7f7b5d86ebc27b8c3f1d35f8a0a54c953fdfb33 \
+            filesystem --json --only-verified --fail \
+            $CHANGED | tee trufflehog.json || echo "[]" > trufflehog.json
+      - name: Enforce policy thresholds
+        if: always()
+        run: |
+          npx tsx security/policy/enforce.ts trufflehog.json security/policy/policy.yaml
