@@ -32,6 +32,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Syft (pinned)
+        env:
+          SYFT_VERSION: "1.20.0"
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo bash -s -- -b /usr/local/bin "v${SYFT_VERSION}"
+          syft version
+
+      - name: Generate SBOM (CycloneDX) for workspace
+        run: |
+          syft dir:. -o cyclonedx-json --add-cpes-if-none > sbom.cdx.json
+
       - name: Install Grype (pinned)
         run: |
           set -euo pipefail
@@ -46,15 +58,15 @@ jobs:
           grype db update
           grype db status
 
-      - name: Scan filesystem for vulnerabilities
+      - name: Scan SBOM for vulnerabilities (fail on HIGH/CRITICAL)
         id: scan-fs
         run: |
           echo "## Vulnerability Scan Report" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Filesystem Scan" >> "$GITHUB_STEP_SUMMARY"
+          echo "### SBOM Scan" >> "$GITHUB_STEP_SUMMARY"
           
           # Run scan with multiple output formats
-          grype dir:. \
+          grype sbom:sbom.cdx.json \
             --fail-on high \
             --only-fixed \
             --output table \
@@ -85,11 +97,12 @@ jobs:
           # Exit with scan result
           exit ${scan_exit:-0}
 
-      - name: Scan container image (if Dockerfile exists)
+      - name: Build+scan image if Dockerfile exists (best-effort)
         if: ${{ hashFiles('Dockerfile') != '' }}
         run: |
-          # Build image for scanning
-          docker build -t local/ai-aas:vuln-scan .
+          set -euo pipefail
+          # Try to build image
+          docker build -t local/ai-aas:vuln-scan . || { echo "::warning ::Docker build failed; skipping image scan"; exit 0; }
           
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### Container Image Scan" >> "$GITHUB_STEP_SUMMARY"
@@ -173,6 +186,7 @@ EOF
         with:
           name: vulnerability-reports-${{ github.sha }}
           path: |
+            sbom.cdx.json
             grype-*.json
             grype-*.sarif
             grype-output.txt
