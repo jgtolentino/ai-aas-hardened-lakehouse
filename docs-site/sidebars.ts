@@ -53,8 +53,7 @@ module.exports = {
       type: 'category',
       label: 'Reference',
       items: [
-        'api-reference/sql-interfaces',
-        'reference/icons/icon-gallery'
+        'api-reference/sql-interfaces'
       ]
     }
   ]
