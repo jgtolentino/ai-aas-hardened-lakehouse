@@ -1,9 +1,13 @@
 # Dockerfile for AI-AAS Hardened Lakehouse
-FROM node:20-alpine AS base
+ARG NODE_VERSION=20.16.0
+FROM node:${NODE_VERSION}-alpine AS base
 
 # Install security updates
 RUN apk update && apk upgrade && \
     apk add --no-cache dumb-init
+
+# Enable deterministic pnpm
+RUN corepack enable && corepack prepare pnpm@9.7.0 --activate
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -17,8 +21,8 @@ COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
 FROM base AS deps
-RUN corepack enable && \
-    pnpm install --frozen-lockfile
+# Fail fast on lockfile drift
+RUN pnpm install --frozen-lockfile
 
 # Build stage
 FROM base AS build
