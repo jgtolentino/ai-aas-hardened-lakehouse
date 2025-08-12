@@ -28,7 +28,8 @@ RUN pnpm install --frozen-lockfile
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm run build || echo "No build script"
+# Build only if build script exists
+RUN if grep -q '"build":' package.json; then pnpm run build; else mkdir -p dist && echo '{"message": "No build configured"}' > dist/index.js; fi
 
 # Production stage
 FROM base AS runtime
