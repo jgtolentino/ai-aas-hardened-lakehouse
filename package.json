@@ -4,6 +4,8 @@
   "description": "Enterprise Data Platform for Philippine Retail Intelligence",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@9.7.0",
+  "engines": { "node": ">=20.16.0" },
   "scripts": {
     "scaffold:slice": "tsx scripts/scaffold-slice.ts",
     "gen:slice": "tsx scripts/scaffold-slice.ts",
