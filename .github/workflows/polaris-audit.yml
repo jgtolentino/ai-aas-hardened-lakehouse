@@ -1,0 +1,55 @@
+# .github/workflows/polaris-audit.yml
+name: Polaris Audit
+
+on:
+  pull_request:
+    paths:
+      - 'platform/**'
+      - '.polaris.yaml'
+      - '.github/workflows/polaris-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: polaris-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Preferred: official setup action pinned to a repo ref, with explicit CLI version
+      - name: Setup Polaris (pinned)
+        uses: fairwindsops/polaris/.github/actions/setup-polaris@10.1.0
+        with:
+          version: 10.1.0  # current latest
+
+      - name: Show version
+        run: polaris version
+
+      - name: Run audit (pretty in logs, JSON artifact, strict gates)
+        run: |
+          polaris audit \
+            --audit-path platform/ \
+            --format=pretty \
+            --only-show-failed-tests true \
+            --set-exit-code-on-danger \
+            --set-exit-code-below-score 90 | tee /tmp/polaris-pretty.txt
+          # re-run for JSON output (kept separate for readability)
+          polaris audit \
+            --audit-path platform/ \
+            --format=json \
+            --only-show-failed-tests true > /tmp/polaris.json
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: polaris-report
+          path: |
+            /tmp/polaris.json
+            /tmp/polaris-pretty.txt

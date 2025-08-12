@@ -144,16 +144,7 @@ jobs:
         input: platform/lakehouse/trino/trino.yaml
       continue-on-error: true
     
-    - name: Install Polaris CLI
+    - name: Note about Polaris
       run: |
-        curl -L https://github.com/FairwindsOps/polaris/releases/download/8.5.0/polaris_linux_amd64.tar.gz | tar xz
-        sudo mv polaris /usr/local/bin/
-    
-    - name: Run Polaris scan
-      run: |
-        if [ -f .polaris.yaml ]; then
-          polaris audit --config .polaris.yaml --audit-path platform/ --format=pretty
-        else
-          echo "No .polaris.yaml config found, skipping Polaris scan"
-        fi
-      continue-on-error: true
+        echo "ℹ️ Polaris audit moved to dedicated workflow: polaris-audit.yml"
+        echo "   This provides proper pinning, security gates, and artifact uploads"
