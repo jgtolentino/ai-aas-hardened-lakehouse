@@ -155,8 +155,8 @@ graph TB
 ## Performance Characteristics
 
 ### **Query Performance Targets**
-- **Sub-second**: Simple aggregations (<1.5s SLA)
-- **Interactive**: Complex analytical queries (<10s)
+- **Sub-second**: Simple aggregations (less than 1.5s SLA)
+- **Interactive**: Complex analytical queries (less than 10s)
 - **Batch**: Large ETL operations (optimized for throughput)
 
 ### **Scalability**
