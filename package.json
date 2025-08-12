@@ -39,7 +39,9 @@
     "deps:check": "pnpm outdated -r",
     "deps:update": "pnpm update -r --interactive",
     "sec:scan": "tsx security/policy/enforce.ts trivy.sarif security/policy/policy.yaml",
-    "sec:demo": "tsx scripts/security-demo.ts"
+    "sec:demo": "tsx scripts/security-demo.ts",
+    "docs:verify": "node scripts/check-doc-coverage.mjs && echo \"OK\"",
+    "docs:lint": "markdownlint \"docs-site/**/*.mdx\" \"docs-site/**/*.md\" && remark docs-site/docs --use remark-preset-lint-consistent --frail"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.6.0",

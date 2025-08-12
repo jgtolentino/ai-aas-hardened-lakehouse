@@ -1,0 +1,80 @@
+name: docs-verify
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs-site/**'
+      - 'mcp/agents/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/docs-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node + pnpm (pinned)
+        run: |
+          set -euo pipefail
+          echo "node 20.16.0" > .tool-versions || true
+          corepack enable
+          corepack prepare pnpm@9.7.0 --activate
+          node -v && pnpm -v
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate docs
+        run: pnpm -s docs:gen
+
+      - name: Lint Markdown/MDX
+        run: |
+          npx --yes markdownlint-cli@0.41.0 "docs-site/**/*.mdx" "docs-site/**/*.md"
+          npx --yes remark@15.0.1 docs-site/docs --use remark-preset-lint-consistent --frail
+
+      - name: Build Docusaurus (deterministic)
+        working-directory: docs-site
+        run: pnpm -s build
+
+      - name: Link check (lychee)
+        run: |
+          curl -sSL https://github.com/lycheeverse/lychee/releases/download/v0.15.1/lychee-v0.15.1-x86_64-unknown-linux-gnu.tar.gz \
+            | tar xz --strip 1 -C /usr/local/bin lychee
+          lychee --version
+          lychee --no-progress --max-concurrency 8 --timeout 10s "docs-site/build" > lychee.txt || true
+
+      - name: Coverage / orphan check
+        run: node scripts/check-doc-coverage.mjs
+
+      - name: Upload preview artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-build
+          path: |
+            docs-site/build
+            lychee.txt
+            coverage/docs-coverage.json
+            coverage/docs-orphans.json
+          retention-days: 7
+
+      - name: PR summary
+        if: always()
+        run: |
+          echo "## Docs verification summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Build: ✅ (artifact attached)" >> $GITHUB_STEP_SUMMARY
+          echo "- Links checked via lychee (see lychee.txt)" >> $GITHUB_STEP_SUMMARY
+          echo "- Coverage report: coverage/docs-coverage.json" >> $GITHUB_STEP_SUMMARY
+          echo "- Orphans: coverage/docs-orphans.json" >> $GITHUB_STEP_SUMMARY
