@@ -27,6 +27,11 @@ function HomepageHeader() {
             to="/playground">
             Try SQL Playground 💻
           </Link>
+          <Link
+            className="button button--secondary button--lg"
+            to="/dashboard">
+            View Scout Dashboard 📊
+          </Link>
         </div>
       </div>
     </header>
