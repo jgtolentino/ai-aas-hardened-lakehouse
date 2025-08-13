@@ -16,6 +16,7 @@
     "@docusaurus/remark-plugin-npm2yarn": "^3.8.1",
     "@docusaurus/theme-mermaid": "^3.0.0",
     "lucide-react": "^0.539.0",
+    "react-grid-layout": "^1.5.2",
     "recharts": "^3.1.2",
     "redocusaurus": "^2.0.0"
   }
