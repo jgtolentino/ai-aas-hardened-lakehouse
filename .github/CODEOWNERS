@@ -1,0 +1,13 @@
+# .github/CODEOWNERS
+# Security & CI
+.github/workflows/*     @jgtolentino
+security/**             @jgtolentino
+
+# Backend services
+apps/**                 @jgtolentino
+
+# Data & dbt
+dbt/**                  @jgtolentino
+
+# Docs
+docs/**                 @jgtolentino

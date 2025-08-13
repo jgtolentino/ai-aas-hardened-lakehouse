@@ -1,0 +1,19 @@
+name: Slash: good first issue
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  issues: write
+  pull-requests: read
+jobs:
+  label-gfi:
+    if: contains(github.event.comment.body, '/gfi')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            if (!issue) return;
+            await github.rest.issues.addLabels({ ...context.repo, issue_number: issue.number, labels: ['good first issue','help wanted'] });
+            await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body: 'Tagged as **good first issue**. Please keep scope small and add reproduction steps. 🚀' });

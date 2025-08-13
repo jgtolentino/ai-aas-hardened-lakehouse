@@ -1,0 +1,36 @@
+# .github/labeler.yml
+area/infra:
+  - ".github/**"
+  - "infra/**"
+area/backend:
+  - "apps/**"
+  - "services/**"
+  - "backend/**"
+area/frontend:
+  - "apps/**/app/**"
+  - "apps/**/components/**"
+area/data:
+  - "data/**"
+  - "pipelines/**"
+area/dbt:
+  - "dbt/**"
+area/security:
+  - "security/**"
+  - ".github/workflows/security*.yml"
+area/ci:
+  - ".github/workflows/**"
+
+type/docs:
+  - "**/*.md"
+  - "docs/**"
+
+deps:
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - "requirements.txt"
+  - "**/pyproject.toml"
+
+# Dependabot PRs
+"deps, area/ci":
+  - any: ["**"]
+    createdBy: "dependabot[bot]"

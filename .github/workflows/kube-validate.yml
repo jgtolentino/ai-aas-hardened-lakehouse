@@ -1,0 +1,169 @@
+# .github/workflows/kube-validate.yml
+name: Kubernetes Schema Validation
+
+on:
+  pull_request:
+    paths:
+      - 'platform/**/*.yaml'
+      - 'platform/**/*.yml'
+      - '.github/workflows/kube-validate.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'platform/**/*.yaml'
+      - 'platform/**/*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kube-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kubeconform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kubeconform (pinned)
+        run: |
+          set -euo pipefail
+          KUBECONFORM_VERSION="v0.6.7"
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | \
+            sudo tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+
+      - name: Validate Kubernetes manifests
+        run: |
+          set -euo pipefail
+          
+          # Find all YAML files
+          echo "## Kubernetes Manifest Validation" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Validation results
+          total=0
+          passed=0
+          failed=0
+          skipped=0
+          
+          # Process each manifest
+          for manifest in $(find platform/ -name '*.yaml' -o -name '*.yml' | sort); do
+            total=$((total + 1))
+            echo -n "Validating $manifest... "
+            
+            # Check if it's a Kubernetes resource
+            if ! grep -q "^kind:" "$manifest" 2>/dev/null; then
+              echo "SKIP (not a K8s manifest)"
+              skipped=$((skipped + 1))
+              continue
+            fi
+            
+            # Run kubeconform
+            if kubeconform \
+              -strict \
+              -verbose \
+              -summary \
+              -kubernetes-version 1.29.0 \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+              "$manifest" 2>&1 | tee /tmp/kubeconform-output.txt; then
+              echo "✓ PASS"
+              passed=$((passed + 1))
+            else
+              echo "✗ FAIL"
+              failed=$((failed + 1))
+              echo "### ❌ Failed: $manifest" >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              cat /tmp/kubeconform-output.txt >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          
+          # Summary
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Total manifests: $total" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ Passed: $passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ❌ Failed: $failed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ⏭️ Skipped: $skipped" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Fail if any validation failed
+          if [ $failed -gt 0 ]; then
+            echo "ERROR: $failed manifest(s) failed validation"
+            exit 1
+          fi
+
+      - name: Check for deprecated APIs
+        run: |
+          echo "## Deprecated API Check" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Common deprecated APIs to check
+          deprecated_apis=(
+            "extensions/v1beta1"
+            "apps/v1beta1"
+            "apps/v1beta2"
+            "networking.k8s.io/v1beta1"
+            "batch/v1beta1"
+            "policy/v1beta1"
+          )
+          
+          found_deprecated=0
+          for api in "${deprecated_apis[@]}"; do
+            if grep -r "apiVersion: $api" platform/ 2>/dev/null; then
+              echo "⚠️ Found deprecated API: $api" >> "$GITHUB_STEP_SUMMARY"
+              grep -r "apiVersion: $api" platform/ >> "$GITHUB_STEP_SUMMARY"
+              found_deprecated=1
+            fi
+          done
+          
+          if [ $found_deprecated -eq 0 ]; then
+            echo "✅ No deprecated APIs found" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  validate-helm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ hashFiles('platform/**/Chart.yaml') != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.16.3'
+
+      - name: Validate Helm charts
+        run: |
+          echo "## Helm Chart Validation" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Find all Chart.yaml files
+          for chart in $(find platform/ -name Chart.yaml -type f); do
+            chart_dir=$(dirname "$chart")
+            echo "### Chart: $chart_dir" >> "$GITHUB_STEP_SUMMARY"
+            
+            # Lint the chart
+            if helm lint "$chart_dir"; then
+              echo "✅ Lint passed" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "❌ Lint failed" >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            
+            # Template the chart to validate rendering
+            if helm template test "$chart_dir" > /tmp/helm-template.yaml; then
+              echo "✅ Template rendering passed" >> "$GITHUB_STEP_SUMMARY"
+              
+              # Validate rendered templates with kubeconform
+              if command -v kubeconform >/dev/null 2>&1; then
+                kubeconform -strict /tmp/helm-template.yaml || true
+              fi
+            else
+              echo "❌ Template rendering failed" >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          done

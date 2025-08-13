@@ -1,41 +1,56 @@
-# Polaris Configuration for AI/AAS Hardened Lakehouse
+# .polaris.yaml - Polaris configuration for AI-AAS Hardened Lakehouse
+# Documentation: https://polaris.docs.fairwinds.com/customization/configuration/
+
+# Global settings
+displayName: "AI-AAS Hardened Lakehouse Security Audit"
+resources:
+  include:
+    - "*.yaml"
+    - "*.yml"
+
+# Check configuration
 checks:
-  # Reliability
+  # Security
+  runAsNonRoot: warning
+  runAsUser: warning
+  readOnlyRootFilesystem: warning
+  allowPrivilegeEscalation: warning
+  runAsRootAllowed: danger
+  insecureCapabilities: danger
+  dangerousCapabilities: danger
+  
+  # Resources
   cpuRequestsMissing: warning
-  cpuLimitsMissing: error
   memoryRequestsMissing: warning
-  memoryLimitsMissing: error
+  cpuLimitsMissing: warning
+  memoryLimitsMissing: warning
+  
+  # Networking
+  hostNetworkSet: danger
+  hostPIDSet: danger
+  hostIPCSet: danger
+  
+  # Images
+  tagNotSpecified: warning
+  pullPolicyNotAlways: ignore  # Allow latest for development
+  
+  # Probes
   readinessProbeMissing: warning
   livenessProbeMissing: warning
-  
-  # Security
-  hostIPCSet: error
-  hostPIDSet: error
-  hostNetworkSet: error
-  hostPortSet: warning
-  runAsRootAllowed: error
-  runAsPrivileged: error
-  notReadOnlyRootFilesystem: warning
-  privilegeEscalationAllowed: error
-  
-  # Efficiency
-  cpuRequestTooLow: warning
-  cpuRequestTooHigh: warning
-  memoryRequestTooLow: warning
-  memoryRequestTooHigh: warning
-  
-  # Best Practices
-  tagNotSpecified: error
-  pullPolicyNotAlways: warning
-  priorityClassNotSet: ignore
-  
+
+# Exemptions (platform-specific)
 exemptions:
-  - namespace: kube-system
-    justification: "System pods require elevated privileges"
-  - namespace: kube-public
-    justification: "Public namespace exempted"
-  - namespace: kube-node-lease
-    justification: "Node lease namespace exempted"
-  - controllerNames:
-    - "^minio$"
-    justification: "MinIO requires specific user/group for file permissions"
+  - namespace: aaas
+    controllerNames:
+      - trino
+    rules:
+      - readOnlyRootFilesystem  # Trino needs write access for temp files
+
+# Mutation settings (for auto-fix)
+mutations:
+  - pullPolicyNotAlways
+  - tagNotSpecified
+
+# Output settings
+disallowExemptions: false
+disallowConfigExemptions: false

@@ -1,0 +1,47 @@
+# .grype.yaml - Grype vulnerability scanner configuration
+log:
+  level: "info"
+
+# Vulnerability matching configuration
+match:
+  # Include vulnerabilities from these sources
+  vulnerability:
+    namespace:
+      - nvd
+      - github
+      - alpine
+      - debian
+      - redhat
+      - ubuntu
+  
+  # Package matching behavior
+  packages:
+    using-cpes: true
+    stock:
+      using-stock-matcher: true
+
+# Ignore specific vulnerabilities (false positives or accepted risks)
+ignore:
+  # Example: Ignore test dependencies
+  - package:
+      location: "**/test/**"
+    reason: "Test dependencies not used in production"
+  
+  # Example: Ignore dev dependencies
+  - package:
+      location: "**/node_modules/**"
+      type: "npm"
+    fix-state: "unknown"
+    reason: "Dev dependencies with no fix available"
+
+# Database configuration
+db:
+  # Auto-update database
+  auto-update: true
+  
+  # Cache directory
+  cache-dir: /tmp/grype-cache
+
+# Output configuration
+output:
+  quiet: false

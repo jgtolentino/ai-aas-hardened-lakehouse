@@ -1,0 +1,78 @@
+metadata:
+  id: dash-v1
+  name: Dash
+  version: "1.0.0"
+  description: "TypeScript/React UI component generation agent"
+  author: "Pulser Team"
+  tags:
+    - frontend
+    - react
+    - typescript
+    - ui
+  status: active
+
+type: generator
+runtime: bruno
+
+capabilities:
+  - name: codegen_tsx
+    description: "Generate TypeScript React components"
+    inputSchema:
+      type: object
+      properties:
+        componentName:
+          type: string
+        props:
+          type: object
+        framework:
+          type: string
+          enum: ["react", "next", "remix"]
+      required:
+        - componentName
+    permissions:
+      - file:write
+      - template:read
+
+  - name: create_chart
+    description: "Create data visualization components"
+    inputSchema:
+      type: object
+      properties:
+        chartType:
+          type: string
+          enum: ["line", "bar", "pie", "scatter", "heatmap"]
+        dataSource:
+          type: string
+        options:
+          type: object
+    permissions:
+      - file:write
+      - data:read
+
+  - name: generate_form
+    description: "Generate form components with validation"
+    permissions:
+      - file:write
+      - schema:read
+
+security:
+  sandboxed: true
+  allowedHosts: []
+  deniedActions:
+    - execute
+    - database
+  requiredPermissions:
+    - file:write
+    - template:read
+
+limits:
+  maxExecutionTime: 120000  # 2 minutes
+  maxMemoryMB: 256
+  maxConcurrent: 5
+
+routing:
+  priority: 70
+  patterns:
+    - "component:*"
+    - "ui:*"
+    - "frontend:*"

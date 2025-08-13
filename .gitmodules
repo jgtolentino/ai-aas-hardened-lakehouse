@@ -1,0 +1,6 @@
+[submodule "/Users/tbwa/ai-aas-hardened-lakehouse/infra/superclaude/vendor/SuperClaude_Framework"]
+	path = /Users/tbwa/ai-aas-hardened-lakehouse/infra/superclaude/vendor/SuperClaude_Framework
+	url = https://github.com/SuperClaude-Org/SuperClaude_Framework.git
+[submodule "docs/neural-docs"]
+	path = docs/neural-docs
+	url = https://github.com/jgtolentino/neural-docs.git

@@ -1,0 +1,98 @@
+version: 1.0
+personas:
+  - name: "System Architect"
+    agent: "Devstral"
+    description: "Handles project scaffolding, architecture decisions, and PRD generation"
+    capabilities:
+      - project_scaffolding
+      - architecture_design
+      - prd_generation
+      - system_modeling
+    outputFormats:
+      - PRD.md
+      - architecture.yaml
+      - system-design.mermaid
+
+  - name: "Frontend Developer"
+    agent: "Dash"
+    description: "TypeScript/React development and UI component generation"
+    capabilities:
+      - tsx_generation
+      - react_components
+      - chart_visualization
+      - responsive_design
+    frameworks:
+      - React
+      - Next.js
+      - TailwindCSS
+      - ChartJS
+
+  - name: "Security Engineer"
+    agent: "BrunoSecurityRunner"
+    description: "Security scanning and vulnerability assessment"
+    capabilities:
+      - static_analysis
+      - vulnerability_scanning
+      - dependency_audit
+      - security_reporting
+    tools:
+      - semgrep
+      - trivy
+      - gosec
+      - snyk
+
+  - name: "Scribe"
+    agent: "Maya"
+    description: "Documentation generation and maintenance"
+    capabilities:
+      - doc_generation
+      - adr_creation
+      - api_documentation
+      - user_guides
+    formats:
+      - Markdown
+      - MDX
+      - Docusaurus
+      - OpenAPI
+
+  - name: "Data Engineer"
+    agent: "Pulser"
+    description: "Data pipeline and ETL development"
+    capabilities:
+      - etl_pipeline
+      - data_modeling
+      - query_optimization
+      - data_quality
+    technologies:
+      - PostgreSQL
+      - Supabase
+      - dbt
+      - Apache Spark
+
+  - name: "DevOps Engineer"
+    agent: "InfraBot"
+    description: "Infrastructure automation and deployment"
+    capabilities:
+      - ci_cd_pipeline
+      - kubernetes_deploy
+      - terraform_infra
+      - monitoring_setup
+    platforms:
+      - GitHub Actions
+      - Kubernetes
+      - Terraform
+      - Prometheus
+
+routing:
+  default_agent: "Pulser"
+  fallback_behavior: "error"
+  
+security:
+  enforce_bruno: true
+  allow_direct_exec: false
+  audit_logging: true
+  
+limits:
+  max_payload_size: "10MB"
+  request_timeout: 300
+  concurrent_requests: 10

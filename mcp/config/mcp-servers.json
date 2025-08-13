@@ -1,0 +1,120 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "node",
+      "args": ["/Users/tbwa/Library/Application Support/Claude/Claude Extensions/ant.dir.ant.anthropic.filesystem.disabled/server/index.js"],
+      "env": {},
+      "permissions": {
+        "read": true,
+        "write": true,
+        "execute": false
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "context7-mcp",
+        "--allow", "nextjs,react,postgres,vercel,cloudflare,supabase,typescript,tailwind"
+      ],
+      "env": { 
+        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}",
+        "CONTEXT7_MODE": "read_only"
+      },
+      "permissions": { 
+        "filesystem": "deny", 
+        "network": "allowlist",
+        "allowedHosts": ["api.context7.ai", "docs.context7.ai"]
+      },
+      "rateLimit": {
+        "requests_per_minute": 60,
+        "burst_size": 10
+      }
+    },
+    "supabase_primary": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--read-only",
+        "--project-ref=${SUPABASE_PROJECT_REF}"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
+      },
+      "permissions": {
+        "database": "read",
+        "storage": "deny",
+        "functions": "deny",
+        "secrets": "deny"
+      }
+    },
+    "postgres_local": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "${DATABASE_URL}"
+      ],
+      "env": {},
+      "permissions": {
+        "write": false,
+        "ddl": false
+      }
+    },
+    "scout_analytics": {
+      "command": "npx",
+      "args": ["@supabase/mcp-server-supabase@latest"],
+      "env": {
+        "SUPABASE_PROJECT_REF": "${SUPABASE_PROJECT_REF}",
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}",
+        "SUPABASE_ROLE": "scout_analyst",
+        "ALLOWED_SCHEMAS": "scout,analytics,gold,platinum",
+        "USER_CONTEXT": "scout_dashboard",
+        "ANALYTICS_MODE": "advanced",
+        "CROSS_DOMAIN": "true"
+      },
+      "permissions": {
+        "database": "read",
+        "rpc": "allow",
+        "realtime": "allow"
+      }
+    },
+    "ai_agents": {
+      "command": "npx",
+      "args": ["@supabase/mcp-server-supabase@latest"],
+      "env": {
+        "SUPABASE_PROJECT_REF": "${AGENT_REGISTRY_PROJECT_REF}",
+        "SUPABASE_ACCESS_TOKEN": "${AGENT_REGISTRY_TOKEN}",
+        "SUPABASE_ROLE": "agent_coordinator",
+        "ALLOWED_SCHEMAS": "agent_repository,agentic,knowledge",
+        "USER_CONTEXT": "agent_management"
+      },
+      "permissions": {
+        "database": "read_write",
+        "functions": "execute",
+        "storage": "read"
+      }
+    }
+  },
+  "security": {
+    "defaultPermissions": {
+      "filesystem": "deny",
+      "network": "deny",
+      "execute": "deny"
+    },
+    "auditLogging": true,
+    "secretsManagement": "external",
+    "tokenRotation": {
+      "enabled": true,
+      "interval": "7d"
+    }
+  },
+  "rateLimits": {
+    "default": {
+      "requests_per_minute": 100,
+      "requests_per_hour": 3000,
+      "concurrent_connections": 5
+    }
+  }
+}

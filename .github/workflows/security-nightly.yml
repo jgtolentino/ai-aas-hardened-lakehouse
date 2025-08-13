@@ -1,0 +1,108 @@
+name: security-nightly
+
+on:
+  schedule:
+    # 02:30 Asia/Manila = 18:30 UTC daily
+    - cron: "30 18 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write   # for SARIF upload
+  actions: read
+
+concurrency:
+  group: security-nightly
+  cancel-in-progress: true
+
+env:
+  TRIVY_CACHE_DIR: .cache/trivy
+
+jobs:
+  sweep:
+    name: Full-history secrets sweep + nightly SAST/deps
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # FULL HISTORY for TruffleHog git scanner
+
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: .cache/trivy
+          key: trivy-${{ runner.os }}-db
+
+      # ---------- TruffleHog: full git history ----------
+      - name: TruffleHog (git full history, verified only)
+        run: |
+          docker run --rm -v "$PWD":/repo -w /repo \
+            trufflesecurity/trufflehog@sha256:2f2a1a7c6e38de8e0d4a0fb0b7f7b5d86ebc27b8c3f1d35f8a0a54c953fdfb33 \
+            git file:///repo --only-verified \
+            --json \
+            | tee trufflehog_history.json
+          test -s trufflehog_history.json || echo "[]" > trufflehog_history.json
+
+      # ---------- Trivy: filesystem/IaC nightly ----------
+      - name: Trivy FS (deps + IaC) → SARIF
+        run: |
+          docker run --rm \
+            -v "$PWD":/workspace -v "$PWD"/.cache/trivy:/root/.cache/trivy \
+            -w /workspace \
+            aquasec/trivy@sha256:7dc2d3f9c63f6e63d0f7b21a0d9d4e9e0d776b7a4b6d3a1b4cb6b2a6f5e37b39 \
+            fs --exit-code 0 --format sarif --output trivy_nightly.sarif \
+            --ignorefile security/allowlists/.trivyignore \
+            --severity CRITICAL,HIGH,MEDIUM \
+            .
+
+      - name: Upload SARIF (Trivy)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy_nightly.sarif
+
+      # ---------- Semgrep: broader nightly ruleset ----------
+      - name: Semgrep (OWASP + local rules) → SARIF
+        run: |
+          docker run --rm -v "$PWD":/src returntocorp/semgrep@sha256:3a5608b3b8e0f2b6f2e3a9c7a7b6b3d1bfb8a0a2a45e9f0a9f2db46be8d9ae9a \
+            semgrep --config "p/owasp-top-ten" \
+                    --config "rules/semgrep" \
+                    --exclude "node_modules" --exclude "dist" --exclude "build" \
+                    --sarif --output semgrep_nightly.sarif \
+                    --severity WARNING || true
+
+      - name: Upload SARIF (Semgrep)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep_nightly.sarif
+
+      # ---------- Summarize + Slack notify ----------
+      - name: Summarize reports
+        id: sum
+        run: |
+          node security/policy/summarize.mjs \
+            --truffle trufflehog_history.json \
+            --trivy trivy_nightly.sarif \
+            --semgrep semgrep_nightly.sarif \
+            --outputs "$GITHUB_OUTPUT" \
+            --slack-out slack.json
+
+      - name: Slack notify (nightly)
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          test -f slack.json || echo '{"text":"No summary generated"}' > slack.json
+          curl -sS -X POST -H 'Content-type: application/json' --data @slack.json "$SLACK_WEBHOOK_URL" || true
+
+      # ---------- Archive artifacts ----------
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-nightly-${{ github.run_id }}
+          path: |
+            trufflehog_history.json
+            trivy_nightly.sarif
+            semgrep_nightly.sarif
+            slack.json
+          retention-days: 7

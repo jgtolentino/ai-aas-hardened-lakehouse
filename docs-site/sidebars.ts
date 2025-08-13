@@ -1,98 +1,60 @@
-import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
-
-const sidebars: SidebarsConfig = {
-  // Main documentation sidebar
-  tutorialSidebar: [
-    'index',
+module.exports = {
+  docs: [
     {
       type: 'category',
-      label: '🏗️ Architecture',
-      collapsed: false,
+      label: 'Getting Started',
       items: [
-        'architecture/medallion',
-        'architecture/platinum-ml',
-        'architecture/security-privacy',
-        'architecture/ci-cd',
-        'architecture/ai-foundry-patterns',
-      ],
+        'intro',
+        'tutorials/quickstart'
+      ]
     },
     {
       type: 'category',
-      label: '📊 Data Platform',
+      label: 'Architecture',
       items: [
-        'data/bronze-layer',
-        'data/silver-layer',
-        'data/gold-layer',
-        'data/platinum-layer',
-        'data/streaming-architecture',
-      ],
+        'architecture/overview',
+        'architecture/medallion-architecture',
+        'architecture/data-dictionary',
+        'architecture/ai-foundry',
+        'overview/arch/system-landscape'
+      ]
     },
     {
       type: 'category',
-      label: '🔌 API Reference',
+      label: 'Agents',
       items: [
-        'api/postgrest',
-        'api/edge-functions',
-        'api/realtime-subscriptions',
-        'api/authentication',
-        'api/rate-limiting',
-      ],
+        'agents/agent-docswriter'
+      ]
     },
     {
       type: 'category',
-      label: '📈 Data Lineage',
+      label: 'Operations',
       items: [
-        'lineage/dbt-overview',
-        'lineage/how-to-read-lineage',
-        'lineage/column-level-tracking',
-        'lineage/impact-analysis',
-      ],
+        'operations/monitoring',
+        'operations/pipeline-verification',
+        'operations/token-management'
+      ]
     },
     {
       type: 'category',
-      label: '🚀 Operations',
+      label: 'Implementation',
       items: [
-        'operations/token-management',
-        'operations/runbook-incidents',
-        'operations/backup-restore',
-        'operations/performance-tuning',
-        'operations/monitoring-alerts',
-        'operations/disaster-recovery',
-      ],
+        'implementation/deployment'
+      ]
     },
     {
       type: 'category',
-      label: '🤖 AI & ML',
+      label: 'Security',
       items: [
-        'ai/model-cards',
-        'ai/rag-pipeline',
-        'ai/agent-orchestration',
-        'ai/drift-detection',
-        'ai/feature-store',
-      ],
+        'security/hardening-guide'
+      ]
     },
     {
       type: 'category',
-      label: '🔒 Governance',
+      label: 'Reference',
       items: [
-        'governance/pii-privacy',
-        'governance/rls-rbac',
-        'governance/compliance',
-        'governance/data-retention',
-        'governance/audit-logs',
-      ],
-    },
-    {
-      type: 'category',
-      label: '💰 Cost Management',
-      items: [
-        'cost/infrastructure-costs',
-        'cost/query-optimization',
-        'cost/resource-monitoring',
-        'cost/budget-alerts',
-      ],
-    },
-  ],
+        'api-reference/sql-interfaces'
+      ]
+    }
+  ]
 };
-
-export default sidebars;

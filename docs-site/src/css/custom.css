@@ -1,0 +1,45 @@
+/* Custom styles for ai-aas-hardened-lakehouse docs */
+@import './azure-theme.css';
+
+:root {
+  --ifm-color-primary: #0078d4;
+  --ifm-color-primary-dark: #006bb3;
+  --ifm-color-primary-darker: #0062a3;
+  --ifm-color-primary-darkest: #005193;
+  --ifm-color-primary-light: #1a86e3;
+  --ifm-color-primary-lighter: #2f92e7;
+  --ifm-color-primary-lightest: #4ba0ec;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #60a5fa;
+  --ifm-color-primary-dark: #3b82f6;
+  --ifm-color-primary-darker: #2563eb;
+  --ifm-color-primary-darkest: #1d4ed8;
+  --ifm-color-primary-light: #93c5fd;
+  --ifm-color-primary-lighter: #bfdbfe;
+  --ifm-color-primary-lightest: #dbeafe;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.hero {
+  background-color: var(--ifm-color-primary);
+  color: white;
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.button {
+  border-radius: 0.5rem;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

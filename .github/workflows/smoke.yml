@@ -1,0 +1,27 @@
+# .github/workflows/smoke.yml
+name: smoke
+on:
+  workflow_dispatch:
+    inputs:
+      rows: { description: "Rows to generate", required: false, default: "1200" }
+      days: { description: "Days back", required: false, default: "7" }
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+      USER_JWT: ${{ secrets.USER_JWT }}
+      INGEST_BUCKET: scout-ingest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - run: npm ci
+      - run: node scripts/generate-bronze-zip.js --out dist/bronze --stores 5 --days "${{ github.event.inputs.days }}" --rows "${{ github.event.inputs.rows }}" --seed 42
+      - run: npm run smoke

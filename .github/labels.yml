@@ -1,0 +1,45 @@
+# .github/labels.yml
+# Run with workflow below to create/update labels
+- name: area/infra            # grey
+  color: 6e7781
+- name: area/backend          # purple
+  color: a371f7
+- name: area/frontend         # cyan
+  color: 0db7ed
+- name: area/data             # orange
+  color: fb8c00
+- name: area/dbt              # blue
+  color: 1f77b4
+- name: area/security         # red
+  color: d73a4a
+- name: area/ci               # indigo
+  color: 5850ec
+- name: type/feat
+  color: 0e8a16
+- name: type/fix
+  color: d73a4a
+- name: type/chore
+  color: 6a737d
+- name: type/docs
+  color: 0075ca
+- name: deps
+  color: 0366d6
+- name: size/XS
+  color: c5def5
+- name: size/S
+  color: c2e0c6
+- name: size/M
+  color: fef2c0
+- name: size/L
+  color: f9d0c4
+- name: size/XL
+  color: b60205
+- name: good first issue
+  color: 7057ff
+  description: Low-scope, mentored issue for newcomers
+- name: help wanted
+  color: 008672
+- name: needs/owner
+  color: e4e669
+- name: blocked
+  color: b4b7bd

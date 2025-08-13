@@ -1,0 +1,189 @@
+# .github/workflows/sbom-scan.yml
+name: SBOM Generation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  schedule:
+    - cron: '30 04 * * 1'  # Weekly on Monday 12:30 PM PH (UTC+8)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: sbom-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-sbom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Syft (pinned)
+        run: |
+          set -euo pipefail
+          SYFT_VERSION="v1.18.0"
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | \
+            sh -s -- -b /usr/local/bin ${SYFT_VERSION}
+          syft version
+
+      - name: Generate filesystem SBOM
+        run: |
+          echo "## SBOM Generation Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Generate SBOM in multiple formats
+          echo "### Filesystem SBOM" >> "$GITHUB_STEP_SUMMARY"
+          
+          # SPDX JSON format (primary)
+          syft scan dir:. \
+            --output spdx-json=sbom-fs.spdx.json \
+            --scope all-layers \
+            --catalogers all
+          
+          # CycloneDX format (alternate)
+          syft scan dir:. \
+            --output cyclonedx-json=sbom-fs.cdx.json \
+            --scope all-layers \
+            --catalogers all
+          
+          # Human-readable summary
+          syft scan dir:. \
+            --output table \
+            --scope all-layers | tee sbom-summary.txt
+          
+          # Package count
+          pkg_count=$(jq '.packages | length' sbom-fs.spdx.json)
+          echo "- Total packages found: $pkg_count" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Top ecosystems
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Package Ecosystems" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.packages | group_by(.type) | map({type: .[0].type, count: length}) | .[] | "- \(.type): \(.count)"' \
+            sbom-fs.spdx.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate container SBOM (if Dockerfile exists)
+        if: ${{ hashFiles('Dockerfile') != '' }}
+        run: |
+          # Build image locally for scanning
+          docker build -t local/ai-aas:scan .
+          
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Container SBOM" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Generate container SBOM
+          syft scan local/ai-aas:scan \
+            --output spdx-json=sbom-container.spdx.json \
+            --scope all-layers
+          
+          # Container layers info
+          layers=$(docker history local/ai-aas:scan --no-trunc --format "table {{.Size}}\t{{.CreatedBy}}" | wc -l)
+          echo "- Container layers: $((layers - 1))" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Base image detection
+          base_image=$(syft scan local/ai-aas:scan --output json | jq -r '.source.image.config.config.Image // "unknown"')
+          echo "- Base image: $base_image" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check for high-risk licenses
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### License Analysis" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Extract licenses
+          jq -r '.packages[] | select(.licenses != null) | .licenses[] | .license' sbom-fs.spdx.json | \
+            sort | uniq -c | sort -rn > license-summary.txt
+          
+          # Check for problematic licenses
+          high_risk_licenses=("AGPL" "GPL-3.0" "SSPL" "Commons-Clause")
+          found_risks=0
+          
+          for license in "${high_risk_licenses[@]}"; do
+            if grep -i "$license" license-summary.txt; then
+              echo "⚠️ Found high-risk license: $license" >> "$GITHUB_STEP_SUMMARY"
+              found_risks=1
+            fi
+          done
+          
+          if [ $found_risks -eq 0 ]; then
+            echo "✅ No high-risk licenses detected" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          
+          # Top 10 licenses
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Top Licenses" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          head -10 license-summary.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: |
+            sbom-*.json
+            sbom-summary.txt
+            license-summary.txt
+          retention-days: 30
+
+      - name: Upload SBOM to release (if release)
+        if: github.event_name == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Compress SBOMs
+          tar -czf sbom-${{ github.event.release.tag_name }}.tar.gz sbom-*.json
+          
+          # Upload to release
+          gh release upload ${{ github.event.release.tag_name }} \
+            sbom-${{ github.event.release.tag_name }}.tar.gz \
+            --clobber
+
+  sbom-analysis:
+    needs: generate-sbom
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+
+      - name: Analyze SBOM quality
+        run: |
+          echo "## SBOM Quality Analysis" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Check SBOM completeness
+          total_packages=$(jq '.packages | length' sbom-fs.spdx.json)
+          with_version=$(jq '.packages | map(select(.version != null and .version != "")) | length' sbom-fs.spdx.json)
+          with_license=$(jq '.packages | map(select(.licenses != null and .licenses != [])) | length' sbom-fs.spdx.json)
+          with_purl=$(jq '.packages | map(select(.purl != null and .purl != "")) | length' sbom-fs.spdx.json)
+          
+          version_pct=$((with_version * 100 / total_packages))
+          license_pct=$((with_license * 100 / total_packages))
+          purl_pct=$((with_purl * 100 / total_packages))
+          
+          echo "### SBOM Completeness" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Packages with version: $with_version/$total_packages ($version_pct%)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Packages with license: $with_license/$total_packages ($license_pct%)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Packages with PURL: $with_purl/$total_packages ($purl_pct%)" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Quality score
+          quality_score=$(( (version_pct + license_pct + purl_pct) / 3 ))
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Overall Quality Score: $quality_score%**" >> "$GITHUB_STEP_SUMMARY"
+          
+          if [ $quality_score -lt 80 ]; then
+            echo "⚠️ SBOM quality below 80% threshold" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "✅ SBOM quality meets standards" >> "$GITHUB_STEP_SUMMARY"
+          fi

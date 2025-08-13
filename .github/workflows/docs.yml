@@ -1,0 +1,54 @@
+name: Docs & Wiki
+on:
+  push: { branches: [ main ] }
+  workflow_dispatch: {}
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm install
+      - run: npm -C docs-site install || true
+
+      # Export draw.io -> SVG (if any .drawio were added)
+      - name: Export draw.io → SVG
+        uses: rlespinasse/drawio-export-action@v2
+        with:
+          src: assets/diagrams/src
+          format: svg
+          output: assets/diagrams/out
+          force: true
+
+      # Generate docs (includes icons/arch if you wired those scripts into docs:gen)
+      - run: npm run docs:gen
+
+      # Normalize old/bad image paths so builds don't break
+      - run: npm run docs:fixpaths
+
+      # Fail fast if docs reference non-existent assets
+      - run: npm run docs:preflight
+
+      # Lint + build + link check
+      - run: npm run docs:lint
+      - run: npm run docs:build
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with: { path: docs-site/build }
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+      - name: Sync Wiki
+        env:
+          GIT_AUTHOR_NAME: "docs-bot"
+          GIT_AUTHOR_EMAIL: "docs-bot@users.noreply.github.com"
+          GIT_COMMITTER_NAME: "docs-bot"
+          GIT_COMMITTER_EMAIL: "docs-bot@users.noreply.github.com"
+        run: |
+          export WIKI_REPO="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/jgtolentino/ai-aas-hardened-lakehouse.wiki.git"
+          npm run wiki:sync || true
