@@ -17,7 +17,7 @@ async function once(worker: string) {
   const job = jobs?.[0];
   if (!job) return false;
 
-  const { job_id, url } = job;
+  const { job_id, url, source_id } = job;
   let http_status = 0, etag = null, last_modified = null, content_sha256 = null;
   let parse_status = "error", parse_note = "fetch-failed", discovered: string[] = [];
 
@@ -25,9 +25,19 @@ async function once(worker: string) {
     const resp = await fetch(ISKO_URL, {
       method: "POST",
       headers: { "content-type":"application/json", "Authorization": `Bearer ${SUPABASE_ANON}` },
-      body: JSON.stringify({ url })
+      body: JSON.stringify({ url, source_id })
     });
     http_status = resp.status;
+    
+    // Handle rate limiting and server errors with backoff
+    if (http_status === 429 || http_status === 503) {
+      await rpc("fail_with_backoff", { 
+        p_job_id: job_id, 
+        p_reason: `HTTP ${http_status}` 
+      });
+      return true;
+    }
+    
     const text = await resp.text();
     // lightweight hash
     const enc = new TextEncoder();
@@ -39,8 +49,25 @@ async function once(worker: string) {
     discovered = Array.isArray(parsed.discovered) ? parsed.discovered : [];
     parse_status = resp.ok ? "ok" : "error";
     parse_note = parsed.note || `status:${resp.status}`;
+    
+    // Extract ETags and Last-Modified if available
+    etag = resp.headers.get('etag') || null;
+    const lastMod = resp.headers.get('last-modified');
+    if (lastMod) {
+      last_modified = new Date(lastMod).toISOString();
+    }
   } catch (e:any) {
-    parse_status = "error"; parse_note = String(e?.message || e).slice(0,200);
+    parse_status = "error"; 
+    parse_note = String(e?.message || e).slice(0,200);
+    
+    // Network errors should trigger backoff
+    if (e?.message?.includes('fetch failed') || e?.message?.includes('ECONNREFUSED')) {
+      await rpc("fail_with_backoff", { 
+        p_job_id: job_id, 
+        p_reason: parse_note 
+      });
+      return true;
+    }
   } finally {
     await rpc("report_job_result", {
       p_job_id: job_id,
