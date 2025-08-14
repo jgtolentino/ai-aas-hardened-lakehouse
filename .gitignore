@@ -143,3 +143,8 @@ security-reports/
 # MCP temp files
 .mcp-cache/
 mcp-logs/
+# secrets
+.env*
+/public/runtime-env.js
+*.env
+*.env.*

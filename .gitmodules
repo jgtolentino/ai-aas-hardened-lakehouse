@@ -4,3 +4,12 @@
 [submodule "docs/neural-docs"]
 	path = docs/neural-docs
 	url = https://github.com/jgtolentino/neural-docs.git
+[submodule "modules/edge-suqi-pie"]
+	path = modules/edge-suqi-pie
+	url = https://github.com/jgtolentino/edge-suqi-pie.git
+[submodule "modules/suqi-ai-db"]
+	path = modules/suqi-ai-db
+	url = https://github.com/jgtolentino/suqi-ai-db.git
+[submodule "modules/scout-analytics-dashboard"]
+	path = modules/scout-analytics-dashboard
+	url = https://github.com/jgtolentino/scout-analytics-blueprint-doc.git
