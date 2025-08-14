@@ -1,0 +1,20 @@
+meta {
+  name: Seed Jobs from Sources
+  type: http
+  seq: 30
+}
+
+post {
+  url: {{PG_REST}}/rpc/seed_jobs_from_sources
+  body: json
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "p_only_active": true
+  }
+}
