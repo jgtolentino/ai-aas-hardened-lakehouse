@@ -1,0 +1,27 @@
+{
+  "success": {
+    "status": 200,
+    "body": { "ok": true }
+  },
+  "schema_error": {
+    "status": 400,
+    "body": {
+      "error": "schema",
+      "details": [
+        {
+          "instancePath": "/items/0",
+          "keyword": "required",
+          "message": "must have required property 'confidence'"
+        }
+      ]
+    }
+  },
+  "unauthorized": {
+    "status": 401,
+    "body": { "error": "unauthorized" }
+  },
+  "server_error": {
+    "status": 500,
+    "body": { "error": "insert failed: duplicate transaction_id" }
+  }
+}
