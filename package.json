@@ -14,7 +14,10 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "dash:dev": "npm --workspace platform/scout/blueprint-dashboard run dev",
+    "dash:build": "npm --workspace platform/scout/blueprint-dashboard run build",
+    "dash:preview": "npm --workspace platform/scout/blueprint-dashboard run preview"
   },
   "devDependencies": {
     "tsx": "^4.7.0",
@@ -23,7 +26,9 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "platform/scout/edge-ingest",
+    "platform/scout/blueprint-dashboard"
   ],
   "engines": {
     "node": ">=18.0.0",
