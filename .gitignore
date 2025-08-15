@@ -83,4 +83,4 @@ qa/node_modules/
 qa/.env
 artifacts/
 *.junit.xml
-*.report.json
+*.report.jsonplatform/scout/blueprint-dashboard/.env.local

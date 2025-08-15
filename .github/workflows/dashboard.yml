@@ -1,0 +1,72 @@
+name: Build Dashboard
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'platform/scout/blueprint-dashboard/**'
+      - '.github/workflows/dashboard.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'platform/scout/blueprint-dashboard/**'
+      - '.github/workflows/dashboard.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.14.0
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Setup dashboard environment
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> platform/scout/blueprint-dashboard/.env.local
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> platform/scout/blueprint-dashboard/.env.local
+          echo "VITE_SUPABASE_PROJECT_REF=${{ secrets.VITE_SUPABASE_PROJECT_REF }}" >> platform/scout/blueprint-dashboard/.env.local
+          
+      - name: Build dashboard
+        run: pnpm run dash:build
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dashboard-build
+          path: platform/scout/blueprint-dashboard/dist/
+          
+      - name: Test dashboard build
+        run: |
+          cd platform/scout/blueprint-dashboard
+          npx serve -s dist -p 3000 &
+          sleep 5
+          curl -f http://localhost:3000 || exit 1
+          
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        
+      - uses: actions/download-artifact@v3
+        with:
+          name: dashboard-build
+          path: platform/scout/blueprint-dashboard/dist/
+          
+      # Add your deployment steps here (Vercel, Netlify, S3, etc.)
+      # Example for Vercel:
+      # - name: Deploy to Vercel
+      #   run: |
+      #     npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }} platform/scout/blueprint-dashboard/dist

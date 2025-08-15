@@ -269,3 +269,116 @@ deploy-env: ## Deploy to current environment
 			--create-namespace; \
 	fi
 	@echo "$(GREEN)✓ Deployed to $$ENVIRONMENT$(NC)"
+
+# Scout Dashboard Commands
+.PHONY: dash-setup
+dash-setup: ## Install dashboard dependencies
+	@echo "$(YELLOW)Setting up Scout Dashboard...$(NC)"
+	@cd platform/scout/blueprint-dashboard && npm install
+	@echo "$(GREEN)✓ Dashboard dependencies installed$(NC)"
+
+.PHONY: dash-dev
+dash-dev: ## Run dashboard in development mode
+	@echo "$(YELLOW)Starting dashboard development server...$(NC)"
+	@cd platform/scout/blueprint-dashboard && npm run dev
+
+.PHONY: dash-build
+dash-build: ## Build dashboard for production
+	@echo "$(YELLOW)Building dashboard for production...$(NC)"
+	@cd platform/scout/blueprint-dashboard && npm run build
+	@echo "$(GREEN)✓ Dashboard built to platform/scout/blueprint-dashboard/dist/$(NC)"
+
+.PHONY: dash-preview
+dash-preview: dash-build ## Preview production build locally
+	@echo "$(YELLOW)Starting preview server...$(NC)"
+	@cd platform/scout/blueprint-dashboard && npm run preview
+
+.PHONY: dash-deploy
+dash-deploy: dash-build ## Deploy dashboard to static hosting
+	@echo "$(YELLOW)Deploying dashboard...$(NC)"
+	@if [ -z "$(DEPLOY_TARGET)" ]; then \
+		echo "$(RED)Error: DEPLOY_TARGET not set$(NC)"; \
+		echo "Usage: make dash-deploy DEPLOY_TARGET=vercel|netlify|s3|supabase"; \
+		exit 1; \
+	fi
+	@case "$(DEPLOY_TARGET)" in \
+		vercel) \
+			cd platform/scout/blueprint-dashboard && \
+			npx vercel --prod --token=$(VERCEL_TOKEN) dist/ ;; \
+		netlify) \
+			cd platform/scout/blueprint-dashboard && \
+			npx netlify deploy --prod --dir=dist --auth=$(NETLIFY_TOKEN) ;; \
+		s3) \
+			aws s3 sync platform/scout/blueprint-dashboard/dist/ s3://$(S3_BUCKET)/ --delete ;; \
+		supabase) \
+			cd platform/scout/blueprint-dashboard && \
+			supabase storage upload --project-ref $(SUPABASE_PROJECT_REF) \
+				--bucket dashboard --file dist/ --recursive ;; \
+		*) \
+			echo "$(RED)Unknown deploy target: $(DEPLOY_TARGET)$(NC)"; \
+			exit 1 ;; \
+	esac
+	@echo "$(GREEN)✓ Dashboard deployed to $(DEPLOY_TARGET)$(NC)"
+
+.PHONY: dash-test
+dash-test: ## Run dashboard tests
+	@echo "$(YELLOW)Running dashboard tests...$(NC)"
+	@cd platform/scout/blueprint-dashboard && npm test
+	@echo "$(GREEN)✓ Dashboard tests passed$(NC)"
+
+.PHONY: dash-verify
+dash-verify: ## Verify dashboard data connections
+	@echo "$(YELLOW)Verifying dashboard data connections...$(NC)"
+	@cd platform/scout/blueprint-dashboard && \
+		node scripts/check-real-data.js \
+			--url "$(SUPABASE_URL)" \
+			--key "$${VITE_SUPABASE_ANON_KEY:-$(shell grep VITE_SUPABASE_ANON_KEY .env.local | cut -d= -f2)}" \
+			--view "scout_dal.v_revenue_trend"
+	@echo "$(GREEN)✓ Dashboard data verified$(NC)"
+
+.PHONY: dash-update
+dash-update: ## Update dashboard submodule to latest
+	@echo "$(YELLOW)Updating dashboard submodule...$(NC)"
+	@git submodule update --remote platform/scout/blueprint-dashboard
+	@git add platform/scout/blueprint-dashboard
+	@git commit -m "chore: update dashboard submodule to latest" || echo "No updates available"
+	@echo "$(GREEN)✓ Dashboard submodule updated$(NC)"
+
+.PHONY: dash-pin
+dash-pin: ## Pin dashboard to specific tag/commit
+	@if [ -z "$(TAG)" ]; then \
+		echo "$(RED)Error: TAG not set$(NC)"; \
+		echo "Usage: make dash-pin TAG=v1.0.0"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)Pinning dashboard to $(TAG)...$(NC)"
+	@cd platform/scout/blueprint-dashboard && git checkout $(TAG)
+	@git add platform/scout/blueprint-dashboard
+	@git commit -m "chore: pin dashboard to $(TAG)"
+	@echo "$(GREEN)✓ Dashboard pinned to $(TAG)$(NC)"
+
+.PHONY: dash-env
+dash-env: ## Configure dashboard environment
+	@echo "$(YELLOW)Configuring dashboard environment...$(NC)"
+	@if [ ! -f platform/scout/blueprint-dashboard/.env.local ]; then \
+		cp platform/scout/blueprint-dashboard/.env.example platform/scout/blueprint-dashboard/.env.local 2>/dev/null || \
+		echo "VITE_SUPABASE_URL=$(SUPABASE_URL)" > platform/scout/blueprint-dashboard/.env.local; \
+		echo "VITE_SUPABASE_ANON_KEY=$${SUPABASE_ANON_KEY}" >> platform/scout/blueprint-dashboard/.env.local; \
+		echo "VITE_SUPABASE_PROJECT_REF=$(SUPABASE_PROJECT_REF)" >> platform/scout/blueprint-dashboard/.env.local; \
+	fi
+	@echo "$(GREEN)✓ Dashboard environment configured$(NC)"
+
+.PHONY: dash-clean
+dash-clean: ## Clean dashboard build artifacts
+	@echo "$(YELLOW)Cleaning dashboard build artifacts...$(NC)"
+	@rm -rf platform/scout/blueprint-dashboard/dist
+	@rm -rf platform/scout/blueprint-dashboard/node_modules
+	@echo "$(GREEN)✓ Dashboard cleaned$(NC)"
+
+.PHONY: dashboard
+dashboard: dash-setup dash-verify dash-build ## Complete dashboard setup and build
+	@echo "$(GREEN)════════════════════════════════════════$(NC)"
+	@echo "$(GREEN)✓ DASHBOARD READY FOR DEPLOYMENT$(NC)"
+	@echo "$(GREEN)════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "Deploy with: make dash-deploy DEPLOY_TARGET=vercel|netlify|s3|supabase"
