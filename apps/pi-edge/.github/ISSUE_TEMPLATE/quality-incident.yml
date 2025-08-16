@@ -1,0 +1,64 @@
+name: Quality Incident
+description: Auto-created by Scout Edge Quality Sentinel
+labels: ["suqi", "quality", "automated"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Quality Incident Report
+        
+        This issue was automatically created by the Scout Edge Quality Sentinel system.
+        
+  - type: input
+    id: incident_key
+    attributes:
+      label: Incident Key
+      description: Unique identifier for this incident
+      placeholder: "BRAND_MISSING:2025-08-15"
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: Incident severity level
+      options:
+        - low
+        - med
+        - high
+        - crit
+    validations:
+      required: true
+      
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Brief description of the issue
+      placeholder: "Brand coverage degraded (25.3%)"
+    validations:
+      required: true
+      
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Full incident details and recommended actions
+      placeholder: |
+        Current metrics:
+        - Brand missing: 25.3%
+        - Target: <20%
+        
+        Actions needed:
+        - Review unrecognized brands
+        - Update STT dictionary
+    validations:
+      required: true
+      
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Related Metrics
+      description: Current system metrics
+      render: json
