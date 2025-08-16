@@ -1162,6 +1162,7 @@ project-root/
 ├─ services/
 │  ├─ api/
 │  │  ├─ node_modules/
+│  ├─ brand-model/
 │  ├─ worker/
 │  │  ├─ node_modules/
 ├─ packages/
