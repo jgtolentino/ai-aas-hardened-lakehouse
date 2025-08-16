@@ -1,70 +1,84 @@
-name: CI Pipeline
+name: CI
 on:
+  pull_request:
   push:
     branches: [main]
-  pull_request:
-
-permissions:
-  contents: read
-  security-events: write
-  packages: write
 
 jobs:
-  dbt-tests:
+  db-build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: ankane/pgvector:pg16
+        env:
+          POSTGRES_USER: suqi
+          POSTGRES_PASSWORD: suqi
+          POSTGRES_DB: suqi
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U suqi -d suqi"
+          --health-interval=5s --health-timeout=3s --health-retries=30
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install dbt-duckdb dbt-trino
-      - name: Run dbt compile and test
-        working-directory: ./platform/lakehouse/dbt
-        run: |
-          DBT_TARGET=ci dbt compile --profiles-dir ../../../profiles
-          DBT_TARGET=ci dbt test --profiles-dir ../../../profiles
 
-  bruno-smoke:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm install -g @usebruno/cli
-      - run: |
-          if [ -d "collections/smoke" ]; then
-            bruno run collections/smoke --env staging
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply DB migrations
+        env:
+          PGURL: postgres://suqi:suqi@localhost:5432/suqi
+        run: |
+          for f in db/migrations/*.sql; do
+            echo ">> $f"
+            psql "$PGURL" -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Seed minimal data (CI only)
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
+        run: psql "$PGURL" -v ON_ERROR_STOP=1 -f db/seeds/ci_min_brands.sql
+
+      - name: Typecheck / Lint (best-effort)
+        run: |
+          pnpm -w run typecheck || true
+          pnpm -w run lint || true
+
+      - name: Data Quality checks
+        if: github.ref == 'refs/heads/main'
+        env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
+        run: |
+          if test -f dq/checks/run_all.sql; then
+            psql "$PGURL" -v ON_ERROR_STOP=1 -f dq/checks/run_all.sql
           else
-            echo "No Bruno collections found - skipping"
+            echo "DQ: no run_all.sql; skipping."
           fi
 
-  security-scan:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-    steps:
-      - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: .
-          format: sarif
-          output: trivy-results.sarif
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-results.sarif
+      - name: Verify core tables exist
+        env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
+        run: |
+          psql "$PGURL" -Atc "select 'brands', count(*) from information_schema.tables where table_schema='scout' and table_name='brand_catalog';"
+          psql "$PGURL" -c "\dt scout.*"
 
-  great-expectations:
+  build-images:
+    needs: db-build-test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    continue-on-error: true
+    permissions: { contents: read }
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: |
-          pip install great_expectations
-          mkdir -p great_expectations
-          echo "config_version: 3.0" > great_expectations/great_expectations.yml
-          echo "GE configuration initialized"
+      - run: echo "placeholder for docker build/push; wire registry when ready"

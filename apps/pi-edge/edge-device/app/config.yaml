@@ -1,0 +1,24 @@
+device:
+  store_id: STO00284
+  region: NCR
+  city: Makati
+  barangay: Bel-Air
+  tz_offset_min: 480
+  demographics_inference: true
+  logo_min_conf: 0.45
+  ocr_min_conf: 0.50
+ingest:
+  supabase_edge_url: "${SUPABASE_FUNC_URL}"
+  supabase_anon_key: "${SUPABASE_ANON_KEY}"
+stt:
+  whisper_cpp_bin: "/home/pi/whisper.cpp/main"
+  model_path: "/home/pi/whisper.cpp/models/ggml-tiny.bin"
+camera:
+  index: 0
+  width: 1280
+  height: 720
+  fps: 15
+gates:
+  transcript_min_chars: 12
+  duration_min_s: 2
+  duration_max_s: 600

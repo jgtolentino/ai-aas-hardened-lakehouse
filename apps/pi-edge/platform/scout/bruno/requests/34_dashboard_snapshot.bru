@@ -1,0 +1,18 @@
+meta {
+  name: Dashboard Snapshot
+  type: http
+  seq: 34
+}
+
+post {
+  url: {{PG_REST}}/rpc/dashboard_snapshot
+  body: json
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {}
+}
