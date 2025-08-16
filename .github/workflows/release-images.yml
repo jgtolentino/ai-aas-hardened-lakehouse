@@ -1,0 +1,121 @@
+name: Release Images (GHCR)
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/**"
+      - ".github/workflows/release-images.yml"
+  pull_request:
+    paths:
+      - "services/**"
+      - ".github/workflows/release-images.yml"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to build (optional)"
+        required: false
+        default: ""
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        include:
+          - svc: api
+            context: services/api
+            dockerfile: services/api/Dockerfile
+          - svc: worker
+            context: services/worker
+            dockerfile: services/worker/Dockerfile
+          - svc: brand-model
+            context: services/brand-model
+            dockerfile: services/brand-model/Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || '' }}
+          fetch-depth: 0
+
+      - name: Set OWNER (lowercase)
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compute image name
+        id: names
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${OWNER}/ai-aas-hardened-lakehouse-${{ matrix.svc }}"
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Docker metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.names.outputs.image }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=semver,pattern={{version}},prefix=v
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=ai-aas-hardened-lakehouse-${{ matrix.svc }}
+
+      - name: Build (PRs) with cache only
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build & Push (main/tags/dispatch)
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+          platforms: linux/amd64
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Output image ref(s)
+        if: github.event_name != 'pull_request'
+        run: echo "PUBLISHED -> ${{ steps.meta.outputs.tags }}"
