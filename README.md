@@ -1,16 +1,25 @@
 # 🏔️ AI-AAS Hardened Lakehouse
 
-A production-ready, security-hardened data lakehouse platform with geographic visualization capabilities, built on open-source technologies with enterprise-grade features.
+A production-grade monorepo for pseudonymous customer intelligence and transaction clustering analytics. Built with security-hardened infrastructure, geographic visualization capabilities, and enterprise-grade CI/CD pipelines.
 
 ## 🚀 Features
 
 ### Core Platform
+- **Production-Grade Monorepo**: pnpm workspaces + Turborepo for build orchestration
 - **Complete ETL/ELT Pipeline**: Bronze → Silver → Gold → Platinum architecture
 - **Geographic Visualization**: PostGIS-powered choropleth maps with Mapbox integration  
 - **Security Hardened**: RLS, Gatekeeper policies, network isolation
-- **Cloud Native**: Kubernetes-ready with Helm charts
+- **Cloud Native**: Kubernetes-ready with Helm charts, Docker images published to GHCR
 - **API-First**: Automated deployment via Bruno API collections
 - **Performance Optimized**: GIST indexes, materialized views, <1.5s query SLA
+- **CI/CD Pipeline**: GitHub Actions with required checks, branch protection, and automated testing
+
+### Microservices Architecture
+- **API Service**: FastAPI (Python) - RESTful API endpoints
+- **Worker Service**: Fastify (Node.js) - Background job processing
+- **Brand Model Service**: FastAPI (Python) - RapidFuzz-powered brand detection
+- **Edge Functions**: Supabase Edge Functions for real-time processing
+- **Database**: PostgreSQL with pgvector extension for embeddings
 
 ### Dataset Publisher & Management (New! 🎉)
 - **Usage Analytics Dashboard**: Comprehensive tracking of dataset downloads, API calls, and user engagement
@@ -47,14 +56,66 @@ A production-ready, security-hardened data lakehouse platform with geographic vi
 - **API Testing**: Bruno
 - **Model Context Protocol**: Claude MCP integration
 
-## 🗂️ Full Project Structure
+## 🗂️ Production Monorepo Structure
 
 ```
 ai-aas-hardened-lakehouse/
 ├── .github/
-│   └── workflows/
-│       ├── ci.yml                      # Continuous integration pipeline
-│       └── policy-gate.yml             # Security policy validation
+│   ├── workflows/
+│   │   ├── ci.yml                      # DB/Build/Test workflow
+│   │   ├── dataset-publisher-tests.yml # Package testing
+│   │   ├── edge-functions.yml          # Edge function tests
+│   │   ├── release-images.yml          # Docker image publishing to GHCR
+│   │   └── security-scan.yml           # Security analysis
+│   └── branch-protection.json          # Required status checks
+│
+├── apps/                               # Frontend applications
+│   └── scout-dashboard/                # Retail analytics UI
+│
+├── db/                                 # Database layer
+│   ├── migrations/                     # SQL migrations (000-999)
+│   │   ├── 000_extensions.sql          # pgcrypto, pg_trgm, vector
+│   │   ├── 100_scouts_dims.sql         # Dimension tables
+│   │   ├── 200_scouts_bronze.sql       # Bronze layer
+│   │   ├── 210_scouts_silver.sql       # Silver layer
+│   │   └── 220_scouts_gold.sql         # Gold layer views
+│   ├── seeds/                          # Seed data
+│   └── views/                          # Database views
+│
+├── dq/                                 # Data quality
+│   └── checks/                         # DQ validation scripts
+│
+├── infra/                              # Infrastructure
+│   └── docker/
+│       ├── compose.yml                 # Local dev environment
+│       └── Dockerfile.base             # Base image with common deps
+│
+├── packages/                           # Shared packages
+│   ├── shared-types/                   # TypeScript types
+│   └── common-utils/                   # Utility functions
+│
+├── services/                           # Microservices
+│   ├── api/                            # FastAPI REST service
+│   │   ├── Dockerfile
+│   │   ├── pyproject.toml
+│   │   └── main.py
+│   ├── worker/                         # Fastify background jobs
+│   │   ├── Dockerfile
+│   │   ├── package.json
+│   │   └── index.js
+│   └── brand-model/                    # Brand detection service
+│       ├── Dockerfile
+│       ├── requirements.txt
+│       └── main.py
+│
+├── scripts/                            # Operational scripts
+│   ├── setup-db.sh                     # Database setup
+│   └── verify-deployment.sh            # Deployment verification
+│
+├── pnpm-workspace.yaml                 # pnpm workspace config
+├── turbo.json                          # Turborepo config
+├── pnpm-lock.yaml                      # Lockfile
+└── package.json                        # Root package.json
 │
 ├── docs/
 │   └── setup/
@@ -839,82 +900,98 @@ scout.recommendation_engine → Product recommendations
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Kubernetes cluster (1.24+)
-- PostgreSQL 14+ with PostGIS 3.0+
-- Helm 3
-- Bruno CLI (`npm install -g @usebruno/cli`)
+- Node.js 20+
+- pnpm 9+ (`npm install -g pnpm`)
+- Docker & Docker Compose
+- PostgreSQL 14+ with pgvector extension
 - Python 3.8+
-- Docker
+- GitHub CLI (for releases)
 
-### 1. Clone and Configure
+### 1. Clone and Setup
 ```bash
 git clone https://github.com/jgtolentino/ai-aas-hardened-lakehouse.git
 cd ai-aas-hardened-lakehouse
 
-# Configure environment
-cp platform/cloud-wire/.env.example platform/cloud-wire/.env
-# Edit .env with your credentials
+# Install dependencies
+pnpm install
+
+# Setup environment
+cp .env.example .env
+# Edit .env with your database credentials
 ```
 
-### 2. Deploy Infrastructure
+### 2. Local Development
 ```bash
-# Create namespace and security policies
-kubectl apply -f platform/lakehouse/00-namespace.yaml
-kubectl apply -f platform/security/netpol/00-default-deny.yaml
-kubectl apply -f platform/security/gatekeeper/
+# Start all services with Docker Compose
+docker compose -f infra/docker/compose.yml up -d
 
-# Deploy storage layer
-kubectl apply -f platform/lakehouse/minio/minio.yaml
-kubectl apply -f platform/lakehouse/minio/init-bucket.yaml
+# Services will be available at:
+# - PostgreSQL: localhost:5432
+# - API Service: http://localhost:8000
+# - Worker Service: http://localhost:3000
+# - Brand Model: http://localhost:8001
 
-# Deploy catalog and query engine
-helm install nessie platform/lakehouse/nessie/ -f platform/lakehouse/nessie/values-oss.yaml
-helm install trino platform/lakehouse/trino/ -f platform/lakehouse/trino/values-oss.yaml
+# Run database migrations
+./scripts/setup-db.sh
 
-# Deploy transformation layer
-kubectl apply -f platform/lakehouse/dbt/dbt-cronjob.yaml
+# Build all packages
+pnpm run build
+
+# Run tests
+pnpm run test
 ```
 
-### 3. Setup Scout Analytics Database
+### 3. Production Deployment
 ```bash
-# Set PostgreSQL connection
-export PGURI="postgresql://user:pass@host:port/database"
+# Build Docker images
+pnpm run docker:build
 
-# Apply all migrations in order
-for migration in platform/scout/migrations/*.sql; do
-  echo "Applying: $migration"
-  psql "$PGURI" -f "$migration"
-done
+# Run CI/CD checks locally
+pnpm run ci:check
 
-# Import geographic boundaries
-kubectl apply -f platform/lakehouse/jobs/geo-importer.yaml
-kubectl -n aaas wait --for=condition=complete job/geo-boundary-importer --timeout=30m
+# Deploy to production
+git push origin main
+
+# Images are automatically published to GHCR:
+# ghcr.io/jgtolentino/ai-aas-hardened-lakehouse-api:latest
+# ghcr.io/jgtolentino/ai-aas-hardened-lakehouse-worker:latest
+# ghcr.io/jgtolentino/ai-aas-hardened-lakehouse-brand-model:latest
 ```
 
-### 4. Deploy Visualization Layer
+## 🔧 Development Workflow
+
+### Branch Protection
+The `main` branch is protected with required status checks:
+- ✅ DB/Build/Test - Database migrations and build verification
+- ✅ Dataset Publisher Tests - Package unit and integration tests  
+- ✅ Security Scan - CodeQL and dependency scanning
+
+### Making Changes
 ```bash
-# Set Mapbox token
-export MAPBOX_API_KEY="pk.your_mapbox_token_here"
+# Create feature branch
+git checkout -b feature/your-feature
 
-# Deploy Superset with geographic support
-./scripts/deploy_superset_with_mapbox.sh
+# Make changes and test locally
+pnpm run dev
 
-# Import dashboards via API
-cd platform/cloud-wire
-./scripts/run_cloud_wire.sh
+# Run linting and type checking
+pnpm run lint
+pnpm run typecheck
+
+# Create pull request
+gh pr create --title "feat: your feature" --body "Description of changes"
+
+# After approval and checks pass, merge
+gh pr merge --squash
 ```
 
-### 5. Verify Deployment
-```bash
-# Run comprehensive verification
-./scripts/verify_choropleth_complete.sh
-
-# Run performance benchmarks
-python scripts/benchmark_choropleth_hard.py --pguri "$PGURI" --exit-on-fail
-
-# Run API tests
-BRUNO_ENV=production ./scripts/run_bruno_tests.sh
-```
+### CI/CD Pipeline
+1. **Pull Request**: Runs all tests and checks
+2. **Merge to main**: 
+   - Builds and publishes Docker images to GHCR
+   - Tags with commit SHA and 'latest'
+   - Deploys to staging (if configured)
+3. **Release**: Create GitHub release to trigger production deployment
 
 ## 📊 Performance Metrics
 
@@ -956,72 +1033,76 @@ BRUNO_ENV=production ./scripts/run_bruno_tests.sh
 - **API Rate Limiting**: DDoS protection
 - **Input Validation**: SQL injection prevention
 
-## 🛠️ Maintenance
+## 🛠️ Operations
 
-### Daily Operations
+### Available Scripts
 ```bash
-# Check system health
-kubectl get pods -n aaas
-kubectl top pods -n aaas
+# Development
+pnpm run dev          # Start all services in dev mode
+pnpm run build        # Build all packages
+pnpm run test         # Run all tests
+pnpm run lint         # Lint all code
+pnpm run typecheck    # TypeScript checking
 
-# Refresh materialized views
-psql "$PGURI" -c "SELECT scout.refresh_gold();"
+# Docker
+pnpm run docker:build # Build all images
+pnpm run docker:push  # Push to registry
 
-# Check data quality
-psql "$PGURI" -f platform/scout/quality/sql_quality_checks.sql
+# Database
+pnpm run db:migrate   # Run migrations
+pnpm run db:seed      # Seed test data
+pnpm run dq:check     # Run data quality checks
 ```
 
-### Monitoring Endpoints
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Prometheus**: http://localhost:9090
-- **Superset**: http://localhost:8088 (admin/admin)
-- **Trino UI**: http://localhost:8080
-- **Nessie UI**: http://localhost:19120
+### Service Endpoints
+- **API Service**: http://localhost:8000/docs (Swagger UI)
+- **Worker Service**: http://localhost:3000/health
+- **Brand Model**: http://localhost:8001/docs
+- **PostgreSQL**: localhost:5432
 
-### Backup & Recovery
+### Docker Images
+Published automatically to GitHub Container Registry:
 ```bash
-# Backup PostgreSQL
-pg_dump "$PGURI" -Fc > backup_$(date +%Y%m%d).dump
-
-# Backup MinIO
-mc mirror minio/lakehouse /backup/lakehouse/
-
-# Restore procedures documented in docs/operations/disaster-recovery.md
+# Pull latest images
+docker pull ghcr.io/jgtolentino/ai-aas-hardened-lakehouse-api:latest
+docker pull ghcr.io/jgtolentino/ai-aas-hardened-lakehouse-worker:latest
+docker pull ghcr.io/jgtolentino/ai-aas-hardened-lakehouse-brand-model:latest
 ```
 
 ## 📚 Documentation
 
 - [Architecture Overview](ARCHITECTURE_FLOW.md)
+- [Monorepo Structure](docs/monorepo-structure.md)
+- [CI/CD Pipeline](docs/cicd-pipeline.md)
+- [Database Schema](docs/database-schema.md)
+- [API Documentation](services/api/README.md)
 - [Deployment Guide](DEPLOYMENT_CHECKLIST.md)
-- [Choropleth Setup](docs/setup/choropleth_optimization.md)
-- [API Documentation](platform/scout/bruno/collection_summary.md)
 - [Security Hardening](docs/security/hardening-guide.md)
-- [Performance Tuning](docs/performance/optimization-guide.md)
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Run tests: `./scripts/run_bruno_tests.sh`
-4. Commit changes (`git commit -m 'Add amazing feature'`)
-5. Push to branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+3. Install dependencies: `pnpm install`
+4. Make changes and test: `pnpm run test`
+5. Commit changes (`git commit -m 'feat: add amazing feature'`)
+6. Push to branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
-### Development Setup
-```bash
-# Install dependencies
-pip install -r requirements-dev.txt
-npm install
+### Commit Message Format
+Follow conventional commits:
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation
+- `chore:` Maintenance
+- `test:` Tests
+- `refactor:` Code refactoring
 
-# Run linters
-make lint
-
-# Run tests
-make test
-
-# Build images
-make build
-```
+### Pull Request Requirements
+- All CI checks must pass
+- Code review approval required
+- Branch must be up-to-date with main
+- Commits will be squashed on merge
 
 ## 📄 License
 
@@ -1040,8 +1121,117 @@ Built with best-in-class open source technologies:
 
 Special thanks to the Philippine Statistics Authority for PSGC geographic codes.
 
+## 🚨 Recent Updates
+
+### v2.0.0 - Monorepo Migration (January 2025)
+- Migrated from submodules to production-grade monorepo structure
+- Implemented pnpm workspaces + Turborepo for build orchestration
+- Added comprehensive CI/CD with GitHub Actions
+- Set up automated Docker image publishing to GHCR
+- Implemented branch protection with required status checks
+- Stabilized all workflows and fixed dependency issues
+
 ---
 
-🚀 **Production Ready** | 🔐 **Enterprise Hardened** | 🌍 **Geographic Enabled** | 📊 **Complete Data Stack**
+🚀 **Production Grade Monorepo** | 🔐 **Enterprise Hardened** | 🌍 **Geographic Enabled** | 📊 **Complete Data Stack**
 
 For questions or support, please open an issue or contact the maintainers.
+
+<!-- AUTO-GEN:STRUCTURE START -->
+## Project Structure (auto)
+
+```
+project-root/
+├─ apps/
+│  ├─ docs/
+│  ├─ pi-edge/
+│  │  ├─ docs/
+│  │  ├─ edge-device/
+│  │  ├─ fixtures/
+│  │  ├─ node_modules/
+│  │  ├─ packages/
+│  │  ├─ platform/
+│  │  ├─ public/
+│  │  ├─ samples/
+│  │  ├─ scripts/
+│  │  ├─ sql/
+│  │  ├─ src/
+│  │  ├─ supabase/
+│  ├─ scout-dashboard/
+│  │  ├─ node_modules/
+├─ services/
+│  ├─ api/
+│  │  ├─ node_modules/
+│  ├─ worker/
+│  │  ├─ node_modules/
+├─ packages/
+│  ├─ contracts/
+│  │  ├─ node_modules/
+│  │  ├─ sql/
+│  │  ├─ src/
+│  ├─ services/
+│  │  ├─ src/
+│  ├─ shared-types/
+│  ├─ types/
+│  ├─ utils-js/
+│  ├─ utils-py/
+├─ db/
+│  ├─ migrations/
+│  ├─ seeds/
+│  ├─ tests/
+├─ dq/
+│  ├─ checks/
+│  ├─ views/
+├─ supabase/
+│  ├─ config/
+│  ├─ functions/
+│  │  ├─ export-platinum/
+│  │  ├─ ingest-bronze/
+│  ├─ migrations/
+│  ├─ storage/
+├─ infra/
+│  ├─ docker/
+│  ├─ k8s/
+│  │  ├─ base/
+│  │  ├─ overlays/
+│  ├─ terraform/
+│  │  ├─ envs/
+│  │  ├─ modules/
+├─ monitoring/
+│  ├─ grafana-dashboards/
+│  ├─ prometheus/
+├─ security/
+│  ├─ policies/
+│  ├─ sops/
+│  ├─ threat-model/
+├─ .github/workflows/
+```
+
+<!-- AUTO-GEN:STRUCTURE END -->
+
+<!-- AUTO-GEN:SERVICES START -->
+## Services & Ports (auto)
+
+| Service | Exposed Ports |
+|---|---|
+| `postgres` | 5432->5432 |
+| `api` | 8000->8000 |
+| `worker` | 3000->3000 |
+| `brand-model` | 8001->8001 |
+| `postgres_data` | — |
+
+
+<!-- AUTO-GEN:SERVICES END -->
+
+<!-- AUTO-GEN:WORKFLOWS START -->
+## Active Workflows (auto)
+
+- `ci.yml`
+- `dataset-publisher-tests.yml`
+- `edge-functions.yml`
+- `readme-guard.yml`
+- `release-images.yml`
+- `security-scan.yml`
+- `storage-buckets.yml`
+
+<!-- AUTO-GEN:WORKFLOWS END -->
