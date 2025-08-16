@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: ankane/pgvector:pg16
+    container_name: lakehouse-postgres
+    environment:
+      POSTGRES_USER: suqi
+      POSTGRES_PASSWORD: suqi
+      POSTGRES_DB: suqi
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U suqi -d suqi"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build:
+      context: ../../services/api
+      dockerfile: Dockerfile
+    container_name: lakehouse-api
+    environment:
+      DATABASE_URL: postgresql://suqi:suqi@postgres:5432/suqi
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ../../services/worker
+      dockerfile: Dockerfile
+    container_name: lakehouse-worker
+    environment:
+      DATABASE_URL: postgresql://suqi:suqi@postgres:5432/suqi
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  brand-model:
+    build:
+      context: ../../services/brand-model
+      dockerfile: Dockerfile
+    container_name: lakehouse-brand-model
+    environment:
+      DATABASE_URL: postgresql://suqi:suqi@postgres:5432/suqi
+      PORT: 8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
