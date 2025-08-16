@@ -1,0 +1,10 @@
+{
+  "pipeline": {
+    "build": { "dependsOn": ["^build"], "outputs": ["dist/**"] },
+    "dev":   { "cache": false },
+    "test":  { "dependsOn": ["build"] },
+    "lint":  { "outputs": [] },
+    "typecheck": { "outputs": [] },
+    "contracts:gen": { "outputs": ["packages/types/**"] }
+  }
+}
