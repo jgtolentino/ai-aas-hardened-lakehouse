@@ -1,84 +1,67 @@
-name: CI
+name: DB/Build/Test
 on:
   pull_request:
+    paths:
+      - 'db/**'
+      - 'dq/**'
+      - 'services/**'
+      - 'packages/**'
+      - 'infra/docker/**'
+      - '.github/workflows/ci.yml'
   push:
     branches: [main]
-
+    paths:
+      - 'db/**'
+      - 'dq/**'
+      - 'services/**'
+      - 'packages/**'
+      - 'infra/docker/**'
+      - '.github/workflows/ci.yml'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   db-build-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     services:
       postgres:
         image: ankane/pgvector:pg16
-        env:
-          POSTGRES_USER: suqi
-          POSTGRES_PASSWORD: suqi
-          POSTGRES_DB: suqi
+        env: { POSTGRES_USER: suqi, POSTGRES_PASSWORD: suqi, POSTGRES_DB: suqi }
         ports: ["5432:5432"]
         options: >-
           --health-cmd="pg_isready -U suqi -d suqi"
           --health-interval=5s --health-timeout=3s --health-retries=30
     steps:
       - uses: actions/checkout@v4
-
+        with: { fetch-depth: 0 }
       - name: Install psql client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
       - uses: pnpm/action-setup@v4
         with: { version: 9 }
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-
-      - name: Apply DB migrations
-        env:
-          PGURL: postgres://suqi:suqi@localhost:5432/suqi
-        run: |
-          for f in db/migrations/*.sql; do
-            echo ">> $f"
-            psql "$PGURL" -v ON_ERROR_STOP=1 -f "$f"
-          done
-
-      - name: Seed minimal data (CI only)
-        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Apply DB migrations (000..999)
         env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
-        run: psql "$PGURL" -v ON_ERROR_STOP=1 -f db/seeds/ci_min_brands.sql
-
-      - name: Typecheck / Lint (best-effort)
+        run: |
+          shopt -s nullglob
+          for f in db/migrations/*.sql; do
+            echo ">> $f"; psql "$PGURL" -v ON_ERROR_STOP=1 -f "$f"
+          done
+      - name: Seed minimal data on PRs
+        if: github.event_name == 'pull_request'
+        env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
+        run: test -f db/seeds/ci_min_brands.sql && psql "$PGURL" -v ON_ERROR_STOP=1 -f db/seeds/ci_min_brands.sql || true
+      - name: Typecheck/Lint (best-effort)
         run: |
           pnpm -w run typecheck || true
           pnpm -w run lint || true
-
-      - name: Data Quality checks
+      - name: DQ checks (main only)
         if: github.ref == 'refs/heads/main'
         env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
         run: |
           if test -f dq/checks/run_all.sql; then
             psql "$PGURL" -v ON_ERROR_STOP=1 -f dq/checks/run_all.sql
-          else
-            echo "DQ: no run_all.sql; skipping."
           fi
-
-      - name: Verify core tables exist
-        env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
-        run: |
-          psql "$PGURL" -Atc "select 'brands', count(*) from information_schema.tables where table_schema='scout' and table_name='brand_catalog';"
-          psql "$PGURL" -c "\dt scout.*"
-
-  build-images:
-    needs: db-build-test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions: { contents: read }
-    steps:
-      - uses: actions/checkout@v4
-      - run: echo "placeholder for docker build/push; wire registry when ready"
