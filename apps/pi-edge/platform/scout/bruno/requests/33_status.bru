@@ -1,0 +1,13 @@
+meta {
+  name: Crawl Health Status
+  type: http
+  seq: 33
+}
+
+get {
+  url: {{PG_REST}}/v_crawl_health
+}
+
+headers {
+  Accept: application/json
+}

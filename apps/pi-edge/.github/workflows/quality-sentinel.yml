@@ -1,0 +1,37 @@
+name: Quality Sentinel Check
+
+on:
+  schedule:
+    - cron: "5 * * * *"   # Run hourly at :05
+  workflow_dispatch:      # Allow manual trigger
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Call Quality Sentinel
+        env:
+          FUNC_URL: "${{ secrets.SUPABASE_URL }}/functions/v1/quality-sentinel"
+          SENTINEL_KEY: "${{ secrets.SENTINEL_KEY }}"
+        run: |
+          response=$(curl -sS -X POST "$FUNC_URL" \
+            -H "x-sentinel-key: $SENTINEL_KEY" \
+            -H "content-type: application/json" \
+            -d '{}')
+          
+          echo "Response: $response"
+          
+          # Check if response indicates issues
+          if echo "$response" | jq -e '.issues_found > 0' > /dev/null; then
+            echo "⚠️ Quality issues detected!"
+            echo "$response" | jq '.results[] | "[\(.severity)] \(.key)"'
+          else
+            echo "✅ No quality issues found"
+          fi
+          
+          # Fail if critical issues
+          if echo "$response" | jq -e '.results[] | select(.severity == "crit")' > /dev/null; then
+            echo "❌ Critical issues found - failing workflow"
+            exit 1
+          fi

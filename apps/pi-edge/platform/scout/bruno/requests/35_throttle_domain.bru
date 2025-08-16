@@ -1,0 +1,21 @@
+meta {
+  name: Throttle Domain
+  type: http
+  seq: 35
+}
+
+post {
+  url: {{PG_REST}}/rpc/throttle_domain
+  body: json
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "p_domain": "example.com",
+    "p_rate_limit_ms": 60000
+  }
+}

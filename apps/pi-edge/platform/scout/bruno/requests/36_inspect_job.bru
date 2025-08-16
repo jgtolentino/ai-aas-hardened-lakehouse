@@ -1,0 +1,20 @@
+meta {
+  name: Inspect Job
+  type: http
+  seq: 36
+}
+
+post {
+  url: {{PG_REST}}/rpc/inspect_job
+  body: json
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "p_job_id": 1
+  }
+}

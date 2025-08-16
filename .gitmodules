@@ -1,7 +1,0 @@
-[submodule "platform/scout/blueprint-dashboard"]
-	path = platform/scout/blueprint-dashboard
-	url = https://github.com/jgtolentino/scout-analytics-blueprint-doc.git
-	branch = main
-[submodule "edge-suqi-pie"]
-	path = edge-suqi-pie
-	url = https://github.com/jgtolentino/edge-suqi-pie.git

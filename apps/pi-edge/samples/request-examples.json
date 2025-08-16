@@ -1,0 +1,94 @@
+{
+  "full_transaction_with_substitution": {
+    "transaction_id": "TXN-20250814-102-000456",
+    "store": { "id": "STO00284", "tz_offset_min": 480 },
+    "geo": { "region_id": 13, "city_id": 1339, "barangay_id": 48291 },
+    "ts_utc": "2025-08-14T12:30:00Z",
+    "tx_start_ts": "2025-08-14T12:29:50Z",
+    "tx_end_ts": "2025-08-14T12:30:03Z",
+    "request": {
+      "request_type": "branded",
+      "request_mode": "verbal",
+      "payment_method": "cash",
+      "gender": "male",
+      "age_bracket": "25-34"
+    },
+    "items": [
+      {
+        "category_id": 21,
+        "category_name": "Beverages",
+        "brand_id": 2001,
+        "brand_name": "Coca-Cola",
+        "product_name": "Coke 1.5L",
+        "qty": 2,
+        "unit": "pc",
+        "unit_price": 65.0,
+        "total_price": 130.0,
+        "detection_method": "hybrid",
+        "confidence": 0.96
+      },
+      {
+        "category_id": 7,
+        "category_name": "Instant Noodles",
+        "brand_id": 3101,
+        "brand_name": "Lucky Me",
+        "product_name": "Pancit Canton Original",
+        "qty": 3,
+        "unit": "pc",
+        "unit_price": 10.0,
+        "total_price": 30.0,
+        "detection_method": "stt",
+        "confidence": 0.93
+      },
+      {
+        "category_id": 21,
+        "category_name": "Ice",
+        "brand_id": null,
+        "brand_name": null,
+        "product_name": "Ice",
+        "local_name": "yelo",
+        "qty": 3,
+        "unit": "bag",
+        "unit_price": 3.0,
+        "total_price": 9.0,
+        "detection_method": "stt",
+        "confidence": 0.90
+      }
+    ],
+    "suggestion": { "offered": true, "accepted": true },
+    "substitution": { "asked_brand_id": 1201, "final_brand_id": 2001 },
+    "amounts": { "transaction_amount": 169.0, "price_source": "edge" },
+    "decision_trace": {
+      "vision": [
+        { "box": [100,120,80,40], "brand": "Coca-Cola", "s_logo": 0.89, "ocr_text": ["coke","1.5l"], "ocr_score": 0.78 }
+      ],
+      "stt": { "brand_hits": [ { "token": "coke", "s_stt": 1.0 }, { "token": "pepsi", "s_stt": 1.0 } ] },
+      "fusion": { "alpha": 0.45, "beta": 0.35, "gamma": 0.20, "delta": 0.10, "T": 1.6, "raw": 0.872, "calibrated": 0.845 }
+    }
+  },
+  "minimal_valid_transaction": {
+    "transaction_id": "TXN-20250814-000001",
+    "store": { "id": "STO00001", "tz_offset_min": 480 },
+    "geo": { "region_id": null, "city_id": null, "barangay_id": null },
+    "ts_utc": "2025-08-14T10:00:00Z",
+    "tx_start_ts": "2025-08-14T09:59:55Z",
+    "tx_end_ts": "2025-08-14T10:00:03Z",
+    "request": {
+      "request_type": "unbranded",
+      "request_mode": "verbal",
+      "payment_method": "cash",
+      "gender": "unknown",
+      "age_bracket": "unknown"
+    },
+    "items": [
+      {
+        "category_name": "Staples",
+        "product_name": "Rice",
+        "qty": 1,
+        "unit": "kg",
+        "detection_method": "stt",
+        "confidence": 0.70
+      }
+    ]
+  }
+}
