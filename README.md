@@ -1219,7 +1219,6 @@ project-root/
 | `api` | 8000->8000 |
 | `worker` | 3000->3000 |
 | `brand-model` | 8001->8001 |
-| `postgres_data` | — |
 
 
 <!-- AUTO-GEN:SERVICES END -->
