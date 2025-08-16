@@ -1143,3 +1143,24 @@ project-root/
 - `storage-buckets.yml`
 
 <!-- AUTO-GEN:WORKFLOWS END -->
+
+<!-- AUTO-GEN:K8S START -->
+## Kubernetes Overlays (auto)
+
+| Overlay | Purpose | Key Resources |
+|---|---|---|
+| `dev` | Custom environment | — |
+
+
+<!-- AUTO-GEN:K8S END -->
+
+<!-- AUTO-GEN:FUNCTIONS START -->
+## Supabase Edge Functions (auto)
+
+| Function | Description | Auth Required |
+|---|---|---|
+| `export-platinum` | — | No |
+| `ingest-bronze` | — | No |
+
+
+<!-- AUTO-GEN:FUNCTIONS END -->

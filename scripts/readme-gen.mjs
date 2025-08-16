@@ -73,12 +73,76 @@ function workflows() {
   return w.map(f => `- \`${f}\``).join('\n') + '\n';
 }
 
+function k8sOverlays() {
+  const overlaysDir = path.join(ROOT, 'infra', 'k8s', 'overlays');
+  if (!fs.existsSync(overlaysDir)) return '_No Kubernetes overlays found at infra/k8s/overlays._\n';
+  const ovs = fs.readdirSync(overlaysDir, { withFileTypes: true })
+    .filter(e => e.isDirectory())
+    .map(e => e.name)
+    .sort();
+  if (!ovs.length) return '_No overlays defined._\n';
+  let md = `| Overlay | Purpose | Key Resources |\n|---|---|---|\n`;
+  for (const ov of ovs) {
+    const kustomFile = path.join(overlaysDir, ov, 'kustomization.yaml');
+    const purpose = ov === 'development' ? 'Local development' :
+                   ov === 'staging' ? 'Pre-production testing' :
+                   ov === 'production' ? 'Production deployment' : 
+                   'Custom environment';
+    let resources = '—';
+    if (fs.existsSync(kustomFile)) {
+      const kc = fs.readFileSync(kustomFile, 'utf8');
+      // crude: find patches or configmaps
+      const patches = (kc.match(/patches:/g) || []).length;
+      const cms = (kc.match(/configMapGenerator:/g) || []).length;
+      const secrets = (kc.match(/secretGenerator:/g) || []).length;
+      const parts = [];
+      if (patches) parts.push(`${patches} patches`);
+      if (cms) parts.push(`${cms} configmaps`);
+      if (secrets) parts.push(`${secrets} secrets`);
+      if (parts.length) resources = parts.join(', ');
+    }
+    md += `| \`${ov}\` | ${purpose} | ${resources} |\n`;
+  }
+  md += '\n';
+  return md;
+}
+
+function supabaseFunctions() {
+  const funcDir = path.join(ROOT, 'supabase', 'functions');
+  if (!fs.existsSync(funcDir)) return '_No Supabase Edge Functions found at supabase/functions._\n';
+  const funcs = fs.readdirSync(funcDir, { withFileTypes: true })
+    .filter(e => e.isDirectory() && !e.name.startsWith('_'))
+    .map(e => e.name)
+    .sort();
+  if (!funcs.length) return '_No functions defined._\n';
+  let md = `| Function | Description | Auth Required |\n|---|---|---|\n`;
+  for (const fn of funcs) {
+    const indexPath = path.join(funcDir, fn, 'index.ts');
+    let desc = '—';
+    let auth = 'Unknown';
+    if (fs.existsSync(indexPath)) {
+      const code = fs.readFileSync(indexPath, 'utf8');
+      // crude: look for a comment like // Description: ... or @description
+      const dMatch = code.match(/\/\/\s*[Dd]escription:\s*(.+?)$/m) || 
+                     code.match(/@description\s+(.+?)$/m);
+      if (dMatch) desc = dMatch[1].trim();
+      // check if it calls requireAuth or has auth middleware
+      auth = code.includes('requireAuth') || code.includes('supabaseAuth') ? 'Yes' : 'No';
+    }
+    md += `| \`${fn}\` | ${desc} | ${auth} |\n`;
+  }
+  md += '\n';
+  return md;
+}
+
 function renderTemplate() {
   const tpl = fs.readFileSync(TEMPLATE, 'utf8');
   return tpl
     .replace('{{STRUCTURE}}', structure())
     .replace('{{SERVICES}}', services())
-    .replace('{{WORKFLOWS}}', workflows());
+    .replace('{{WORKFLOWS}}', workflows())
+    .replace('{{K8S}}', k8sOverlays())
+    .replace('{{FUNCTIONS}}', supabaseFunctions());
 }
 
 function upsertBlocks(readme, gen) {
@@ -86,6 +150,8 @@ function upsertBlocks(readme, gen) {
     { key:'STRUCTURE', title:'Project Structure (auto)' },
     { key:'SERVICES',  title:'Services & Ports (auto)' },
     { key:'WORKFLOWS', title:'Active Workflows (auto)' },
+    { key:'K8S',       title:'Kubernetes Overlays (auto)' },
+    { key:'FUNCTIONS', title:'Supabase Edge Functions (auto)' },
   ];
   let out = readme;
   for (const b of blocks) {
