@@ -1045,3 +1045,122 @@ Special thanks to the Philippine Statistics Authority for PSGC geographic codes.
 🚀 **Production Ready** | 🔐 **Enterprise Hardened** | 🌍 **Geographic Enabled** | 📊 **Complete Data Stack**
 
 For questions or support, please open an issue or contact the maintainers.
+
+<!-- AUTO-GEN:STRUCTURE START -->
+## Project Structure (auto)
+
+```
+project-root/
+├─ apps/
+│  ├─ docs/
+│  ├─ pi-edge/
+│  │  ├─ docs/
+│  │  ├─ edge-device/
+│  │  ├─ fixtures/
+│  │  ├─ node_modules/
+│  │  ├─ packages/
+│  │  ├─ platform/
+│  │  ├─ public/
+│  │  ├─ samples/
+│  │  ├─ scripts/
+│  │  ├─ sql/
+│  │  ├─ src/
+│  │  ├─ supabase/
+│  ├─ scout-dashboard/
+│  │  ├─ node_modules/
+├─ services/
+│  ├─ api/
+│  │  ├─ node_modules/
+│  ├─ brand-model/
+│  ├─ worker/
+│  │  ├─ node_modules/
+├─ packages/
+│  ├─ contracts/
+│  │  ├─ node_modules/
+│  │  ├─ sql/
+│  │  ├─ src/
+│  ├─ services/
+│  │  ├─ src/
+│  ├─ shared-types/
+│  ├─ types/
+│  ├─ utils-js/
+│  ├─ utils-py/
+├─ db/
+│  ├─ migrations/
+│  ├─ seeds/
+│  ├─ tests/
+├─ dq/
+│  ├─ checks/
+│  ├─ views/
+├─ supabase/
+│  ├─ config/
+│  ├─ functions/
+│  │  ├─ export-platinum/
+│  │  ├─ ingest-bronze/
+│  ├─ migrations/
+│  ├─ storage/
+├─ infra/
+│  ├─ docker/
+│  ├─ k8s/
+│  │  ├─ base/
+│  │  ├─ overlays/
+│  ├─ terraform/
+│  │  ├─ envs/
+│  │  ├─ modules/
+├─ monitoring/
+│  ├─ grafana-dashboards/
+│  ├─ prometheus/
+├─ security/
+│  ├─ policies/
+│  ├─ sops/
+│  ├─ threat-model/
+├─ .github/workflows/
+```
+
+<!-- AUTO-GEN:STRUCTURE END -->
+
+<!-- AUTO-GEN:SERVICES START -->
+## Services & Ports (auto)
+
+| Service | Exposed Ports |
+|---|---|
+| `postgres` | 5432->5432 |
+| `api` | 8000->8000 |
+| `worker` | 3000->3000 |
+| `brand-model` | 8001->8001 |
+
+
+<!-- AUTO-GEN:SERVICES END -->
+
+<!-- AUTO-GEN:WORKFLOWS START -->
+## Active Workflows (auto)
+
+- `ci.yml`
+- `dataset-publisher-tests.yml`
+- `edge-functions.yml`
+- `readme-guard.yml`
+- `security-scan.yml`
+- `storage-buckets.yml`
+
+<!-- AUTO-GEN:WORKFLOWS END -->
+
+<!-- AUTO-GEN:K8S START -->
+## Kubernetes Overlays (auto)
+
+| Overlay | Purpose | Key Resources |
+|---|---|---|
+| `dev` | Custom environment | — |
+
+
+<!-- AUTO-GEN:K8S END -->
+
+<!-- AUTO-GEN:FUNCTIONS START -->
+## Supabase Edge Functions (auto)
+
+| Function | Description | Auth Required |
+|---|---|---|
+| `export-platinum` | — | No |
+| `ingest-bronze` | — | No |
+
+
+<!-- AUTO-GEN:FUNCTIONS END -->
