@@ -382,3 +382,5 @@ dashboard: dash-setup dash-verify dash-build ## Complete dashboard setup and bui
 	@echo "$(GREEN)════════════════════════════════════════$(NC)"
 	@echo ""
 	@echo "Deploy with: make dash-deploy DEPLOY_TARGET=vercel|netlify|s3|supabase"
+# Edge SUQI PIE Module
+include makefiles/edge-suqi-pie.mk

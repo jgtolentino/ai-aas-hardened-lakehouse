@@ -1,0 +1,58 @@
+name: Edge SUQI PIE CI/CD
+
+on:
+  push:
+    paths:
+      - 'edge-suqi-pie/**'
+      - '.github/workflows/edge-suqi-pie.yml'
+  pull_request:
+    paths:
+      - 'edge-suqi-pie/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        cd edge-suqi-pie
+        npm ci
+        
+    - name: Run tests
+      run: |
+        cd edge-suqi-pie
+        npm test
+        
+    - name: Build
+      run: |
+        cd edge-suqi-pie
+        npm run build
+
+  browser-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        
+    - name: Install Playwright
+      run: |
+        cd edge-suqi-pie/browser-automation
+        npm ci
+        npx playwright install --with-deps
+        
+    - name: Run browser tests
+      run: |
+        cd edge-suqi-pie/browser-automation
+        npm test
