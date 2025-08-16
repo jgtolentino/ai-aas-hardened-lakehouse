@@ -36,16 +36,20 @@ function parseCompose() {
   const lines = txt.split(/\r?\n/);
   const out = [];
   let cur = null;
+  let inServices = false;
   for (let i=0;i<lines.length;i++) {
     const L = lines[i];
+    if (L.match(/^services:\s*$/)) { inServices = true; continue; }
+    if (!inServices) continue;
     const mSvc = L.match(/^\s{2}([a-zA-Z0-9_-]+):\s*$/);
     if (mSvc) { cur = { name:mSvc[1], ports:[] }; out.push(cur); continue; }
     if (!cur) continue;
     const mPort = L.match(/^\s*-\s*"?(?<host>\d+):(?<cont>\d+)"?\s*$/);
     if (mPort) cur.ports.push(`${mPort.groups.host}->${mPort.groups.cont}`);
-    if (/^\S/.test(L)) cur = null; // next top-level key
+    if (/^\S/.test(L) && L !== 'services:') { inServices = false; cur = null; } // next top-level key
   }
-  return out;
+  // Filter out volumes section entries
+  return out.filter(s => !s.name.includes('_data'));
 }
 
 function services() {
