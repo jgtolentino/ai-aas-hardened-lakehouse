@@ -1,38 +1,39 @@
 name: Dataset Publisher Tests
 on:
   pull_request:
+    paths:
+      - 'packages/**'
+      - 'services/**'
+      - 'apps/**'
+      - '.github/workflows/dataset-publisher-tests.yml'
   push:
     branches: [main]
-
+    paths:
+      - 'packages/**'
+      - 'services/**'
+      - 'apps/**'
+      - '.github/workflows/dataset-publisher-tests.yml'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  dataset-tests:
+  tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Checkout (full history)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node & pnpm cache
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
       - uses: pnpm/action-setup@v4
         with: { version: 9 }
       - run: corepack enable
-
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-
+      - run: pnpm install --frozen-lockfile
       - name: Unit
         run: pnpm -r --workspace-concurrency 1 test --if-present
       - name: Integration
         run: pnpm -r --workspace-concurrency 1 run test:integration --if-present
       - name: Performance
         run: pnpm -r --workspace-concurrency 1 run test:perf --if-present
-
       - name: Upload results (non-fatal)
         if: always()
         uses: actions/upload-artifact@v4
