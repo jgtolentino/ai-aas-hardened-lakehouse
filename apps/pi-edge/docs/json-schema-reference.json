@@ -1,0 +1,327 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://scout/edge-transaction.schema.json",
+  "title": "Scout Edge Transaction",
+  "description": "Schema for Scout Edge sari-sari store transaction data",
+  "type": "object",
+  "required": [
+    "transaction_id",
+    "store",
+    "geo",
+    "ts_utc",
+    "tx_start_ts",
+    "tx_end_ts",
+    "request",
+    "items"
+  ],
+  "properties": {
+    "transaction_id": {
+      "type": "string",
+      "description": "Unique transaction identifier",
+      "pattern": "^TXN-[0-9]{8}-[0-9]{3}-[0-9]{6}$",
+      "examples": ["TXN-20250814-102-000456"]
+    },
+    "store": {
+      "type": "object",
+      "description": "Store information",
+      "required": ["id", "tz_offset_min"],
+      "properties": {
+        "id": {
+          "type": ["string", "number"],
+          "description": "Store identifier",
+          "examples": ["STO00284", 284]
+        },
+        "tz_offset_min": {
+          "type": "integer",
+          "description": "Timezone offset in minutes from UTC",
+          "examples": [480],
+          "minimum": -720,
+          "maximum": 840
+        }
+      }
+    },
+    "geo": {
+      "type": "object",
+      "description": "Geographic location information",
+      "properties": {
+        "region_id": {
+          "type": ["integer", "null"],
+          "description": "Region identifier",
+          "examples": [13]
+        },
+        "city_id": {
+          "type": ["integer", "null"],
+          "description": "City identifier",
+          "examples": [1339]
+        },
+        "barangay_id": {
+          "type": ["integer", "null"],
+          "description": "Barangay identifier",
+          "examples": [48291]
+        }
+      }
+    },
+    "ts_utc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Transaction timestamp in UTC",
+      "examples": ["2025-08-14T12:30:00Z"]
+    },
+    "tx_start_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Transaction start timestamp",
+      "examples": ["2025-08-14T12:29:50Z"]
+    },
+    "tx_end_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Transaction end timestamp",
+      "examples": ["2025-08-14T12:30:03Z"]
+    },
+    "request": {
+      "type": "object",
+      "description": "Customer request details",
+      "required": ["request_type", "request_mode", "payment_method"],
+      "properties": {
+        "request_type": {
+          "type": "string",
+          "description": "Type of customer request",
+          "enum": ["branded", "unbranded", "point", "indirect"],
+          "examples": ["branded"]
+        },
+        "request_mode": {
+          "type": "string",
+          "description": "Mode of customer request",
+          "enum": ["verbal", "pointing", "indirect"],
+          "examples": ["verbal"]
+        },
+        "payment_method": {
+          "type": "string",
+          "description": "Payment method used",
+          "enum": ["cash", "gcash", "maya", "credit", "other"],
+          "examples": ["cash"]
+        },
+        "gender": {
+          "type": "string",
+          "description": "Customer gender (optional)",
+          "enum": ["male", "female", "unknown"],
+          "examples": ["male"]
+        },
+        "age_bracket": {
+          "type": "string",
+          "description": "Customer age bracket (optional)",
+          "enum": ["18-24", "25-34", "35-44", "45-54", "55+", "unknown"],
+          "examples": ["25-34"]
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "description": "List of items in the transaction",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "category_name",
+          "product_name",
+          "qty",
+          "detection_method",
+          "confidence"
+        ],
+        "properties": {
+          "category_id": {
+            "type": ["integer", "null"],
+            "description": "Category identifier",
+            "examples": [21]
+          },
+          "category_name": {
+            "type": "string",
+            "description": "Category name",
+            "examples": ["Beverages", "Instant Noodles", "Ice"]
+          },
+          "brand_id": {
+            "type": ["integer", "null"],
+            "description": "Brand identifier",
+            "examples": [2001, null]
+          },
+          "brand_name": {
+            "type": ["string", "null"],
+            "description": "Brand name",
+            "examples": ["Coca-Cola", "Lucky Me", null]
+          },
+          "product_name": {
+            "type": "string",
+            "description": "Product name",
+            "examples": ["Coke 1.5L", "Pancit Canton Original", "Ice"]
+          },
+          "local_name": {
+            "type": ["string", "null"],
+            "description": "Local/vernacular name",
+            "examples": ["yelo", null]
+          },
+          "qty": {
+            "type": "integer",
+            "description": "Quantity purchased",
+            "minimum": 1,
+            "examples": [2, 3]
+          },
+          "unit": {
+            "type": "string",
+            "description": "Unit of measurement",
+            "default": "pc",
+            "examples": ["pc", "bag", "bottle", "pack"]
+          },
+          "unit_price": {
+            "type": ["number", "null"],
+            "description": "Price per unit",
+            "minimum": 0,
+            "examples": [65.0, 10.0, 3.0]
+          },
+          "total_price": {
+            "type": ["number", "null"],
+            "description": "Total price for this item",
+            "minimum": 0,
+            "examples": [130.0, 30.0, 9.0]
+          },
+          "detection_method": {
+            "type": "string",
+            "description": "Method used to detect this item",
+            "enum": ["stt", "vision", "ocr", "hybrid"],
+            "examples": ["hybrid", "stt"]
+          },
+          "confidence": {
+            "type": "number",
+            "description": "Confidence score for item detection",
+            "minimum": 0,
+            "maximum": 1,
+            "examples": [0.96, 0.93, 0.90]
+          }
+        }
+      }
+    },
+    "suggestion": {
+      "type": ["object", "null"],
+      "description": "Suggestion tracking (optional)",
+      "properties": {
+        "offered": {
+          "type": "boolean",
+          "description": "Whether a suggestion was offered",
+          "examples": [true]
+        },
+        "accepted": {
+          "type": "boolean",
+          "description": "Whether the suggestion was accepted",
+          "examples": [true]
+        }
+      }
+    },
+    "substitution": {
+      "type": ["object", "null"],
+      "description": "Substitution tracking (optional)",
+      "properties": {
+        "asked_brand_id": {
+          "type": ["integer", "null"],
+          "description": "Originally requested brand ID",
+          "examples": [1201]
+        },
+        "final_brand_id": {
+          "type": ["integer", "null"],
+          "description": "Final substituted brand ID",
+          "examples": [2001]
+        }
+      }
+    },
+    "amounts": {
+      "type": ["object", "null"],
+      "description": "Transaction amounts (optional)",
+      "properties": {
+        "transaction_amount": {
+          "type": ["number", "null"],
+          "description": "Total transaction amount",
+          "minimum": 0,
+          "examples": [169.0]
+        },
+        "price_source": {
+          "type": "string",
+          "description": "Source of pricing information",
+          "enum": ["edge", "catalog", "pos", "unknown"],
+          "examples": ["edge"]
+        }
+      }
+    },
+    "decision_trace": {
+      "type": ["object", "null"],
+      "description": "Debug/explainability information (optional, not stored in Gold)",
+      "properties": {
+        "vision": {
+          "type": "array",
+          "description": "Computer vision detections",
+          "items": {
+            "type": "object",
+            "properties": {
+              "box": {
+                "type": "array",
+                "description": "Bounding box [x, y, width, height]",
+                "items": {"type": "number"},
+                "minItems": 4,
+                "maxItems": 4
+              },
+              "brand": {"type": "string"},
+              "s_logo": {"type": "number", "minimum": 0, "maximum": 1},
+              "ocr_text": {"type": "array", "items": {"type": "string"}},
+              "ocr_score": {"type": "number", "minimum": 0, "maximum": 1}
+            }
+          }
+        },
+        "stt": {
+          "type": "object",
+          "description": "Speech-to-text information",
+          "properties": {
+            "turns": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "t": {"type": "number"},
+                  "speaker": {"type": "string"},
+                  "text": {"type": "string"}
+                }
+              }
+            },
+            "brand_hits": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "token": {"type": "string"},
+                  "s_stt": {"type": "number", "minimum": 0, "maximum": 1}
+                }
+              }
+            }
+          }
+        },
+        "fusion": {
+          "type": "object",
+          "description": "Confidence fusion parameters",
+          "properties": {
+            "alpha": {"type": "number"},
+            "beta": {"type": "number"},
+            "gamma": {"type": "number"},
+            "delta": {"type": "number"},
+            "T": {"type": "number"},
+            "z": {"type": "number"},
+            "raw": {"type": "number", "minimum": 0, "maximum": 1},
+            "calibrated": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        },
+        "heuristics": {
+          "type": "array",
+          "description": "Applied business rules",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

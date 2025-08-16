@@ -1,0 +1,4 @@
+{
+  "alpha": 0.45, "beta": 0.35, "gamma": 0.20, "delta": 0.10, "bias": 0.0, "temperature": 1.6,
+  "min_confidence_reliable": 0.60
+}

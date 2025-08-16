@@ -1,0 +1,14 @@
+{
+  "name": "@scout/scout-scraper-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/worker.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node --env-file=.env dist/worker.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
