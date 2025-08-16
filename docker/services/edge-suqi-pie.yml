@@ -1,0 +1,28 @@
+# Edge SUQI PIE Service Configuration
+version: '3.8'
+
+services:
+  edge-suqi-pie:
+    build:
+      context: ../../edge-suqi-pie
+      dockerfile: Dockerfile
+    container_name: edge-suqi-pie
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    ports:
+      - "3030:3000"
+    volumes:
+      - edge-suqi-cache:/app/cache
+      - edge-suqi-logs:/app/logs
+    networks:
+      - lakehouse-network
+    depends_on:
+      - postgres
+      - supabase
+
+volumes:
+  edge-suqi-cache:
+  edge-suqi-logs:
