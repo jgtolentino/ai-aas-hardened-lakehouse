@@ -1052,7 +1052,11 @@ For questions or support, please open an issue or contact the maintainers.
 ```
 project-root/
 ├─ apps/
+│  ├─ brand-dashboard/
+│  │  ├─ src/
 │  ├─ docs/
+│  ├─ etl-brand/
+│  │  ├─ data/
 │  ├─ pi-edge/
 │  │  ├─ docs/
 │  │  ├─ edge-device/
@@ -1071,10 +1075,13 @@ project-root/
 ├─ services/
 │  ├─ api/
 │  │  ├─ node_modules/
+│  ├─ brand-detector/
 │  ├─ brand-model/
 │  ├─ worker/
 │  │  ├─ node_modules/
 ├─ packages/
+│  ├─ brand-detection/
+│  │  ├─ dictionaries/
 │  ├─ contracts/
 │  │  ├─ node_modules/
 │  │  ├─ sql/
@@ -1124,10 +1131,13 @@ project-root/
 
 | Service | Exposed Ports |
 |---|---|
-| `postgres` | 5432->5432 |
+| `postgres` | 5433->5432 |
 | `api` | 8000->8000 |
 | `worker` | 3000->3000 |
 | `brand-model` | 8001->8001 |
+| `brand-detector` | 8002->8000 |
+| `brand-dashboard` | 3001->3000 |
+| `etl-brand` | — |
 
 
 <!-- AUTO-GEN:SERVICES END -->
@@ -1137,8 +1147,11 @@ project-root/
 
 - `ci.yml`
 - `dataset-publisher-tests.yml`
+- `deploy-production.yml`
 - `edge-functions.yml`
+- `prod-gate.yml`
 - `readme-guard.yml`
+- `release-images.yml`
 - `security-scan.yml`
 - `storage-buckets.yml`
 
