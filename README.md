@@ -1131,13 +1131,10 @@ project-root/
 
 | Service | Exposed Ports |
 |---|---|
-| `postgres` | 5433->5432 |
-| `api` | 8000->8000 |
-| `worker` | 3000->3000 |
-| `brand-model` | 8001->8001 |
-| `brand-detector` | 8002->8000 |
-| `brand-dashboard` | 3001->3000 |
-| `etl-brand` | — |
+| `db` | 5432->5432 |
+| `api` | 8080->8080 |
+| `worker` | — |
+| `brand-model` | 8000->8000 |
 
 
 <!-- AUTO-GEN:SERVICES END -->
