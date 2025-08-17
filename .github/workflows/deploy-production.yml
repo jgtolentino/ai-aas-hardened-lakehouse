@@ -1,0 +1,183 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+  push:
+    branches: [production]
+
+jobs:
+  gate-check:
+    name: Verify Production Gate
+    uses: ./.github/workflows/prod-gate.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy to Production
+    needs: gate-check
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: ${{ steps.deploy.outputs.url }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --workspace platform/scout/blueprint-dashboard
+      
+      - name: Build for production
+        run: |
+          npm run build
+          npm run dash:build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_ANON_KEY }}
+          NODE_ENV: production
+      
+      - name: Deploy to Vercel
+        id: deploy-vercel
+        if: github.repository_owner == 'your-org'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./platform/scout/blueprint-dashboard
+      
+      - name: Deploy to Supabase Edge Functions
+        run: |
+          npx supabase functions deploy --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      
+      - name: Canary check (k6)
+        env: { API_BASE: ${{ secrets.PROD_API_BASE }} }
+        run: |
+          docker run --rm -i grafana/k6:0.51.0 run - < scripts/k6/canary.js || echo CANARY_FAIL=1 >> $GITHUB_ENV
+
+      - name: Rollback on canary failure
+        if: env.CANARY_FAIL == '1'
+        run: |
+          echo 'Canary failed. Rolling back…'
+          # your rollback command here (e.g., helm rollback release-name 1)
+          exit 1
+
+      - name: Run post-deployment checks
+        run: |
+          # Wait for deployment to propagate
+          sleep 60
+          
+          # Check if site is accessible
+          DEPLOY_URL="${{ steps.deploy-vercel.outputs.preview-url || secrets.PROD_URL }}"
+          
+          if curl -f -s "$DEPLOY_URL" > /dev/null; then
+            echo "✅ Deployment accessible at $DEPLOY_URL"
+          else
+            echo "❌ Deployment not accessible"
+            exit 1
+          fi
+          
+          # Check API health
+          if curl -f -s "$DEPLOY_URL/api/health" > /dev/null; then
+            echo "✅ API health check passed"
+          else
+            echo "⚠️ API health check failed"
+          fi
+      
+      - name: Update deployment status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const environment = '${{ github.event.inputs.environment || 'production' }}';
+            const deploymentUrl = '${{ steps.deploy-vercel.outputs.preview-url || secrets.PROD_URL }}';
+            
+            // Create deployment
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: environment,
+              required_contexts: [],
+              auto_merge: false
+            });
+            
+            // Update deployment status
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: '${{ job.status }}',
+              environment_url: deploymentUrl,
+              description: 'Deployment ' + '${{ job.status }}'
+            });
+      
+      - name: Notify team
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            Production deployment ${{ job.status }}
+            Environment: ${{ github.event.inputs.environment || 'production' }}
+            Commit: ${{ github.sha }}
+            Actor: ${{ github.actor }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  rollback:
+    name: Rollback Plan
+    needs: deploy
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create rollback issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Production Deployment Failed - Rollback Required`,
+              body: `## Deployment Failure
+              
+              **Failed deployment:** ${context.sha}
+              **Environment:** ${{ github.event.inputs.environment || 'production' }}
+              **Time:** ${new Date().toISOString()}
+              **Actor:** ${{ github.actor }}
+              
+              ### Rollback Steps:
+              1. Revert to previous production tag
+              2. Run \`git revert ${context.sha}\`
+              3. Deploy hotfix through emergency pipeline
+              
+              ### Investigation:
+              - [ ] Check deployment logs
+              - [ ] Review production gate results
+              - [ ] Identify root cause
+              - [ ] Create fix PR
+              
+              cc @${{ github.actor }}`,
+              labels: ['incident', 'production', 'high-priority']
+            });
+            
+            console.log(`Rollback issue created: ${issue.data.html_url}`);
