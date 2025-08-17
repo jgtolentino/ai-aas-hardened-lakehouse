@@ -1148,6 +1148,7 @@ project-root/
 - `ci.yml`
 - `dataset-publisher-tests.yml`
 - `deploy-production.yml`
+- `dq-nightly.yml`
 - `edge-functions.yml`
 - `prod-gate.yml`
 - `readme-guard.yml`

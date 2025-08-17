@@ -1,0 +1,29 @@
+name: DQ Nightly
+on:
+  schedule:
+    - cron: "15 18 * * *"   # 02:15 PHT
+  workflow_dispatch:
+
+jobs:
+  dq:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Boot DB (compose) for checks
+        run: docker compose -f infra/docker/compose.yml up -d --build db
+      - name: Run DQ gate
+        env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
+        run: |
+          set +e
+          bash scripts/prod-readiness.sh; code=$?
+          echo "EXIT=$code" >> $GITHUB_ENV
+          exit 0
+      - name: Open issue on failure
+        if: env.EXIT != '0'
+        uses: actions-ecosystem/action-create-issue@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          title: "DQ Nightly failed"
+          body: "DQ gate failed in nightly run. Investigate. Run logs are attached."
