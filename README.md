@@ -1163,6 +1163,7 @@ project-root/
 | Overlay | Purpose | Key Resources |
 |---|---|---|
 | `dev` | Custom environment | — |
+| `prod` | Custom environment | — |
 
 
 <!-- AUTO-GEN:K8S END -->
