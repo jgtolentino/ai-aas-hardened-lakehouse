@@ -1,0 +1,65 @@
+version: "3.9"
+services:
+  db:
+    image: ankane/pgvector:v0.5.1
+    container_name: suqi-db
+    environment:
+      POSTGRES_USER: suqi
+      POSTGRES_PASSWORD: suqi
+      POSTGRES_DB: suqi
+    ports: ["5434:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U suqi -d suqi"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - ../../db/migrations:/docker-entrypoint-initdb.d
+
+  brand-model:
+    build: ../../services/brand-model
+    container_name: suqi-brand-model
+    environment:
+      DATABASE_URL: postgres://suqi:suqi@db:5432/suqi
+      ENABLE_EMBEDDINGS: "1"
+    ports: ["8000:8000"]
+    depends_on: [db]
+
+  api:
+    build: ../../services/api
+    container_name: suqi-api
+    environment:
+      DATABASE_URL: postgres://suqi:suqi@db:5432/suqi
+      BRAND_MODEL_URL: http://brand-model:8000
+    ports: ["8080:8080"]
+    depends_on: [db, brand-model]
+
+  worker:
+    build: ../../services/worker
+    container_name: suqi-worker
+    environment:
+      DATABASE_URL: postgres://suqi:suqi@db:5432/suqi
+      USER_AGENT: "IskoBot/1.0 (+consent)"
+      PER_HOST_RPS: "0.5"
+      BRAND_MODEL_URL: http://brand-model:8000
+    depends_on: [db, brand-model]
+
+  # FastAPI brand-detector (your service); container exposes 8000 -> host 8002
+  brand-detector:
+    build: ../../services/brand-detector
+    container_name: suqi-brand-detector
+    environment:
+      PORT: "8000"
+      DATABASE_URL: postgres://suqi:suqi@db:5432/suqi
+    ports: ["8002:8000"]
+    depends_on: [db]
+
+  # Next.js dashboard (your app); container exposes 3000 -> host 3001
+  brand-dashboard:
+    build: ../../apps/brand-dashboard
+    container_name: suqi-brand-dashboard
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXT_PUBLIC_DETECTOR_URL: http://localhost:8002
+    ports: ["3001:3000"]
+    depends_on: [api, brand-detector]

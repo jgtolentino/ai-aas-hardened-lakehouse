@@ -1,0 +1,9 @@
+text,context,timestamp
+"I love drinking Coca-Cola with my lunch","{'category': 'beverage'}","2024-01-01 12:00:00"
+"Pepsi is my favorite soda","{'category': 'beverage'}","2024-01-01 12:05:00"
+"Red Bull gives me energy","{'category': 'energy_drink'}","2024-01-01 12:10:00"
+"Sprite is so refreshing","{'category': 'beverage'}","2024-01-01 12:15:00"
+"I bought some generic cola","{'category': 'beverage'}","2024-01-01 12:20:00"
+"Mountain Dew is great for gaming","{'category': 'beverage'}","2024-01-01 12:25:00"
+"Gatorade after my workout","{'category': 'sports_drink'}","2024-01-01 12:30:00"
+"Monster energy drink keeps me awake","{'category': 'energy_drink'}","2024-01-01 12:35:00"

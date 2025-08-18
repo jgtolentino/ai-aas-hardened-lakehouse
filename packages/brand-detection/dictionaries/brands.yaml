@@ -1,0 +1,69 @@
+version: "1.0.0"
+description: "Brand detection dictionary for retail analytics"
+
+brands:
+  coke:
+    regex: '\b(coca[\s-]?cola|coke|coca cola)\b'
+    weight: 1.0
+    category: "cola"
+    aliases: ["coca-cola", "coke", "coca cola"]
+
+  pepsi:
+    regex: '\bpepsi\b'
+    weight: 1.0
+    category: "cola"
+    aliases: ["pepsi"]
+
+  sprite:
+    regex: '\bsprite\b'
+    weight: 1.0
+    category: "lemon_lime"
+    aliases: ["sprite"]
+
+  red_bull:
+    regex: '\b(red[\s-]?bull|redbull)\b'
+    weight: 1.0
+    category: "energy_drink"
+    aliases: ["red bull", "redbull"]
+
+  monster:
+    regex: '\bmonster\b'
+    weight: 0.8
+    category: "energy_drink"
+    aliases: ["monster"]
+
+  gatorade:
+    regex: '\bgatorade\b'
+    weight: 1.0
+    category: "sports_drink"
+    aliases: ["gatorade"]
+
+  powerade:
+    regex: '\bpowerade\b'
+    weight: 1.0
+    category: "sports_drink"
+    aliases: ["powerade"]
+
+  mountain_dew:
+    regex: '\b(mountain[\s-]?dew|mtn[\s-]?dew)\b'
+    weight: 1.0
+    category: "citrus"
+    aliases: ["mountain dew", "mtn dew"]
+
+  seven_up:
+    regex: '\b(7[\s-]?up|seven[\s-]?up)\b'
+    weight: 1.0
+    category: "lemon_lime"
+    aliases: ["7up", "seven up"]
+
+  dr_pepper:
+    regex: '\b(dr[\s\.]?pepper|doctor pepper)\b'
+    weight: 1.0
+    category: "cola"
+    aliases: ["dr pepper", "doctor pepper"]
+
+  generic:
+    regex: '.*'
+    weight: 0.1
+    category: "unknown"
+    aliases: ["generic", "unknown"]
