@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: brand-model }
+spec:
+  strategy: { type: RollingUpdate, rollingUpdate: { maxUnavailable: 0, maxSurge: 1 } }
+  template:
+    spec:
+      securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
+      containers:
+      - name: brand-model
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: { drop: ["ALL"] }
+          readOnlyRootFilesystem: true
+        resources:
+          requests: { cpu: "200m", memory: "512Mi" }
+          limits:   { cpu: "2000m", memory: "3Gi" }
+        readinessProbe: { httpGet: { path: /reload, port: 8000 }, periodSeconds: 15, failureThreshold: 3 }
+        livenessProbe:  { httpGet: { path: /docs,   port: 8000 }, periodSeconds: 30, failureThreshold: 3 }

@@ -17,7 +17,9 @@
     "type-check": "turbo run type-check",
     "dash:dev": "npm --workspace platform/scout/blueprint-dashboard run dev",
     "dash:build": "npm --workspace platform/scout/blueprint-dashboard run build",
-    "dash:preview": "npm --workspace platform/scout/blueprint-dashboard run preview"
+    "dash:preview": "npm --workspace platform/scout/blueprint-dashboard run preview",
+    "readme:build": "node scripts/readme-gen.mjs",
+    "readme:check": "node scripts/readme-gen.mjs --check"
   },
   "devDependencies": {
     "tsx": "^4.7.0",

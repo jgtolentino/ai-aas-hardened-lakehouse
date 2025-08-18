@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: suqi
+      POSTGRES_PASSWORD: suqi
+      POSTGRES_DB: suqi
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U suqi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: 
+      context: ../../services/api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://suqi:suqi@db:5432/suqi
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ../../services/worker
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgres://suqi:suqi@db:5432/suqi
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+
+  brand-model:
+    build:
+      context: ../../services/brand-model
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgres://suqi:suqi@db:5432/suqi
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+EOF < /dev/null
