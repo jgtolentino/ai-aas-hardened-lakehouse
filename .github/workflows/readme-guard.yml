@@ -1,0 +1,24 @@
+name: README Guard
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'services/**'
+      - 'packages/**'
+      - 'db/**'
+      - 'dq/**'
+      - 'supabase/**'
+      - 'infra/**'
+      - '.github/workflows/**'
+      - 'scripts/readme-gen.mjs'
+      - 'templates/README.tpl.md'
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node
+        uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Check
+        run: node scripts/readme-gen.mjs --check
