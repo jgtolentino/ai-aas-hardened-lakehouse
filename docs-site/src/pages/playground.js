@@ -133,14 +133,23 @@ LIMIT 10;`);
                           nameKey="category"
                           cx="50%"
                           cy="50%"
+                          innerRadius={40}
                           outerRadius={100}
-                          label
+                          paddingAngle={2}
+                          label={({ category, percent }) => `${category}: ${(percent * 100).toFixed(0)}%`}
+                          labelLine={false}
                         >
                           {results.categoryData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={['#0078d4', '#40a9ff', '#69c0ff', '#91d5ff', '#bae7ff'][index % 5]} />
                           ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip formatter={(value, name) => [`₱${value.toLocaleString()}`, name]} />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={36}
+                          layout="horizontal"
+                          align="center"
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>

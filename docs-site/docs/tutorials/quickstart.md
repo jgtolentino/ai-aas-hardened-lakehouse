@@ -64,6 +64,11 @@ JWT_SECRET=your-jwt-secret-key
 
 # External APIs
 MAPBOX_API_KEY=pk.your_mapbox_token_here
+OPENAI_API_KEY=sk-your-openai-api-key
+
+# Suqi Chat Configuration
+SUQI_CHAT_MODE=db  # Use database orchestration
+NEXT_PUBLIC_DEFAULT_PLATFORM=analytics
 ```
 
 ## 🏗️ Local Development Setup
@@ -176,6 +181,53 @@ curl -X POST http://localhost:54324/functions/v1/genie-query \
   -H "Authorization: Bearer YOUR_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"query": "Show me top 5 stores by revenue"}'
+```
+
+## 🤖 Setting Up Suqi Chat
+
+### 1. **Enable pgvector Extension**
+
+```bash
+# Connect to database
+psql postgresql://postgres:postgres@localhost:54322/postgres
+
+# Enable vector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+### 2. **Apply Suqi Chat Migrations**
+
+```bash
+# Apply Suqi Chat schema
+psql postgresql://postgres:postgres@localhost:54322/postgres \
+  -f supabase/migrations/20240118000001_fix_production_blockers.sql
+
+# Verify Suqi functions
+psql postgresql://postgres:postgres@localhost:54322/postgres -c "
+  SELECT proname 
+  FROM pg_proc 
+  WHERE proname LIKE '%suqi%' 
+  ORDER BY proname;"
+```
+
+### 3. **Test Suqi Chat**
+
+```bash
+# Test natural language query
+curl -X POST http://localhost:54321/rest/v1/rpc/ask_suqi_query \
+  -H "apikey: YOUR_ANON_KEY" \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -H "x-platform: analytics" \
+  -d '{
+    "question": "What were our top performing stores last month?",
+    "context_limit": 5
+  }'
+
+# Check performance metrics
+curl -X POST http://localhost:54321/rest/v1/rpc/get_suqi_performance_metrics \
+  -H "apikey: YOUR_ANON_KEY" \
+  -H "Authorization: Bearer YOUR_ANON_KEY"
 ```
 
 ## 🎯 Deploy Your First Pipeline

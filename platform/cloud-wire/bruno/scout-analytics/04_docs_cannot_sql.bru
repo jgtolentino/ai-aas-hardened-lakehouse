@@ -1,0 +1,63 @@
+meta {
+  name: Docs Platform Cannot Execute SQL
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{BASE_URL}}/rest/v1/rpc/ask_suqi_query
+  body: json
+  auth: none
+}
+
+headers {
+  apikey: {{SUPABASE_ANON}}
+  Authorization: Bearer {{SUPABASE_ANON}}
+  Content-Type: application/json
+  Prefer: return=representation
+  x-platform: docs
+}
+
+body:json {
+  {
+    "question": "run sql select * from scout.gold_daily_metrics",
+    "context_limit": 5,
+    "include_metadata": false
+  }
+}
+
+assert {
+  res.status: in [401, 403, 422]
+}
+
+tests {
+  test("Docs platform should be denied SQL operations", function() {
+    const status = res.getStatus();
+    expect([401, 403, 422]).to.include(status);
+    
+    if (res.getBody()) {
+      const body = res.getBody();
+      // Check for security error indicators
+      const errorMessage = body.message || body.error || body.msg || "";
+      const hasSecurityError = 
+        errorMessage.includes("not allowed") ||
+        errorMessage.includes("insufficient_privilege") ||
+        errorMessage.includes("denied") ||
+        errorMessage.includes("SQL operations");
+      
+      if (status === 422 || status === 403) {
+        expect(hasSecurityError).to.be.true;
+      }
+    }
+  });
+}
+
+docs {
+  This test verifies that the docs platform cannot execute SQL queries through the ask_suqi_query function.
+  
+  Expected behavior:
+  - Platform header x-platform: docs
+  - Query contains SQL keywords
+  - Response should be 401, 403, or 422 (any denial is acceptable)
+  - Error message should indicate SQL operations are not allowed
+}

@@ -27,6 +27,15 @@ A production-ready, security-hardened data lakehouse platform with geographic vi
 - **Cost Management**: Replication cost estimation and optimization
 - **API Documentation**: Auto-generated docs with OpenAPI integration
 
+### AI-Powered Analytics (New! 🤖)
+- **Suqi Chat**: Natural language query interface powered by GPT-4
+- **Intelligent RAG**: Vector search with semantic understanding
+- **Dual Orchestration**: Database or Node.js orchestration modes
+- **Platform Gating**: Role-based access control for SQL operations
+- **Usage Analytics**: Token tracking and cost optimization
+- **Response Caching**: Sub-second responses for repeated queries
+- **GitHub MCP Integration**: Automated issue creation from TODOs and data quality checks
+
 ## 📊 Complete Data Stack
 
 ### Core Components
@@ -840,11 +849,12 @@ scout.recommendation_engine → Product recommendations
 
 ### Prerequisites
 - Kubernetes cluster (1.24+)
-- PostgreSQL 14+ with PostGIS 3.0+
+- PostgreSQL 14+ with PostGIS 3.0+ and pgvector extension
 - Helm 3
 - Bruno CLI (`npm install -g @usebruno/cli`)
 - Python 3.8+
 - Docker
+- OpenAI API key (for Suqi Chat)
 
 ### 1. Clone and Configure
 ```bash
@@ -904,7 +914,21 @@ cd platform/cloud-wire
 ./scripts/run_cloud_wire.sh
 ```
 
-### 5. Verify Deployment
+### 5. Configure Suqi Chat (AI Analytics)
+```bash
+# Apply Suqi Chat migrations
+psql "$PGURI" -f supabase/migrations/20240118000001_fix_production_blockers.sql
+
+# Set environment variables
+export OPENAI_API_KEY="your-openai-api-key"
+export SUQI_CHAT_MODE="db"  # Use database orchestration
+
+# Deploy edge functions
+supabase functions deploy ask_suqi_query
+supabase functions deploy search_ai_corpus
+```
+
+### 6. Verify Deployment
 ```bash
 # Run comprehensive verification
 ./scripts/verify_choropleth_complete.sh
@@ -912,8 +936,11 @@ cd platform/cloud-wire
 # Run performance benchmarks
 python scripts/benchmark_choropleth_hard.py --pguri "$PGURI" --exit-on-fail
 
-# Run API tests
+# Run API tests including Suqi Chat
 BRUNO_ENV=production ./scripts/run_bruno_tests.sh
+
+# Verify Suqi Chat readiness
+psql "$PGURI" -f scripts/validate_production_readiness.sql
 ```
 
 ## 📊 Performance Metrics

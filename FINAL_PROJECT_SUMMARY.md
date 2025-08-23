@@ -22,13 +22,18 @@
 │       │   ├── 004_scout_platinum_features.sql
 │       │   └── 005_scout_rls_policies.sql
 │       │
-│       ├── functions/                # Edge Functions (4)
+│       ├── functions/                # Edge Functions (10+)
 │       │   ├── ingest-transaction.ts # Transaction ingestion
 │       │   ├── embed-batch.ts        # Batch embeddings
 │       │   ├── genie-query.ts        # Natural language SQL
-│       │   └── ingest-doc.ts         # Document processing
+│       │   ├── ingest-doc.ts         # Document processing
+│       │   ├── ask_suqi_query/       # AI chat interface
+│       │   ├── search_ai_corpus/     # Vector search
+│       │   ├── usage-analytics/      # Dataset tracking
+│       │   ├── dataset-versioning/   # Version control
+│       │   └── export-parquet/       # Data export
 │       │
-│       ├── bruno/                    # API Tests (11 tests)
+│       ├── bruno/                    # API Tests (23 tests)
 │       ├── quality/                  # Data quality checks
 │       └── deploy.sh                 # Deployment script
 │
@@ -132,6 +137,8 @@ export SUPABASE_PROJECT_REF=cxzllzyxwpyptfretryc
 export SUPABASE_DB_PASSWORD=<your-password>
 export OPENAI_API_KEY=<your-key>
 export GITHUB_OWNER=<your-github-username>
+export SUQI_CHAT_MODE=db  # Use database orchestration
+export NEXT_PUBLIC_DEFAULT_PLATFORM=analytics
 ```
 
 ### Deployment Steps
@@ -162,10 +169,13 @@ make status
 - Time-travel queries
 - Trend analysis
 
-### 3. **AI-Driven Insights**
-- Natural language interface
-- Automated anomaly detection
-- Predictive analytics
+### 3. **AI-Driven Insights with Suqi Chat**
+- Natural language interface powered by GPT-4
+- RAG-based contextual responses
+- Platform-aware access control
+- Response caching for performance
+- Usage analytics and cost tracking
+- Dual orchestration modes (DB/Node)
 
 ### 4. **Enterprise Security**
 - Zero-trust architecture
@@ -179,11 +189,13 @@ make status
 
 ## 📊 Sample Queries
 
-### Natural Language (via Genie)
+### Natural Language (via Suqi Chat)
 ```
 "What are the top 5 products by revenue in NCR this month?"
 "Show me stores with declining sales trends"
 "Find unusual transaction patterns in Cebu"
+"Compare Q3 vs Q4 performance by region"
+"Which campaigns had the highest ROI?"
 ```
 
 ### Direct SQL (PostgREST)

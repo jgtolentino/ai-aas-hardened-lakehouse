@@ -1,0 +1,72 @@
+meta {
+  name: Analytics Platform Can Query Read-Only
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{BASE_URL}}/rest/v1/rpc/ask_suqi_query
+  body: json
+  auth: none
+}
+
+headers {
+  apikey: {{SUPABASE_ANON}}
+  Authorization: Bearer {{SUPABASE_ANON}}
+  Content-Type: application/json
+  Prefer: return=representation
+  x-platform: analytics
+}
+
+body:json {
+  {
+    "question": "show last 7d revenue trend from scout.gold_daily_metrics",
+    "context_limit": 10,
+    "include_metadata": true,
+    "use_cache": false
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.answer: isString
+}
+
+tests {
+  test("Analytics platform should allow read-only queries", function() {
+    expect(res.getStatus()).to.equal(200);
+    
+    const body = res.getBody();
+    expect(body).to.have.property('answer');
+    expect(body).to.have.property('sources');
+    expect(body.platform).to.equal('analytics');
+    
+    // Verify response structure
+    if (body.sources) {
+      expect(body.sources).to.be.an('array');
+    }
+    
+    if (body.usage) {
+      expect(body.usage).to.have.property('total_tokens');
+    }
+    
+    expect(body).to.have.property('response_time_ms');
+    expect(body.response_time_ms).to.be.a('number');
+  });
+  
+  test("Response should indicate analytics platform context", function() {
+    const body = res.getBody();
+    expect(body.platform).to.equal('analytics');
+  });
+}
+
+docs {
+  This test verifies that the analytics platform can execute read-only queries through the ask_suqi_query function.
+  
+  Expected behavior:
+  - Platform header x-platform: analytics
+  - Query requests revenue trend data
+  - Response should be 200 OK
+  - Response should include answer, sources, and platform indicator
+  - No write operations are tested (read-only verification)
+}

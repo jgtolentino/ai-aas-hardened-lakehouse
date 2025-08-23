@@ -110,6 +110,33 @@ graph TD
 - Advanced analytics
 - AI-powered insights
 
+### **Suqi Chat AI Interface** 🤖
+- Natural language query processing
+- GPT-4 powered responses
+- RAG-based context retrieval
+- Platform-aware access control
+
+```mermaid
+graph LR
+    A[User Query] --> B[Suqi Chat]
+    B --> C[Embedding Generation]
+    C --> D[Vector Search]
+    D --> E[Context Retrieval]
+    E --> F[LLM Processing]
+    F --> G[Response Generation]
+    G --> H[User Response]
+    
+    subgraph "Security Layer"
+        I[JWT Validation]
+        J[Platform Gating]
+        K[Rate Limiting]
+    end
+    
+    B --> I
+    I --> J
+    J --> K
+```
+
 ## Security Architecture
 
 ### **Multi-Layer Security Model**

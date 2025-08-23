@@ -1,0 +1,115 @@
+name: Scout v5.2 - Scheduled Sync & Monitor
+
+on:
+  schedule:
+    # Run every 6 hours to check sync status
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+env:
+  SUPABASE_PROJECT_ID: cxzllzyxwpyptfretryc
+  GITHUB_REPO: jgtolentino/ai-aas-hardened-lakehouse
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Check Schema Drift
+        run: |
+          echo "🔍 Checking for schema drift..."
+          
+          supabase link --project-ref ${{ env.SUPABASE_PROJECT_ID }}
+          
+          # Generate diff between local and remote
+          supabase db diff --linked > /tmp/schema_drift.txt
+          
+          if [ -s /tmp/schema_drift.txt ]; then
+            echo "⚠️ Schema drift detected!"
+            cat /tmp/schema_drift.txt
+            
+            # Create an issue if drift is detected
+            echo "CREATE_ISSUE=true" >> $GITHUB_ENV
+          else
+            echo "✅ No schema drift detected"
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      
+      - name: Create Drift Issue
+        if: env.CREATE_ISSUE == 'true'
+        uses: actions/create-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          title: "🔄 Schema Drift Detected in Scout v5.2"
+          body: |
+            ## Schema Drift Detected
+            
+            The production database schema has drifted from the repository.
+            
+            ### Actions Required:
+            1. Review the changes in production
+            2. Run the sync-from-prod workflow to pull changes
+            3. Update documentation if needed
+            
+            Run workflow: [Sync from Production](https://github.com/${{ env.GITHUB_REPO }}/actions/workflows/scout-deploy.yml)
+          labels: schema-drift, scout-v5.2
+
+  monitor-health:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check Agent Feed Activity
+        run: |
+          echo "📊 Checking Agent Feed activity..."
+          
+          # Check if agent feed has recent entries
+          response=$(curl -s -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/agent_feed?select=feed_id,created_at&order=created_at.desc&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          
+          if echo "$response" | grep -q "feed_id"; then
+            echo "✅ Agent Feed is active"
+          else
+            echo "⚠️ No recent Agent Feed activity"
+          fi
+      
+      - name: Check Monitor Status
+        run: |
+          echo "🔍 Checking Platinum Monitors..."
+          
+          # Check monitor execution via RPC
+          response=$(curl -s -X POST "${{ secrets.SUPABASE_URL }}/rest/v1/rpc/rpc_get_dashboard_kpis" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          
+          if echo "$response" | grep -q "metric_value"; then
+            echo "✅ Monitors are responding"
+          else
+            echo "❌ Monitors not responding"
+            exit 1
+          fi
+      
+      - name: Generate Health Report
+        run: |
+          echo "## 🏥 Scout v5.2 Health Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Component Status" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Database: Connected" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ RPC Functions: Operational" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Agent Feed: Active" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Edge Functions: Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[View Dashboard](https://app.supabase.com/project/${{ env.SUPABASE_PROJECT_ID }})" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,1105 @@
+Project ScoutAnalytics {
+  database_type: 'PostgreSQL'
+  Note: '''
+    Scout Analytics Platform - Complete Schema v3.0
+    Production Release: August 23, 2025
+    Architecture: Star Schema with Master Data Layer
+    Pipeline: Bronze → Silver → Gold + Analytics Views
+    Tables: 81 Base Tables + 120+ Views
+    Deployment: Supabase PostgreSQL with RLS
+  '''
+}
+
+/* ===================== ENUMS & TYPES ===================== */
+
+Enum transaction_status {
+  pending
+  completed
+  cancelled
+  failed
+}
+
+Enum price_tier {
+  value
+  standard
+  premium
+}
+
+Enum customer_segment {
+  premium
+  regular
+  occasional
+  churned
+}
+
+Enum request_type {
+  branded
+  unbranded
+  unsure
+}
+
+Enum geom_type {
+  region
+  province
+  city
+  barangay
+  custom
+}
+
+Enum etl_status {
+  pending
+  processing
+  completed
+  failed
+  retrying
+}
+
+Enum brand_tier {
+  premium
+  mainstream
+  value
+  local
+}
+
+/* ===================== DIMENSION TABLES (8) ===================== */
+
+Table scout.dim_date {
+  date_key integer [pk, note: "Surrogate key YYYYMMDD format"]
+  full_date date [not null, unique]
+  year integer [not null]
+  quarter integer [not null]
+  month integer [not null]
+  month_name varchar [not null]
+  month_short varchar(3) [not null]
+  week_of_year integer [not null]
+  day_of_month integer [not null]
+  day_of_week integer [not null]
+  day_name varchar [not null]
+  day_short varchar(3) [not null]
+  is_weekend boolean [not null]
+  is_holiday boolean [default: false]
+  holiday_name varchar [null]
+  fiscal_year integer [null]
+  fiscal_quarter integer [null]
+  fiscal_month integer [null]
+  
+  Indexes {
+    full_date [unique]
+  }
+}
+
+Table scout.dim_time {
+  time_key integer [pk, note: "Surrogate key HHMMSS format"]
+  full_time time [not null, unique]
+  hour integer [not null]
+  minute integer [not null]
+  second integer [not null]
+  hour_12 integer [not null]
+  am_pm varchar(2) [not null]
+  time_of_day varchar [not null, note: "Morning, Afternoon, Evening, Night"]
+  business_hours boolean [not null]
+  peak_hours boolean [not null]
+  
+  Indexes {
+    full_time [unique]
+  }
+}
+
+Table scout.dim_stores {
+  store_key integer [pk, increment]
+  store_id varchar [not null, unique]
+  store_name varchar
+  store_type varchar
+  barangay varchar
+  city varchar
+  province varchar
+  region varchar
+  island_group varchar
+  latitude numeric(10,7)
+  longitude numeric(10,7)
+  psgc_code varchar
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Indexes {
+    store_id [unique]
+    (province, city, barangay) [name: 'idx_store_location']
+  }
+}
+
+Table scout.dim_customers {
+  customer_key integer [pk, increment]
+  customer_id varchar [not null, unique]
+  customer_name varchar
+  customer_type varchar
+  segment customer_segment
+  lifetime_value numeric(12,2)
+  first_purchase_date date
+  last_purchase_date date
+  purchase_frequency integer
+  avg_basket_size numeric(10,2)
+  preferred_payment varchar
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Indexes {
+    customer_id [unique]
+    segment
+  }
+}
+
+Table scout.dim_products {
+  product_key integer [pk, increment]
+  product_id varchar [not null, unique]
+  sku varchar [unique]
+  barcode varchar
+  product_name varchar [not null]
+  brand varchar
+  category varchar
+  subcategory varchar
+  size varchar
+  unit varchar
+  price_tier price_tier
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Indexes {
+    product_id [unique]
+    sku [unique]
+    (brand, category)
+  }
+}
+
+Table scout.dim_campaigns {
+  campaign_key integer [pk, increment]
+  campaign_id varchar [not null, unique]
+  campaign_name varchar [not null]
+  campaign_type varchar
+  start_date date [not null]
+  end_date date
+  target_audience varchar
+  budget numeric(12,2)
+  actual_spend numeric(12,2)
+  roi numeric(5,2)
+  is_active boolean
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    campaign_id [unique]
+    (start_date, end_date)
+  }
+}
+
+Table scout.dim_payment_methods {
+  payment_key integer [pk, increment]
+  payment_method varchar [not null, unique]
+  payment_category varchar
+  processing_fee_rate numeric(5,4)
+  is_digital boolean
+  is_active boolean [default: true]
+  
+  Indexes {
+    payment_method [unique]
+  }
+}
+
+Table scout.dim_geometries {
+  geometry_key integer [pk, increment]
+  geometry_type geom_type [not null]
+  name varchar [not null]
+  psgc_code varchar
+  parent_geometry_key integer [ref: > scout.dim_geometries.geometry_key]
+  boundary geometry
+  area_sq_km numeric(10,2)
+  population integer
+  
+  Indexes {
+    (geometry_type, name)
+    psgc_code
+  }
+}
+
+/* ===================== FACT TABLES (9) ===================== */
+
+Table scout.fact_transactions {
+  transaction_key bigserial [pk]
+  transaction_id varchar [not null, unique]
+  date_key integer [ref: > scout.dim_date.date_key]
+  time_key integer [ref: > scout.dim_time.time_key]
+  store_key integer [ref: > scout.dim_stores.store_key]
+  customer_key integer [ref: > scout.dim_customers.customer_key]
+  payment_key integer [ref: > scout.dim_payment_methods.payment_key]
+  total_amount numeric(12,2) [not null]
+  total_quantity integer [not null]
+  discount_amount numeric(10,2) [default: 0]
+  tax_amount numeric(10,2) [default: 0]
+  status transaction_status
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    transaction_id [unique]
+    date_key
+    store_key
+    customer_key
+  }
+}
+
+Table scout.fact_transaction_items {
+  item_key bigserial [pk]
+  transaction_key bigint [ref: > scout.fact_transactions.transaction_key]
+  product_key integer [ref: > scout.dim_products.product_key]
+  quantity integer [not null]
+  unit_price numeric(10,2) [not null]
+  line_total numeric(10,2) [not null]
+  discount_amount numeric(10,2) [default: 0]
+  
+  Indexes {
+    transaction_key
+    product_key
+  }
+}
+
+Table scout.fact_daily_sales {
+  date_key integer [ref: > scout.dim_date.date_key]
+  store_key integer [ref: > scout.dim_stores.store_key]
+  product_key integer [ref: > scout.dim_products.product_key]
+  total_quantity integer [not null]
+  total_revenue numeric(12,2) [not null]
+  total_transactions integer [not null]
+  avg_unit_price numeric(10,2)
+  
+  Indexes {
+    (date_key, store_key, product_key) [pk]
+  }
+}
+
+Table scout.fact_consumer_behavior {
+  behavior_key bigserial [pk]
+  date_key integer [ref: > scout.dim_date.date_key]
+  customer_key integer [ref: > scout.dim_customers.customer_key]
+  store_key integer [ref: > scout.dim_stores.store_key]
+  visit_frequency integer
+  avg_basket_size numeric(10,2)
+  preferred_categories jsonb
+  price_sensitivity_score numeric(3,2)
+  brand_loyalty_score numeric(3,2)
+  
+  Indexes {
+    (date_key, customer_key)
+  }
+}
+
+Table scout.fact_basket_analysis {
+  basket_key bigserial [pk]
+  date_key integer [ref: > scout.dim_date.date_key]
+  store_key integer [ref: > scout.dim_stores.store_key]
+  basket_items jsonb [not null]
+  basket_value numeric(12,2)
+  item_count integer
+  category_count integer
+  brand_count integer
+  
+  Indexes {
+    date_key
+    store_key
+  }
+}
+
+Table scout.fact_substitutions {
+  substitution_key bigserial [pk]
+  date_key integer [ref: > scout.dim_date.date_key]
+  store_key integer [ref: > scout.dim_stores.store_key]
+  original_product_key integer [ref: > scout.dim_products.product_key]
+  substitute_product_key integer [ref: > scout.dim_products.product_key]
+  reason varchar
+  frequency integer
+  
+  Indexes {
+    (date_key, store_key)
+  }
+}
+
+Table scout.fact_request_patterns {
+  pattern_key bigserial [pk]
+  date_key integer [ref: > scout.dim_date.date_key]
+  store_key integer [ref: > scout.dim_stores.store_key]
+  request_type request_type
+  brand_requested varchar
+  product_requested varchar
+  fulfillment_status varchar
+  alternative_offered boolean
+  
+  Indexes {
+    date_key
+    store_key
+  }
+}
+
+Table scout.fact_transaction_duration {
+  duration_key bigserial [pk]
+  transaction_key bigint [ref: > scout.fact_transactions.transaction_key]
+  queue_time_seconds integer
+  processing_time_seconds integer
+  total_time_seconds integer
+  payment_time_seconds integer
+  
+  Indexes {
+    transaction_key
+  }
+}
+
+Table scout.fact_monthly_performance {
+  performance_key bigserial [pk]
+  year_month integer [not null]
+  store_key integer [ref: > scout.dim_stores.store_key]
+  total_revenue numeric(15,2)
+  total_transactions integer
+  unique_customers integer
+  new_customers integer
+  churn_rate numeric(5,2)
+  
+  Indexes {
+    (year_month, store_key) [unique]
+  }
+}
+
+/* ===================== MASTER DATA TABLES (12) ===================== */
+
+Table scout.master_brands {
+  brand_id integer [pk, increment]
+  brand_code varchar [unique, not null]
+  brand_name varchar [not null]
+  brand_tier brand_tier
+  is_local boolean [default: false]
+  is_tbwa_client boolean [default: false]
+  parent_company varchar
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    brand_code [unique]
+    brand_name
+  }
+}
+
+Table scout.master_categories {
+  category_id integer [pk, increment]
+  category_code varchar [unique, not null]
+  category_name varchar [not null]
+  parent_category_id integer [ref: > scout.master_categories.category_id]
+  category_level integer
+  display_order integer
+  
+  Indexes {
+    category_code [unique]
+  }
+}
+
+Table scout.master_locations {
+  location_id integer [pk, increment]
+  location_type varchar [not null]
+  location_name varchar [not null]
+  parent_location_id integer [ref: > scout.master_locations.location_id]
+  island_group varchar
+  latitude numeric(10,7)
+  longitude numeric(10,7)
+  
+  Indexes {
+    (location_type, location_name)
+  }
+}
+
+Table scout.master_ph_locations {
+  psgc_code varchar [pk]
+  region varchar [not null]
+  province varchar
+  city_municipality varchar
+  barangay varchar
+  geo_level varchar [not null]
+  population integer
+  income_class varchar
+  
+  Indexes {
+    geo_level
+    region
+  }
+}
+
+Table scout.master_stores {
+  store_master_id integer [pk, increment]
+  store_code varchar [unique, not null]
+  store_name varchar [not null]
+  chain_name varchar
+  store_format varchar
+  size_sqm numeric(10,2)
+  employee_count integer
+  
+  Indexes {
+    store_code [unique]
+  }
+}
+
+Table scout.master_items {
+  item_master_id bigserial [pk]
+  universal_sku varchar [unique]
+  brand_id integer [ref: > scout.master_brands.brand_id]
+  category_id integer [ref: > scout.master_categories.category_id]
+  base_description varchar [not null]
+  manufacturer varchar
+  
+  Indexes {
+    universal_sku [unique]
+  }
+}
+
+Table scout.master_product_catalog {
+  catalog_id bigserial [pk]
+  item_master_id bigint [ref: > scout.master_items.item_master_id]
+  variant_code varchar
+  size varchar
+  flavor varchar
+  pack_size integer
+  upc varchar [unique]
+  
+  Indexes {
+    upc [unique]
+  }
+}
+
+Table scout.master_price_list {
+  price_id bigserial [pk]
+  catalog_id bigint [ref: > scout.master_product_catalog.catalog_id]
+  store_master_id integer [ref: > scout.master_stores.store_master_id]
+  price_tier varchar
+  srp numeric(10,2)
+  wholesale_price numeric(10,2)
+  effective_date date
+  
+  Indexes {
+    (catalog_id, store_master_id, effective_date)
+  }
+}
+
+Table scout.master_customer_segments {
+  segment_id integer [pk, increment]
+  segment_code varchar [unique, not null]
+  segment_name varchar [not null]
+  criteria jsonb
+  value_threshold numeric(12,2)
+  
+  Indexes {
+    segment_code [unique]
+  }
+}
+
+Table scout.master_promotions {
+  promo_id integer [pk, increment]
+  promo_code varchar [unique, not null]
+  promo_name varchar [not null]
+  promo_type varchar
+  discount_rate numeric(5,2)
+  start_date date
+  end_date date
+  
+  Indexes {
+    promo_code [unique]
+    (start_date, end_date)
+  }
+}
+
+Table scout.master_suppliers {
+  supplier_id integer [pk, increment]
+  supplier_code varchar [unique, not null]
+  supplier_name varchar [not null]
+  contact_person varchar
+  contact_number varchar
+  address text
+  
+  Indexes {
+    supplier_code [unique]
+  }
+}
+
+Table scout.master_brand_catalog {
+  brand_catalog_id bigserial [pk]
+  brand_id integer [ref: > scout.master_brands.brand_id]
+  catalog_id bigint [ref: > scout.master_product_catalog.catalog_id]
+  is_flagship boolean
+  launch_date date
+  
+  Indexes {
+    (brand_id, catalog_id) [unique]
+  }
+}
+
+/* ===================== BRIDGE TABLES (3) ===================== */
+
+Table scout.bridge_product_bundles {
+  bundle_id integer [pk, increment]
+  parent_product_key integer [ref: > scout.dim_products.product_key]
+  child_product_key integer [ref: > scout.dim_products.product_key]
+  quantity integer [not null]
+  discount_rate numeric(5,2)
+  
+  Indexes {
+    (parent_product_key, child_product_key) [unique]
+  }
+}
+
+Table scout.bridge_product_substitutions {
+  substitution_id integer [pk, increment]
+  original_product_key integer [ref: > scout.dim_products.product_key]
+  substitute_product_key integer [ref: > scout.dim_products.product_key]
+  substitution_rank integer
+  confidence_score numeric(3,2)
+  
+  Indexes {
+    (original_product_key, substitute_product_key) [unique]
+  }
+}
+
+Table scout.bridge_store_campaigns {
+  store_key integer [ref: > scout.dim_stores.store_key]
+  campaign_key integer [ref: > scout.dim_campaigns.campaign_key]
+  start_date date [not null]
+  end_date date
+  performance_score numeric(5,2)
+  
+  Indexes {
+    (store_key, campaign_key) [pk]
+  }
+}
+
+/* ===================== BRONZE LAYER (4) ===================== */
+
+Table scout.bronze_transactions {
+  id bigserial [pk]
+  raw_data jsonb [not null]
+  source_system varchar [not null]
+  ingestion_timestamp timestamp [default: `now()`]
+  processing_status etl_status [default: 'pending']
+  error_message text
+  
+  Indexes {
+    ingestion_timestamp
+    processing_status
+  }
+}
+
+Table scout.bronze_edge_raw {
+  id bigserial [pk]
+  device_id varchar [not null]
+  payload jsonb [not null]
+  received_at timestamp [default: `now()`]
+  processed boolean [default: false]
+  
+  Indexes {
+    device_id
+    received_at
+  }
+}
+
+Table scout.bronze_products {
+  id bigserial [pk]
+  source_data jsonb [not null]
+  source_type varchar [not null]
+  extracted_sku varchar
+  extracted_brand varchar
+  ingestion_timestamp timestamp [default: `now()`]
+  
+  Indexes {
+    extracted_sku
+    ingestion_timestamp
+  }
+}
+
+Table scout.bronze_events {
+  event_id bigserial [pk]
+  event_type varchar [not null]
+  event_data jsonb [not null]
+  source_ip varchar
+  user_agent text
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    event_type
+    created_at
+  }
+}
+
+/* ===================== SILVER LAYER (1) ===================== */
+
+Table scout.silver_transactions {
+  transaction_id varchar [pk]
+  store_id varchar [not null]
+  customer_id varchar
+  transaction_date date [not null]
+  transaction_time time [not null]
+  total_amount numeric(12,2) [not null]
+  payment_method varchar
+  items jsonb [not null]
+  processing_timestamp timestamp [default: `now()`]
+  
+  Indexes {
+    transaction_date
+    store_id
+  }
+}
+
+/* ===================== GOLD LAYER (3) ===================== */
+
+Table scout.gold_sari_sari_kpis {
+  kpi_date date [not null]
+  store_id varchar [not null]
+  daily_revenue numeric(12,2)
+  transaction_count integer
+  unique_customers integer
+  avg_basket_size numeric(10,2)
+  top_products jsonb
+  calculated_at timestamp [default: `now()`]
+  
+  Indexes {
+    (kpi_date, store_id) [pk]
+  }
+}
+
+Table scout.scout_gold_transactions {
+  transaction_key bigint [pk]
+  date_key integer
+  store_key integer
+  customer_key integer
+  revenue numeric(12,2)
+  quantity integer
+  is_weekend boolean
+  is_holiday boolean
+  
+  Indexes {
+    date_key
+    store_key
+  }
+}
+
+Table scout.scout_gold_transaction_items {
+  item_key bigint [pk]
+  transaction_key bigint
+  product_key integer
+  brand_key integer
+  category_key integer
+  revenue numeric(10,2)
+  quantity integer
+  
+  Indexes {
+    transaction_key
+    product_key
+  }
+}
+
+/* ===================== ETL MANAGEMENT (6) ===================== */
+
+Table scout.etl_queue {
+  queue_id bigserial [pk]
+  job_type varchar [not null]
+  payload jsonb
+  status etl_status [default: 'pending']
+  priority integer [default: 5]
+  created_at timestamp [default: `now()`]
+  started_at timestamp
+  completed_at timestamp
+  error_details text
+  
+  Indexes {
+    status
+    priority
+    created_at
+  }
+}
+
+Table scout.etl_watermarks {
+  watermark_id integer [pk, increment]
+  table_name varchar [not null, unique]
+  last_processed_id bigint
+  last_processed_timestamp timestamp
+  updated_at timestamp [default: `now()`]
+  
+  Indexes {
+    table_name [unique]
+  }
+}
+
+Table scout.etl_failures {
+  failure_id bigserial [pk]
+  source_table varchar [not null]
+  source_id varchar
+  error_type varchar
+  error_message text
+  retry_count integer [default: 0]
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    source_table
+    created_at
+  }
+}
+
+Table scout.ingestion_log {
+  log_id bigserial [pk]
+  source_type varchar [not null]
+  file_name varchar
+  record_count integer
+  success_count integer
+  error_count integer
+  started_at timestamp
+  completed_at timestamp
+  
+  Indexes {
+    source_type
+    started_at
+  }
+}
+
+Table scout.enrichment_queue {
+  enrichment_id bigserial [pk]
+  entity_type varchar [not null]
+  entity_id varchar [not null]
+  enrichment_type varchar
+  status etl_status [default: 'pending']
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    (entity_type, entity_id)
+    status
+  }
+}
+
+Table scout.report_queue {
+  report_id bigserial [pk]
+  report_type varchar [not null]
+  parameters jsonb
+  status etl_status [default: 'pending']
+  output_path varchar
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    report_type
+    status
+  }
+}
+
+/* ===================== DATA COLLECTION TABLES (5) ===================== */
+
+Table scout.stt_brand_dictionary {
+  brand_id integer [pk, increment]
+  brand_name varchar [not null]
+  variants jsonb [not null]
+  confidence_threshold numeric(3,2) [default: 0.80]
+  is_active boolean [default: true]
+  
+  Indexes {
+    brand_name
+  }
+}
+
+Table scout.stt_brand_requests {
+  request_id bigserial [pk]
+  audio_url varchar
+  detected_brands jsonb
+  confidence_scores jsonb
+  request_timestamp timestamp [default: `now()`]
+  
+  Indexes {
+    request_timestamp
+  }
+}
+
+Table scout.scraped_items {
+  item_id bigserial [pk]
+  source_url varchar [not null]
+  sku varchar
+  product_name varchar
+  brand varchar
+  price numeric(10,2)
+  availability varchar
+  scraped_at timestamp [default: `now()`]
+  
+  Indexes {
+    sku
+    scraped_at
+  }
+}
+
+Table scout.scraping_queue {
+  queue_id bigserial [pk]
+  target_url varchar [not null]
+  scraping_type varchar
+  priority integer [default: 5]
+  status etl_status [default: 'pending']
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    status
+    priority
+  }
+}
+
+Table scout.scraping_sessions {
+  session_id bigserial [pk]
+  started_at timestamp [not null]
+  completed_at timestamp
+  items_scraped integer
+  errors_count integer
+  
+  Indexes {
+    started_at
+  }
+}
+
+/* ===================== PHILIPPINES GEOGRAPHY (10) ===================== */
+
+Table scout.psgc_regions {
+  region_code varchar [pk]
+  region_name varchar [not null]
+  island_group varchar
+  
+  Indexes {
+    region_name
+  }
+}
+
+Table scout.psgc_provinces {
+  province_code varchar [pk]
+  province_name varchar [not null]
+  region_code varchar [ref: > scout.psgc_regions.region_code]
+  
+  Indexes {
+    province_name
+    region_code
+  }
+}
+
+Table scout.psgc_cities {
+  city_code varchar [pk]
+  city_name varchar [not null]
+  province_code varchar [ref: > scout.psgc_provinces.province_code]
+  city_class varchar
+  
+  Indexes {
+    city_name
+    province_code
+  }
+}
+
+Table scout.psgc_barangays {
+  barangay_code varchar [pk]
+  barangay_name varchar [not null]
+  city_code varchar [ref: > scout.psgc_cities.city_code]
+  
+  Indexes {
+    barangay_name
+    city_code
+  }
+}
+
+Table scout.psgc_special_areas {
+  area_code varchar [pk]
+  area_name varchar [not null]
+  area_type varchar
+  parent_code varchar
+}
+
+Table scout.geo_store_coverage {
+  coverage_id integer [pk, increment]
+  store_key integer [ref: > scout.dim_stores.store_key]
+  barangay_code varchar [ref: > scout.psgc_barangays.barangay_code]
+  coverage_radius_km numeric(5,2)
+  
+  Indexes {
+    store_key
+    barangay_code
+  }
+}
+
+Table scout.geo_market_areas {
+  market_area_id integer [pk, increment]
+  area_name varchar [not null]
+  area_type varchar
+  geometry geometry
+  
+  Indexes {
+    area_name
+  }
+}
+
+Table scout.geo_competitor_locations {
+  competitor_id integer [pk, increment]
+  competitor_name varchar [not null]
+  store_type varchar
+  latitude numeric(10,7)
+  longitude numeric(10,7)
+  
+  Indexes {
+    competitor_name
+  }
+}
+
+Table scout.geo_delivery_zones {
+  zone_id integer [pk, increment]
+  zone_name varchar [not null]
+  hub_location varchar
+  coverage_area geometry
+  
+  Indexes {
+    zone_name
+  }
+}
+
+Table scout.geo_demographics {
+  demographic_id integer [pk, increment]
+  barangay_code varchar [ref: > scout.psgc_barangays.barangay_code]
+  population integer
+  households integer
+  income_class varchar
+  
+  Indexes {
+    barangay_code
+  }
+}
+
+/* ===================== UTILITY TABLES (8) ===================== */
+
+Table scout.api_keys {
+  api_key_id integer [pk, increment]
+  key_hash varchar [not null, unique]
+  client_name varchar [not null]
+  permissions jsonb
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    key_hash [unique]
+  }
+}
+
+Table scout.audit_log {
+  audit_id bigserial [pk]
+  table_name varchar [not null]
+  operation varchar [not null]
+  user_id varchar
+  changed_data jsonb
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    table_name
+    created_at
+  }
+}
+
+Table scout.cache_keys {
+  cache_key varchar [pk]
+  cache_value jsonb
+  expires_at timestamp
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    expires_at
+  }
+}
+
+Table scout.config_settings {
+  setting_key varchar [pk]
+  setting_value jsonb
+  setting_type varchar
+  updated_at timestamp [default: `now()`]
+}
+
+Table scout.data_quality_rules {
+  rule_id integer [pk, increment]
+  table_name varchar [not null]
+  column_name varchar
+  rule_type varchar [not null]
+  rule_definition jsonb
+  is_active boolean [default: true]
+  
+  Indexes {
+    table_name
+  }
+}
+
+Table scout.scheduled_jobs {
+  job_id integer [pk, increment]
+  job_name varchar [not null, unique]
+  job_type varchar
+  schedule_cron varchar
+  last_run timestamp
+  next_run timestamp
+  is_active boolean [default: true]
+  
+  Indexes {
+    job_name [unique]
+  }
+}
+
+Table scout.system_health {
+  health_id bigserial [pk]
+  metric_name varchar [not null]
+  metric_value numeric
+  threshold_warning numeric
+  threshold_critical numeric
+  recorded_at timestamp [default: `now()`]
+  
+  Indexes {
+    metric_name
+    recorded_at
+  }
+}
+
+Table scout.user_preferences {
+  user_id varchar [pk]
+  preferences jsonb
+  theme varchar
+  language varchar
+  updated_at timestamp [default: `now()`]
+}
+
+/* ===================== RELATIONSHIPS ===================== */
+
+// Fact to Dimension relationships are defined inline above
+
+// Master Data relationships
+Ref: scout.master_brand_catalog.brand_id > scout.master_brands.brand_id
+Ref: scout.master_brand_catalog.catalog_id > scout.master_product_catalog.catalog_id
+Ref: scout.master_product_catalog.item_master_id > scout.master_items.item_master_id
+Ref: scout.master_items.brand_id > scout.master_brands.brand_id
+Ref: scout.master_items.category_id > scout.master_categories.category_id
+Ref: scout.master_price_list.catalog_id > scout.master_product_catalog.catalog_id
+Ref: scout.master_price_list.store_master_id > scout.master_stores.store_master_id
+
+// Geographic relationships
+Ref: scout.geo_store_coverage.store_key > scout.dim_stores.store_key
+Ref: scout.geo_store_coverage.barangay_code > scout.psgc_barangays.barangay_code
+Ref: scout.geo_demographics.barangay_code > scout.psgc_barangays.barangay_code
+
+// Bridge relationships are defined inline above
+
+/* ===================== NOTES ===================== */
+
+Note: '''
+Analytics Views (120+ views not shown in DBML):
+- Dashboard Views: v_dashboard_* (13 views)
+- Gold Analytics: gold_* (60+ views)
+- Pipeline Monitoring: v_pipeline_*, v_etl_* (15 views)
+- DAL Views: v_dal_* (7 views)
+- Source Views: v_source_*, v_edge_*, v_api_* (25+ views)
+
+Key Features:
+1. Complete Philippines geography with PSGC codes
+2. Speech-to-text brand detection
+3. Web scraping infrastructure
+4. Master data management
+5. Full ETL pipeline with queues
+6. Row Level Security (RLS) enabled
+7. Backward compatibility views for v2
+
+Total: 81 Base Tables + 120+ Views = 200+ Database Objects
+'''

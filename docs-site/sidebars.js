@@ -23,6 +23,15 @@ module.exports = {
     },
     {
       type: 'category',
+      label: '🤖 Suqi Chat AI',
+      collapsed: false,
+      items: [
+        'features/suqi-chat',
+        'api-reference/suqi-chat-api',
+      ],
+    },
+    {
+      type: 'category',
       label: '🔒 Security',
       collapsed: false,
       items: [

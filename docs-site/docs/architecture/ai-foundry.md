@@ -8,6 +8,93 @@ description: Agents, RAG, and ML model lifecycle management
 
 Scout implements enterprise AI patterns similar to Azure AI Foundry, with agents, RAG pipelines, and comprehensive model lifecycle management.
 
+## 🎯 Suqi Chat: Unified AI Orchestration
+
+Suqi Chat serves as the central orchestration layer for all AI agents, providing:
+
+- **Unified Interface**: Single entry point for all AI interactions
+- **Platform-Aware Routing**: Different capabilities based on user platform (analytics, docs, admin)
+- **Context Management**: Maintains conversation history and user context
+- **Cost Optimization**: Caching and token usage tracking
+- **Security Enforcement**: JWT validation and parameter verification
+
+### Orchestration Modes
+
+1. **Database Mode (`SUQI_CHAT_MODE=db`)**
+   - All orchestration logic in PostgreSQL functions
+   - Lower latency, better for simple queries
+   - Integrated caching at database level
+
+2. **Node Mode (`SUQI_CHAT_MODE=node`)**
+   - Application-level orchestration
+   - More flexibility for complex agent interactions
+   - Better for multi-step reasoning
+
+### AI Development Workflow
+
+```mermaid
+graph LR
+    subgraph "Development"
+        Dev[Developer Query] --> Suqi[Suqi Chat]
+        Suqi --> Intent[Intent Analysis]
+    end
+    
+    subgraph "Orchestration"
+        Intent --> Router{Route Decision}
+        Router -->|Analytics| SQL[SQL Generation]
+        Router -->|ML Task| ML[ML Pipeline]
+        Router -->|Documentation| Docs[Doc Search]
+        Router -->|General| RAG[RAG Pipeline]
+    end
+    
+    subgraph "Execution"
+        SQL --> DB[(Database)]
+        ML --> Model[Model Inference]
+        Docs --> Knowledge[(Knowledge Base)]
+        RAG --> Vector[(Vector Search)]
+    end
+    
+    subgraph "Response"
+        DB --> Format[Response Formatter]
+        Model --> Format
+        Knowledge --> Format
+        Vector --> Format
+        Format --> Stream[Streaming Response]
+    end
+```
+
+### Orchestration Examples
+
+```typescript
+// Example 1: Analytics Query
+const analyticsQuery = {
+  question: "Show revenue trends for Q4 2023",
+  platform: "analytics"
+};
+// Routes to: Analytics Agent → SQL Generation → Database Query
+
+// Example 2: ML Prediction
+const mlQuery = {
+  question: "Predict next month's sales for Store S001",
+  platform: "analytics"
+};
+// Routes to: ML Agent → Feature Extraction → Model Inference
+
+// Example 3: Documentation Query
+const docQuery = {
+  question: "How do I calculate customer lifetime value?",
+  platform: "docs"
+};
+// Routes to: Doc Agent → RAG Pipeline → Knowledge Base Search
+
+// Example 4: Complex Multi-Agent Query
+const complexQuery = {
+  question: "Analyze campaign effectiveness and suggest optimizations",
+  platform: "analytics"
+};
+// Routes to: Analytics Agent + AdsBot → Data Analysis + ML Optimization
+```
+
 ## 🤖 Agent Architecture
 
 ### Multi-Agent System
@@ -17,11 +104,13 @@ graph TB
     subgraph "User Interface"
         NLQ[Natural Language Query]
         API[API Request]
+        Suqi[Suqi Chat Interface]
     end
     
     subgraph "Agent Orchestrator"
         Router[Intent Router]
         Context[Context Manager]
+        Platform[Platform Gating]
     end
     
     subgraph "Specialized Agents"
@@ -38,13 +127,15 @@ graph TB
         Knowledge[(Knowledge Base)]
     end
     
-    NLQ --> Router
-    API --> Router
-    Router --> Analytics
-    Router --> Retail
-    Router --> Ads
-    Router --> Security
-    Router --> Sari
+    NLQ --> Suqi
+    API --> Suqi
+    Suqi --> Router
+    Router --> Platform
+    Platform --> Analytics
+    Platform --> Retail
+    Platform --> Ads
+    Platform --> Security
+    Platform --> Sari
     
     Analytics --> LLM
     Retail --> LLM
@@ -54,6 +145,37 @@ graph TB
     
     Context --> Vector
     Context --> Knowledge
+```
+
+### Agent Integration with Suqi Chat
+
+All agents are accessed through the Suqi Chat interface, which handles:
+
+```typescript
+// Suqi Chat orchestrates agent selection based on query intent
+const suqiChatOrchestrator = {
+  async processQuery(query: string, platform: string) {
+    // 1. Platform gating
+    if (platform === 'docs' && containsSQLKeywords(query)) {
+      throw new Error('SQL operations not allowed on docs platform');
+    }
+    
+    // 2. Intent classification
+    const intent = await classifyIntent(query);
+    
+    // 3. Route to appropriate agent
+    switch (intent.type) {
+      case 'analytics':
+        return await analyticsAgent.process(query);
+      case 'retail_advice':
+        return await retailExpertAgent.advise(query);
+      case 'campaign_optimization':
+        return await adsBotAgent.optimize(query);
+      default:
+        return await generalAgent.respond(query);
+    }
+  }
+};
 ```
 
 ### Agent Definitions
@@ -218,17 +340,19 @@ const generateEmbeddings = async (chunks: Chunk[]): Promise<Embedding[]> => {
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Document chunks with embeddings
-CREATE TABLE scout.rag_knowledge_base (
+-- Document chunks with embeddings (used by Suqi Chat)
+CREATE TABLE scout.ai_corpus (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    content TEXT NOT NULL,
+    tenant_id TEXT NOT NULL,
+    vendor_id TEXT,
+    title TEXT NOT NULL,
+    chunk TEXT NOT NULL,
     embedding vector(1536) NOT NULL,
-    metadata JSONB NOT NULL,
-    source_document TEXT NOT NULL,
-    chunk_index INTEGER NOT NULL,
+    metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     -- Indexes for similarity search
-    INDEX rag_embedding_idx USING ivfflat (embedding vector_cosine_ops)
+    INDEX idx_ai_corpus_embedding USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100),
+    INDEX idx_tenant_vendor ON scout.ai_corpus(tenant_id, vendor_id)
 );
 
 -- Semantic search function

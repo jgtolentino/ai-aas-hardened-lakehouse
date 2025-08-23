@@ -12,6 +12,9 @@ Welcome to the **AI-AAS Hardened Lakehouse** documentation - your comprehensive 
 
 The AI-AAS Hardened Lakehouse is a modern, cloud-native data platform that combines the best of data lakes and data warehouses while providing enterprise-grade security, scalability, and AI/ML capabilities. Built on proven open-source technologies and designed with a security-first approach.
 
+### 🤖 Now with Suqi Chat AI Interface
+Our platform features **Suqi Chat**, an intelligent natural language interface powered by GPT-4 and RAG (Retrieval-Augmented Generation). Ask questions about your data in plain English and get instant, contextual insights with source citations.
+
 ## 🏗️ Platform Overview
 
 Scout is built on a **modern medallion architecture** with AI-native capabilities:

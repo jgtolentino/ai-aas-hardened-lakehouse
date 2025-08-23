@@ -1,0 +1,722 @@
+@startuml scout-v3-erd
+!theme aws-orange
+skinparam linetype ortho
+skinparam backgroundColor #FEFEFE
+skinparam classFontSize 10
+title Scout Analytics v3.0 - Entity Relationship Diagram\n
+
+package scout #DDDDDD {
+  entity bridge_product_bundles {
+    * bundle_id : integer
+    --
+      parent_product_key : integer
+      child_product_key : integer
+      quantity : integer
+      bundle_price : numeric
+      Product : bundle
+  }
+  entity bridge_product_substitutions {
+    * substitution_id : integer
+    --
+      original_product_key : integer
+      substitute_product_key : integer
+      substitution_rank : integer
+      substitution_rate : numeric
+      Product : substitution
+  }
+  entity bridge_store_campaigns {
+    --
+      store_key : integer
+      campaign_key : integer
+      start_date : date
+      end_date : date
+      performance_score : numeric
+  }
+  entity bronze_edge_raw {
+    --
+      source_file : text
+      entry_name : text
+      txn_id : text
+      payload : jsonb
+      ingested_at : timestamptz
+  }
+  entity bronze_events {
+    * event_id : bigserial
+    --
+      event_type : varchar
+      payload : jsonb
+      created_at : timestamp
+      Raw : event
+      stream : data
+  }
+  entity bronze_products {
+    * raw_id : bigserial
+    --
+      source_url : varchar
+      raw_data : jsonb
+      scraped_at : timestamp
+      Raw : product
+      data : from
+      web : scraping
+  }
+  entity bronze_transactions {
+    * raw_id : bigserial
+    --
+      source_system : varchar
+      raw_data : jsonb
+      ingestion_timestamp : timestamp
+      processing_status : varchar
+      error_message : text
+      processing_status : ingestion_timestamp
+  }
+  entity dim_campaigns {
+    * campaign_key : integer
+    --
+      campaign_id : varchar
+      campaign_name : varchar
+      campaign_type : varchar
+      campaign_category : varchar
+      start_date : date
+      end_date : date
+      budget : numeric
+      target_sales : numeric
+      discount_rate : numeric
+      target_audience : varchar
+      channel : varchar
+      status : varchar
+      created_at : timestamp
+      updated_at : timestamp
+  }
+  entity dim_customers {
+    * customer_key : integer
+    --
+      customer_id : varchar
+      customer_name : varchar
+      customer_type : varchar
+      gender : varchar
+      age_group : varchar
+      income_bracket : varchar
+      economic_class : varchar
+      barangay : varchar
+      city : varchar
+      province : varchar
+      customer_segment : varchar
+      preferred_payment : varchar
+      first_purchase_date : date
+      last_purchase_date : date
+      effective_from : date
+      effective_to : date
+      is_current : boolean
+      loyalty_tier : varchar
+      preferred_daypart : varchar
+      preferred_category : varchar
+      lifetime_value : numeric
+      purchase_frequency : varchar
+      created_at : timestamp
+      updated_at : timestamp
+  }
+  entity dim_date {
+    * date_key : integer
+    --
+      full_date : date
+      year : integer
+      quarter : integer
+      month : integer
+      month_name : varchar
+      month_short : varchar
+      not : null
+      week_of_year : integer
+      day_of_month : integer
+      day_of_week : integer
+      day_name : varchar
+      day_short : varchar
+      not : null
+      is_weekend : boolean
+      is_holiday : boolean
+      holiday_name : varchar
+      fiscal_year : integer
+      fiscal_quarter : integer
+      fiscal_month : integer
+  }
+  entity dim_geometries {
+    * geom_key : integer
+    --
+      geom_type : varchar
+      geom_code : varchar
+      geom_name : varchar
+      parent_code : varchar
+      centroid_lat : numeric
+      centroid_lng : numeric
+      boundary_geojson : jsonb
+      effective_from : date
+      effective_to : date
+      is_current : boolean
+      created_at : timestamptz
+      updated_at : timestamptz
+  }
+  entity dim_payment_methods {
+    * payment_key : integer
+    --
+      payment_method : varchar
+      payment_category : varchar
+      provider : varchar
+      transaction_fee_rate : numeric
+      is_digital : boolean
+      is_active : boolean
+      created_at : timestamp
+  }
+  entity dim_products {
+    * product_key : integer
+    --
+      sku : varchar
+      product_name : varchar
+      category : varchar
+      subcategory : varchar
+      brand : varchar
+      manufacturer : varchar
+      supplier : varchar
+      unit_cost : numeric
+      unit_price : numeric
+      price_tier : varchar
+      package_size : varchar
+      unit_of_measure : varchar
+      barcode : varchar
+      is_active : boolean
+      launch_date : date
+      discontinue_date : date
+      effective_from : date
+      effective_to : date
+      is_current : boolean
+      created_at : timestamp
+      updated_at : timestamp
+  }
+  entity dim_stores {
+    * store_key : integer
+    --
+      store_id : varchar
+      store_name : varchar
+      store_type : varchar
+      barangay : varchar
+      city : varchar
+      province : varchar
+      region : varchar
+      island_group : varchar
+      store_size : varchar
+      economic_class : varchar
+      urban_rural : varchar
+      date_opened : date
+      date_closed : date
+      is_active : boolean
+      effective_from : date
+      effective_to : date
+      is_current : boolean
+      district : varchar
+      operating_hours : varchar
+      manager_name : varchar
+      latitude : numeric
+      longitude : numeric
+      created_at : timestamp
+      updated_at : timestamp
+  }
+  entity dim_time {
+    * time_key : integer
+    --
+      full_time : time
+      hour : integer
+      minute : integer
+      second : integer
+      hour_12 : integer
+      am_pm : varchar
+      not : null
+      time_of_day : varchar
+      business_hours : boolean
+      peak_hours : boolean
+  }
+  entity enrichment_queue {
+    * id : bigserial
+    --
+      entity_type : varchar
+      entity_id : varchar
+      enrichment_type : varchar
+      status : varchar
+      created_at : timestamp
+      Data : enrichment
+      processing : queue
+  }
+  entity etl_failures {
+    * id : bigserial
+    --
+      bucket_id : text
+      name : text
+      error_msg : text
+      attempts : integer
+      failed_at : timestamptz
+  }
+  entity etl_queue {
+    * id : bigserial
+    --
+      bucket_id : text
+      name : text
+      size_bytes : bigint
+      mime_type : text
+      sha256_hex : text
+      status : text
+      attempts : integer
+      last_error : text
+      enqueued_at : timestamptz
+      started_at : timestamptz
+      finished_at : timestamptz
+      status : enqueued_at
+  }
+  entity etl_watermarks {
+    * obj_id : text
+    --
+      processed_at : timestamptz
+      ok : boolean
+      msg : text
+      ETL : processing
+  }
+  entity fact_basket_analysis {
+    * basket_id : bigserial
+    --
+      transaction_id : bigint
+      product_key : int
+      co_product_key : int
+      lift : numeric
+      confidence : numeric
+      support : numeric
+      as_of_date : date
+  }
+  entity fact_consumer_behavior {
+    * behavior_id : bigserial
+    --
+      transaction_id : varchar
+      customer_id : varchar
+      store_id : varchar
+      Behavior : Metrics
+      dwell_time_seconds : integer
+      items_viewed : integer
+      items_purchased : integer
+      conversion_rate : numeric
+      repeat_visit_days : integer
+      Derived : Attributes
+      shopping_mission : varchar
+      price_sensitivity_score : numeric
+      brand_loyalty_score : numeric
+      created_at : timestamp
+      transaction_id : customer_id
+  }
+  entity fact_daily_sales {
+    --
+      date_key : integer
+      store_key : integer
+      product_key : integer
+      Metrics : units_sold
+      revenue : numeric
+      discount_amount : numeric
+      transaction_count : integer
+      unique_customers : integer
+      Moving : Averages
+      avg_unit_price : numeric
+      avg_basket_size : numeric
+      created_at : timestamp
+      updated_at : timestamp
+  }
+  entity fact_monthly_performance {
+    * id : bigserial
+    --
+      date_key : int
+      store_key : int
+      product_key : int
+      revenue : numeric
+      units : numeric
+      margin : numeric
+      share : numeric
+  }
+  entity fact_request_patterns {
+    * id : bigserial
+    --
+      store_key : int
+      request_type : varchar
+      hour_bucket : int
+      requests_count : int
+      as_of_date : date
+  }
+  entity fact_substitutions {
+    * id : bigserial
+    --
+      product_key : int
+      substitute_key : int
+      substitution_rate : numeric
+      as_of_date : date
+  }
+  entity fact_transaction_duration {
+    * transaction_id : bigint
+    --
+      store_key : int
+      started_at : timestamptz
+      completed_at : timestamptz
+      duration_seconds : int
+      as_of_date : date
+  }
+  entity fact_transaction_items {
+    --
+      transaction_id : varchar
+      line_item_id : integer
+      sku : varchar
+      quantity : integer
+      unit_price : numeric
+      not : null
+      line_amount : numeric
+      not : null
+      discount_amount : numeric
+      product_key : integer
+      Brand : Detection
+      brand_name : varchar
+      brand_id : integer
+      category_name : varchar
+      category_id : integer
+      detection_method : varchar
+      confidence : numeric
+      source_file : text
+      created_at : timestamp
+      sku : brand_id
+  }
+  entity fact_transactions {
+    * transaction_id : varchar
+    --
+      store_id : varchar
+      customer_id : varchar
+      campaign_id : varchar
+      transaction_date : date
+      transaction_time : time
+      total_amount : numeric
+      not : null
+      discount_amount : numeric
+      tax_amount : numeric
+      payment_method : varchar
+      status : varchar
+      Surrogate : Keys
+      date_key : integer
+      time_key : integer
+      store_key : integer
+      customer_key : integer
+      campaign_key : integer
+      payment_key : integer
+      Extended : Attributes
+      items : jsonb
+      transcript : text
+      brand_detection_status : varchar
+      customer_gender : varchar
+      customer_age_group : varchar
+      confidence_demographics : numeric
+      source_file : text
+      created_at : timestamp
+  }
+  entity gold_sari_sari_kpis {
+    * id : bigserial
+    --
+      store_code : text
+      hour_bucket : timestamptz
+      Environmental : Metrics
+      avg_temperature : numeric
+      avg_humidity : numeric
+      avg_comfort_index : numeric
+      comfort_rating : varchar
+      Customer : Metrics
+      total_customers : integer
+      avg_customers : numeric
+      peak_customers : integer
+      avg_queue_length : numeric
+      avg_wait_time_minutes : numeric
+      Performance : Scores
+      footfall_score : numeric
+      engagement_score : numeric
+      operational_efficiency : numeric
+      System : Metrics
+      avg_cpu_usage : numeric
+      avg_memory_usage : numeric
+      data_quality_score : numeric
+      record_count : integer
+      created_at : timestamptz
+      updated_at : timestamptz
+  }
+  entity ingestion_log {
+    * ingestion_id : serial
+    --
+      file_name : varchar
+      file_path : varchar
+      ingestion_timestamp : timestamp
+      records_processed : integer
+      status : varchar
+      error_message : text
+      metadata : jsonb
+      Data : ingestion
+      audit : log
+  }
+  entity master_brand_catalog {
+    * catalog_id : integer
+    --
+      brand_id : integer
+      category_id : integer
+      product_count : integer
+      market_share : numeric
+      category : relationships
+  }
+  entity master_brands {
+    * brand_id : integer
+    --
+      brand_code : varchar
+      brand_name : varchar
+      brand_tier : varchar
+      is_local : boolean
+      is_tbwa_client : boolean
+      parent_company : varchar
+      country_origin : varchar
+      is_active : boolean
+      created_at : timestamp
+      updated_at : timestamp
+      Brand : registry
+      with : parent
+      company : relationships
+  }
+  entity master_categories {
+    * category_id : integer
+    --
+      category_code : varchar
+      category_name : varchar
+      parent_category_id : integer
+      category_level : integer
+      is_active : boolean
+      created_at : timestamp
+      Product : category
+  }
+  entity master_customer_segments {
+    * segment_id : integer
+    --
+      segment_code : varchar
+      segment_name : varchar
+      segment_description : text
+      min_value : numeric
+      max_value : numeric
+      Customer : segmentation
+  }
+  entity master_items {
+    * item_id : integer
+    --
+      item_code : varchar
+      item_name : varchar
+      brand_id : integer
+      category_id : integer
+      barcode : varchar
+      pack_size : varchar
+      srp : numeric
+      Item : master
+  }
+  entity master_locations {
+    * location_id : integer
+    --
+      location_type : varchar
+      location_name : varchar
+      parent_location_id : integer
+      island_group : varchar
+      psgc_code : varchar
+      is_active : boolean
+      Geographic : hierarchy
+      for : Philippines
+  }
+  entity master_ph_locations {
+    * psgc_code : varchar
+    --
+      region : varchar
+      province : varchar
+      city_municipality : varchar
+      barangay : varchar
+      geo_level : varchar
+      population : integer
+      income_class : varchar
+      Philippines : Standard
+      Geographic : Code
+  }
+  entity master_price_list {
+    * price_id : bigserial
+    --
+      product_id : integer
+      store_type : varchar
+      price_type : varchar
+      price : numeric
+      not : null
+      effective_date : date
+      Price : list
+      by : product
+      and : store
+  }
+  entity master_product_catalog {
+    * product_id : integer
+    --
+      product_code : varchar
+      product_name : varchar
+      brand_id : integer
+      category_id : integer
+      variant : varchar
+      size : varchar
+      unit : varchar
+      Complete : product
+  }
+  entity master_promotions {
+    * promo_id : integer
+    --
+      promo_code : varchar
+      promo_name : varchar
+      promo_type : varchar
+      start_date : date
+      end_date : date
+      discount_rate : numeric
+      Promotional : campaigns
+  }
+  entity master_stores {
+    * store_code : varchar
+    --
+      store_name : varchar
+      store_type : varchar
+      channel : varchar
+      owner_name : varchar
+      contact_number : varchar
+      address : text
+      location_id : integer
+      is_active : boolean
+      Store : master
+      data : including
+      sari : stores
+  }
+  entity master_suppliers {
+    * supplier_id : integer
+    --
+      supplier_code : varchar
+      supplier_name : varchar
+      contact_person : varchar
+      contact_number : varchar
+      address : text
+      Supplier : master
+  }
+  entity report_queue {
+    * id : bigserial
+    --
+      report_type : varchar
+      parameters : jsonb
+      status : varchar
+      created_at : timestamp
+      Report : generation
+  }
+  entity scout_gold_transaction_items {
+    --
+      transaction_id : varchar
+      line_item_id : integer
+      sku : varchar
+      brand_name : varchar
+      quantity : integer
+      amount : numeric
+  }
+  entity scout_gold_transactions {
+    * transaction_id : varchar
+    --
+      store_id : varchar
+      transaction_date : date
+      total_amount : numeric
+      items_count : integer
+      Gold : layer
+      optimized : transactions
+  }
+  entity scrape_queue {
+    * id : bigserial
+    --
+      url : varchar
+      priority : integer
+      status : varchar
+      created_at : timestamp
+      Web : scraping
+      job : queue
+  }
+  entity scrape_sessions {
+    * session_id : bigserial
+    --
+      start_time : timestamp
+      end_time : timestamp
+      items_scraped : integer
+      status : varchar
+      Scraping : session
+  }
+  entity scraped_items {
+    * item_id : bigserial
+    --
+      source_url : varchar
+      sku : varchar
+      product_name : varchar
+      brand : varchar
+      price : numeric
+      availability : varchar
+      scraped_at : timestamp
+      scraped : product
+  }
+  entity scraper_config {
+    * config_id : integer
+    --
+      site_name : varchar
+      base_url : varchar
+      selectors : jsonb
+      is_active : boolean
+      Scraper : configuration
+      by : site
+  }
+  entity silver_transactions {
+    * txn_id : text
+    --
+      data : jsonb
+      loaded_at : timestamptz
+      source_file : text
+      source_file : loaded_at
+  }
+  entity stt_brand_dictionary {
+    * brand_id : integer
+    --
+      brand_name : varchar
+      variants : jsonb
+      confidence_threshold : numeric
+      is_active : boolean
+      text : brand
+      detection : dictionary
+  }
+}
+
+' Relationships
+fact_transactions ||--o{ dim_date : date_key
+fact_transactions ||--o{ dim_time : time_key
+fact_transactions ||--o{ dim_stores : store_key
+fact_transactions ||--o{ dim_customers : customer_key
+fact_transactions ||--o{ dim_campaigns : campaign_key
+fact_transactions ||--o{ dim_payment_methods : payment_key
+fact_transaction_items ||--o{ fact_transactions : transaction_id
+fact_transaction_items ||--o{ dim_products : product_key
+fact_daily_sales ||--o{ dim_date : date_key
+fact_daily_sales ||--o{ dim_stores : store_key
+fact_daily_sales ||--o{ dim_products : product_key
+fact_consumer_behavior ||--o{ fact_transactions : transaction_id
+master_categories ||--o{ master_categories : parent_category_id
+master_locations ||--o{ master_locations : parent_location_id
+master_items ||--o{ master_brands : brand_id
+master_items ||--o{ master_categories : category_id
+master_product_catalog ||--o{ master_brands : brand_id
+master_product_catalog ||--o{ master_categories : category_id
+master_price_list ||--o{ master_product_catalog : product_id
+master_brand_catalog ||--o{ master_brands : brand_id
+master_brand_catalog ||--o{ master_categories : category_id
+master_stores ||--o{ master_locations : location_id
+bridge_product_bundles ||--o{ dim_products : parent_product_key
+bridge_product_bundles ||--o{ dim_products : child_product_key
+bridge_product_substitutions ||--o{ dim_products : original_product_key
+bridge_product_substitutions ||--o{ dim_products : substitute_product_key
+bridge_store_campaigns ||--o{ dim_stores : store_key
+bridge_store_campaigns ||--o{ dim_campaigns : campaign_key
+scout_gold_transaction_items ||--o{ scout_gold_transactions : transaction_id
+
+@enduml
