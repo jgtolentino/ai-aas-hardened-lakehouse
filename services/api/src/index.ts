@@ -7,6 +7,7 @@ import geoRoutes from './routes-geo';
 import srpRoutes from './routes-srp';
 import mlRoutes from './routes-ml-metrics';
 import txRoutes from './routes-transactions';
+import dashboardRoutes from './routes-dashboard';
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -25,6 +26,7 @@ app.use(geoRoutes);
 app.use(srpRoutes);
 app.use(mlRoutes);
 app.use(txRoutes);
+app.use(dashboardRoutes);
 
 // Error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

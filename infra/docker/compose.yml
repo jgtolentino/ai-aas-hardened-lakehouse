@@ -63,3 +63,12 @@ services:
       NEXT_PUBLIC_DETECTOR_URL: http://localhost:8002
     ports: ["3001:3000"]
     depends_on: [api, brand-detector]
+
+  # React monitoring dashboard
+  dashboard:
+    build: ../../services/dashboard
+    container_name: suqi-dashboard
+    environment:
+      VITE_API_URL: http://localhost:8080
+    ports: ["3000:3000"]
+    depends_on: [api]

@@ -7,6 +7,7 @@ import asyncpg
 import os
 import time
 import logging
+import json
 from datetime import datetime
 
 # Configure logging
@@ -110,6 +111,7 @@ async def predict_brand(request: PredictionRequest):
         # Log to database
         import json
         async with db_pool.acquire() as conn:
+            # Log to legacy gold_brand_predictions table
             await conn.execute("""
                 INSERT INTO scout.gold_brand_predictions 
                 (text_input, brand, confidence, model_version, dictionary_version, context)
@@ -122,6 +124,39 @@ async def predict_brand(request: PredictionRequest):
             result['dictionary_version'],
             json.dumps(request.context)
             )
+            
+            # Log to ML monitoring system
+            prediction_id = await conn.fetchval("""
+                SELECT ml.log_prediction(
+                    'brand_detector'::varchar,
+                    $1::varchar,
+                    $2::varchar,
+                    $3::decimal,
+                    $4::jsonb
+                )
+            """,
+            result['model_version'],
+            result['brand'],
+            result['confidence'],
+            json.dumps({
+                'text': request.text,
+                'context': request.context,
+                'dictionary_version': result['dictionary_version'],
+                'store_id': request.store_id,
+                'region': request.region
+            })
+            )
+            
+            # Link prediction to transaction if provided
+            if request.transaction_id:
+                await conn.execute("""
+                    SELECT ml.link_prediction($1, $2, $3, $4)
+                """,
+                prediction_id,
+                request.transaction_id,
+                request.product_id,
+                request.sku_id
+                )
             
             # Log metrics
             await conn.execute("""
@@ -138,12 +173,44 @@ async def predict_brand(request: PredictionRequest):
             confidence=result['confidence'],
             model_version=result['model_version'],
             dictionary_version=result['dictionary_version'],
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
+            prediction_id=prediction_id
         )
         
     except Exception as e:
         prediction_counter.labels(status='error').inc()
         logger.error(f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/feedback")
+async def submit_feedback(request: FeedbackRequest):
+    """Submit ground truth label for a prediction"""
+    try:
+        async with db_pool.acquire() as conn:
+            # Submit label
+            await conn.execute("""
+                SELECT ml.submit_label($1, $2, $3, $4)
+            """,
+            request.prediction_id,
+            request.true_brand,
+            request.labeled_by,
+            request.notes
+            )
+            
+            # Update metrics
+            await conn.execute("""
+                INSERT INTO scout.model_metrics (name, value, labels)
+                VALUES ('feedback_count', 1, $1::jsonb)
+            """, json.dumps({'true_brand': request.true_brand}))
+        
+        return {
+            "status": "success", 
+            "prediction_id": request.prediction_id,
+            "message": "Feedback recorded successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Feedback submission error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/dictionary/upsert")

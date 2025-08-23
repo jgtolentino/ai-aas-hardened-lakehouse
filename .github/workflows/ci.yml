@@ -34,7 +34,15 @@ jobs:
           --health-interval=5s --health-timeout=3s --health-retries=30
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with: 
+          fetch-depth: 0
+          submodules: recursive
+      
+      - name: Initialize submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+      
       - name: Install psql client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - uses: pnpm/action-setup@v4
