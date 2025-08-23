@@ -2,6 +2,13 @@
 
 Production-grade data platform for real-time sari-sari store transaction analytics with exact field mappings and dashboard requirements.
 
+## 🚀 New: Scout Databank Dashboard & MCP Integration
+
+- **Scout Databank**: Advanced analytics dashboard integrated as git submodule at `platform/scout/scout-databank/`
+- **MCP Servers**: Playwright and Puppeteer automation configured for testing
+- **AI Reasoning**: Comprehensive tracking and monitoring system
+- See [MCP_CONFIGURATION.md](MCP_CONFIGURATION.md) for details
+
 ## 📊 Data Contract
 
 Every transaction MUST include these fields (immutable API contract):
