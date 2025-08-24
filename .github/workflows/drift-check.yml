@@ -1,0 +1,87 @@
+name: 🔍 Database Drift Check
+
+on:
+  push:
+    branches: [main, feat/*, fix/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  drift-check:
+    name: Ensure DB SQL lives in supabase/migrations
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Check for SQL files outside supabase/migrations
+        run: |
+          echo "🔍 Checking for SQL files outside supabase/migrations..."
+          
+          # Find all SQL files
+          sql_files=$(git ls-files '*.sql' | grep -v '^supabase/migrations/' | grep -v '^supabase/seed.sql' || true)
+          
+          if [ -n "$sql_files" ]; then
+            echo "❌ Found SQL files outside supabase/migrations:"
+            echo "$sql_files"
+            echo ""
+            echo "💡 All database changes should be in supabase/migrations/"
+            echo "   Move these files to the correct location:"
+            echo ""
+            for file in $sql_files; do
+              basename=$(basename "$file")
+              echo "   mv $file supabase/migrations/$(date +%Y%m%d%H%M%S)_${basename}"
+            done
+            exit 1
+          else
+            echo "✅ All SQL files are properly located in supabase/migrations/"
+          fi
+          
+      - name: Check for migration naming convention
+        run: |
+          echo "🔍 Checking migration naming conventions..."
+          
+          # Check migration files follow YYYYMMDD pattern
+          bad_migrations=$(ls supabase/migrations/*.sql 2>/dev/null | grep -v -E '/[0-9]{8}[0-9]*_.*\.sql$' | grep -v 'seed.sql' || true)
+          
+          if [ -n "$bad_migrations" ]; then
+            echo "❌ Found migrations with incorrect naming:"
+            echo "$bad_migrations"
+            echo ""
+            echo "💡 Migration files should follow: YYYYMMDDHHMMSS_description.sql"
+            echo "   Examples:"
+            echo "   - 20250824120000_add_users_table.sql"
+            echo "   - 20250824120100_create_indexes.sql"
+            exit 1
+          else
+            echo "✅ All migration files follow proper naming convention"
+          fi
+
+      - name: Check for duplicate migration timestamps
+        run: |
+          echo "🔍 Checking for duplicate migration timestamps..."
+          
+          # Extract timestamps from migration files
+          duplicates=$(ls supabase/migrations/*.sql 2>/dev/null | \
+            grep -E '/[0-9]{8}[0-9]*_.*\.sql$' | \
+            sed 's/.*\/\([0-9]*\)_.*/\1/' | \
+            sort | uniq -d)
+          
+          if [ -n "$duplicates" ]; then
+            echo "❌ Found duplicate migration timestamps:"
+            echo "$duplicates"
+            echo ""
+            echo "💡 Each migration must have a unique timestamp"
+            echo "   Use: date +%Y%m%d%H%M%S"
+            exit 1
+          else
+            echo "✅ No duplicate migration timestamps found"
+          fi
+
+      - name: Success summary
+        run: |
+          echo "🎉 Database drift check passed!"
+          echo "✅ All SQL files in correct locations"
+          echo "✅ Migration naming conventions followed"  
+          echo "✅ No duplicate timestamps"
