@@ -1,0 +1,242 @@
+name: Scout Schema Drift Detection
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'platform/scout/migrations/*.sql'
+      - 'supabase/migrations/*.sql'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'platform/scout/migrations/*.sql'
+      - 'supabase/migrations/*.sql'
+  schedule:
+    # Run daily at 2 AM UTC to detect drift
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  detect-drift:
+    runs-on: ubuntu-latest
+    name: Detect Schema Drift
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install Dependencies
+        run: |
+          npm install -g @supabase/supabase-js
+          npm install -g @jest/globals
+          
+      - name: Generate Schema Snapshot
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          node -e "
+          const { createClient } = require('@supabase/supabase-js');
+          const fs = require('fs');
+          
+          const supabase = createClient(
+            process.env.SUPABASE_URL,
+            process.env.SUPABASE_SERVICE_KEY
+          );
+          
+          async function generateSnapshot() {
+            // Get all tables in scout schema
+            const { data: tables } = await supabase.rpc('execute_sql', {
+              query: \`
+                SELECT 
+                  table_name,
+                  column_name,
+                  data_type,
+                  is_nullable,
+                  column_default
+                FROM information_schema.columns
+                WHERE table_schema = 'scout'
+                ORDER BY table_name, ordinal_position
+              \`
+            });
+            
+            // Get all functions
+            const { data: functions } = await supabase.rpc('execute_sql', {
+              query: \`
+                SELECT 
+                  routine_name,
+                  routine_type,
+                  data_type
+                FROM information_schema.routines
+                WHERE routine_schema = 'scout'
+                ORDER BY routine_name
+              \`
+            });
+            
+            // Get all indexes
+            const { data: indexes } = await supabase.rpc('execute_sql', {
+              query: \`
+                SELECT 
+                  tablename,
+                  indexname,
+                  indexdef
+                FROM pg_indexes
+                WHERE schemaname = 'scout'
+                ORDER BY tablename, indexname
+              \`
+            });
+            
+            const snapshot = {
+              timestamp: new Date().toISOString(),
+              tables: tables || [],
+              functions: functions || [],
+              indexes: indexes || [],
+              version: '${{ github.sha }}'
+            };
+            
+            fs.writeFileSync('schema-snapshot.json', JSON.stringify(snapshot, null, 2));
+            console.log('Schema snapshot generated successfully');
+          }
+          
+          generateSnapshot().catch(console.error);
+          "
+          
+      - name: Compare with Previous Snapshot
+        id: compare
+        run: |
+          if [ -f "schema-snapshot-previous.json" ]; then
+            node -e "
+            const fs = require('fs');
+            const current = JSON.parse(fs.readFileSync('schema-snapshot.json'));
+            const previous = JSON.parse(fs.readFileSync('schema-snapshot-previous.json'));
+            
+            let driftDetected = false;
+            const changes = [];
+            
+            // Compare tables
+            const currentTables = new Set(current.tables.map(t => t.table_name + '.' + t.column_name));
+            const previousTables = new Set(previous.tables.map(t => t.table_name + '.' + t.column_name));
+            
+            for (const table of currentTables) {
+              if (!previousTables.has(table)) {
+                changes.push('+ Added: ' + table);
+                driftDetected = true;
+              }
+            }
+            
+            for (const table of previousTables) {
+              if (!currentTables.has(table)) {
+                changes.push('- Removed: ' + table);
+                driftDetected = true;
+              }
+            }
+            
+            // Compare functions
+            const currentFuncs = new Set(current.functions.map(f => f.routine_name));
+            const previousFuncs = new Set(previous.functions.map(f => f.routine_name));
+            
+            for (const func of currentFuncs) {
+              if (!previousFuncs.has(func)) {
+                changes.push('+ Added function: ' + func);
+                driftDetected = true;
+              }
+            }
+            
+            for (const func of previousFuncs) {
+              if (!currentFuncs.has(func)) {
+                changes.push('- Removed function: ' + func);
+                driftDetected = true;
+              }
+            }
+            
+            if (driftDetected) {
+              console.log('⚠️ Schema drift detected!');
+              console.log('Changes:');
+              changes.forEach(c => console.log(c));
+              process.exit(1);
+            } else {
+              console.log('✅ No schema drift detected');
+            }
+            "
+          else
+            echo "First run - creating baseline snapshot"
+            cp schema-snapshot.json schema-snapshot-previous.json
+          fi
+          
+      - name: Upload Schema Snapshot
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: schema-snapshot-${{ github.sha }}
+          path: schema-snapshot.json
+          
+      - name: Notify on Drift
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ Schema Drift Detected',
+              body: `Schema drift has been detected in the Scout Analytics database.
+              
+              **Commit:** ${{ github.sha }}
+              **Workflow:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              
+              Please review the changes and update the migrations if necessary.`,
+              labels: ['database', 'drift-detection', 'urgent']
+            });
+
+  validate-migrations:
+    runs-on: ubuntu-latest
+    name: Validate Migration Files
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Check Migration Sequence
+        run: |
+          echo "Checking migration file sequence..."
+          
+          # Get all migration files
+          migrations=$(ls platform/scout/migrations/*.sql | sort)
+          
+          prev_num=0
+          for file in $migrations; do
+            # Extract number from filename
+            num=$(basename "$file" | grep -o '^[0-9]*' || echo "0")
+            
+            if [ "$num" -le "$prev_num" ]; then
+              echo "❌ Migration sequence error: $file"
+              exit 1
+            fi
+            
+            prev_num=$num
+          done
+          
+          echo "✅ Migration sequence valid"
+          
+      - name: Validate SQL Syntax
+        run: |
+          echo "Validating SQL syntax..."
+          
+          # Install pg_format for SQL validation
+          sudo apt-get update
+          sudo apt-get install -y pgformatter
+          
+          for file in platform/scout/migrations/*.sql; do
+            echo "Checking: $file"
+            pg_format --check "$file" || {
+              echo "❌ SQL syntax error in: $file"
+              exit 1
+            }
+          done
+          
+          echo "✅ All SQL files have valid syntax"
