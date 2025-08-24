@@ -384,3 +384,66 @@ dashboard: dash-setup dash-verify dash-build ## Complete dashboard setup and bui
 	@echo "Deploy with: make dash-deploy DEPLOY_TARGET=vercel|netlify|s3|supabase"
 # Edge SUQI PIE Module
 include makefiles/edge-suqi-pie.mk
+
+# Dictionary Management Commands
+.PHONY: refresh-dictionary reprocess-start coverage-check dict-stats
+
+refresh-dictionary: ## Generate and deploy new dictionary from catalog
+	@echo "$(YELLOW)Refreshing brand dictionary...$(NC)"
+	@bash scripts/dict/refresh-dictionary.sh
+
+refresh-reprocess: ## Refresh dictionary and queue reprocessing
+	@echo "$(YELLOW)Refreshing dictionary with reprocessing...$(NC)"
+	@bash scripts/dict/refresh-dictionary.sh --reprocess
+
+reprocess-start: ## Start reprocessing worker
+	@echo "$(YELLOW)Starting reprocessing worker...$(NC)"
+	@bash scripts/dict/reprocess-worker.sh
+
+coverage-check: ## Check brand/price coverage metrics
+	@echo "$(YELLOW)Coverage Metrics (Last 7 Days)$(NC)"
+	@echo "================================="
+	@$(PSQL) -x -c "\
+		SELECT \
+			day, \
+			ROUND(brand_coverage * 100, 2) || '%' as brand_coverage, \
+			ROUND(price_coverage * 100, 2) || '%' as price_coverage, \
+			total_predictions, \
+			total_transactions \
+		FROM dq.v_coverage_summary \
+		ORDER BY day DESC \
+		LIMIT 7;"
+
+dict-stats: ## Show dictionary statistics
+	@echo "$(YELLOW)Dictionary Statistics$(NC)"
+	@echo "======================="
+	@$(PSQL) -x -c "\
+		WITH stats AS ( \
+			SELECT \
+				(SELECT COUNT(*) FROM scout.brand_catalog) as total_brands, \
+				(SELECT COUNT(*) FROM scout.brand_aliases) as total_aliases, \
+				(SELECT COUNT(*) FROM scout.unknown_clusters WHERE status = 'pending') as pending_unknowns, \
+				(SELECT version_hash FROM scout.dictionary_versions WHERE is_active LIMIT 1) as active_version \
+		) \
+		SELECT * FROM stats;"
+	@echo ""
+	@echo "$(YELLOW)Top Unknown Brands:$(NC)"
+	@$(PSQL) -c "\
+		SELECT \
+			phrase, \
+			occurrence_count, \
+			TO_CHAR(last_seen, 'YYYY-MM-DD HH24:MI') as last_seen \
+		FROM scout.unknown_clusters \
+		WHERE status = 'pending' \
+		ORDER BY occurrence_count DESC \
+		LIMIT 10;"
+
+test-dictionary: ## Test dictionary generation
+	@echo "$(YELLOW)Testing dictionary generation...$(NC)"
+	@$(PSQL) -c "SELECT jsonb_pretty(scout.generate_dictionary_json());"
+
+ci-dictionary: ## Trigger dictionary refresh workflow
+	@gh workflow run dictionary-refresh.yml
+
+ci-dictionary-reprocess: ## Trigger dictionary refresh with reprocessing
+	@gh workflow run dictionary-refresh.yml -f reprocess=true

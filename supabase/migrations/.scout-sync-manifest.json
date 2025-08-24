@@ -1,0 +1,25 @@
+{
+  "last_sync": "2025-08-24T07:46:04Z",
+  "submodule_commit": "1d487281c9657209dd324a896877b0e6508f7617",
+  "synced_files": [
+    "037_scout_edge_ingest_schema.sql",
+    "20250812_public_gold_aliases.sql",
+    "20250812_silver_clean.sql",
+    "20250812_silver_dq_health.sql",
+    "20250823_agentic_analytics.sql",
+    "20250823_brands_products.sql",
+    "20250823_complete_agentic_deployment.sql",
+    "20250823_isko_ops.sql",
+    "20250823_products_autogen.sql",
+    "20250823_scout_v5_2_complete_backend.sql",
+    "20250823_rls_gold_only.sql",
+    "20250823_sari_sari_expert.sql",
+    "20250823_scout_agentic_core.sql",
+    "20250823_scout_exec_rpc.sql"
+  ],
+  "stats": {
+    "total_files": 14,
+    "synced": 13,
+    "skipped": 1
+  }
+}

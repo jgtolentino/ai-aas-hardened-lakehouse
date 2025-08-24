@@ -1,10 +1,31 @@
-# Environment and secrets
+# Environment and secrets - NEVER COMMIT LIVE TOKENS
 .env
 .env.*
 !.env.example
+.env.mcp
+.env.local
+.env.production
+.env.development
+
+# MCP and Claude configs with tokens
+.mcp.json.local
+.claude/
+claude_desktop_config.json
+
+# Supabase tokens and keys
+sbp_*
+*_token_*
+*access_token*
+setup-mcp-env.sh
 *.key
 *.pem
 *.p12
+
+# Claude/Bruno local configs - CONTAIN LIVE TOKENS
+.mcp.json.local
+.claude.json
+.bruno.json
+secrets/*.json
 
 # Kubernetes secrets
 *-secret.yaml
@@ -84,3 +105,4 @@ qa/.env
 artifacts/
 *.junit.xml
 *.report.jsonplatform/scout/blueprint-dashboard/.env.local
+platform/scout/blueprint-dashboard/

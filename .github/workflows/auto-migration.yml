@@ -1,0 +1,287 @@
+name: 🔄 Auto Migration & Schema Sync
+
+on:
+  schedule:
+    # Run every 6 hours to catch any manual changes
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      force_pull:
+        description: 'Force pull schema changes from production'
+        required: false
+        default: false
+        type: boolean
+      create_migration:
+        description: 'Create migration file for differences'
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: auto-migration-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+jobs:
+  schema-drift-detection:
+    runs-on: ubuntu-latest
+    outputs:
+      has-drift: ${{ steps.check-drift.outputs.has-drift }}
+      drift-severity: ${{ steps.check-drift.outputs.severity }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Supabase CLI
+        run: npm i -g supabase@latest
+
+      - name: Link to project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --no-open
+
+      - name: Check for schema drift
+        id: check-drift
+        run: |
+          echo "🔍 Checking for schema drift..."
+          
+          # Generate diff between repo and production
+          supabase db diff --schema scout,public > drift-report.sql || true
+          
+          # Check if there are significant changes
+          if [ -s drift-report.sql ]; then
+            echo "has-drift=true" >> $GITHUB_OUTPUT
+            
+            # Analyze severity
+            if grep -qE "(DROP TABLE|DROP FUNCTION|DROP VIEW)" drift-report.sql; then
+              echo "severity=high" >> $GITHUB_OUTPUT
+              echo "🚨 HIGH SEVERITY: Destructive operations detected"
+            elif grep -qE "(ALTER TABLE|CREATE TABLE|CREATE FUNCTION)" drift-report.sql; then
+              echo "severity=medium" >> $GITHUB_OUTPUT
+              echo "⚠️ MEDIUM SEVERITY: Schema modifications detected"
+            else
+              echo "severity=low" >> $GITHUB_OUTPUT
+              echo "📝 LOW SEVERITY: Minor changes detected"
+            fi
+            
+            echo "## Schema Drift Detected" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`sql" >> $GITHUB_STEP_SUMMARY
+            head -n 50 drift-report.sql >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has-drift=false" >> $GITHUB_OUTPUT
+            echo "✅ No schema drift detected"
+          fi
+
+      - name: Upload drift report
+        if: steps.check-drift.outputs.has-drift == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-drift-report-${{ github.run_number }}
+          path: drift-report.sql
+          retention-days: 30
+
+  create-sync-migration:
+    needs: schema-drift-detection
+    if: needs.schema-drift-detection.outputs.has-drift == 'true' && (github.event.inputs.create_migration != 'false')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Supabase CLI
+        run: npm i -g supabase@latest
+
+      - name: Link to project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --no-open
+
+      - name: Create sync migration
+        run: |
+          echo "📝 Creating migration to sync with production..."
+          
+          # Generate timestamp for migration
+          timestamp=$(date +%Y%m%d%H%M%S)
+          migration_name="${timestamp}_auto_sync_from_production.sql"
+          
+          # Create migration directory if it doesn't exist
+          mkdir -p supabase/migrations
+          
+          # Generate the migration file
+          supabase db diff --schema scout,public > "supabase/migrations/$migration_name"
+          
+          if [ -s "supabase/migrations/$migration_name" ]; then
+            echo "✅ Migration created: $migration_name"
+            
+            # Add header to migration file
+            temp_file=$(mktemp)
+            cat > "$temp_file" << EOF
+-- Auto-generated migration to sync with production
+-- Generated at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+-- Workflow: ${{ github.workflow }}
+-- Run: ${{ github.run_number }}
+-- Severity: ${{ needs.schema-drift-detection.outputs.drift-severity }}
+
+EOF
+            cat "supabase/migrations/$migration_name" >> "$temp_file"
+            mv "$temp_file" "supabase/migrations/$migration_name"
+            
+            echo "MIGRATION_FILE=$migration_name" >> $GITHUB_ENV
+            echo "MIGRATION_CREATED=true" >> $GITHUB_ENV
+          else
+            echo "⚠️ No migration content generated"
+            rm -f "supabase/migrations/$migration_name"
+            echo "MIGRATION_CREATED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create Pull Request for sync migration
+        if: env.MIGRATION_CREATED == 'true'
+        run: |
+          # Configure git
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action - Auto Migration"
+          
+          # Create branch for the sync
+          branch_name="auto-sync/migration-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$branch_name"
+          
+          # Add and commit the migration
+          git add supabase/migrations/
+          git commit -m "🔄 Auto-sync migration from production
+
+          - Migration: ${{ env.MIGRATION_FILE }}
+          - Severity: ${{ needs.schema-drift-detection.outputs.drift-severity }}
+          - Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          - Workflow Run: ${{ github.run_number }}
+          
+          This migration was automatically generated to sync the repository
+          schema with the current production database state.
+          
+          ⚠️ Review carefully before merging, especially for HIGH severity changes.
+          "
+          
+          # Push the branch
+          git push origin "$branch_name"
+          
+          # Create pull request
+          pr_title="🔄 Auto-sync migration - ${{ needs.schema-drift-detection.outputs.drift-severity }} severity"
+          pr_body="## Auto-Generated Schema Sync Migration
+
+          **Severity**: ${{ needs.schema-drift-detection.outputs.drift-severity }}
+          **Migration File**: \`${{ env.MIGRATION_FILE }}\`
+          **Generated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ### ⚠️ Important Notes
+          - This migration was automatically generated to sync with production
+          - **Review all changes carefully** before merging
+          - High severity changes may include destructive operations
+          
+          ### Changes Detected
+          The following differences were found between the repository and production:
+          
+          \`\`\`sql
+          $(head -n 30 supabase/migrations/${{ env.MIGRATION_FILE }})
+          \`\`\`
+          
+          ### Next Steps
+          1. 🔍 **Review the migration file thoroughly**
+          2. 🧪 **Test in a development environment**
+          3. ✅ **Approve and merge when ready**
+          4. 🚀 **The migration will auto-deploy on merge to main**
+
+          ---
+          _This PR was automatically created by the Auto Migration workflow._
+          "
+          
+          gh pr create \
+            --title "$pr_title" \
+            --body "$pr_body" \
+            --head "$branch_name" \
+            --base main \
+            --label "auto-migration,schema-sync,${{ needs.schema-drift-detection.outputs.drift-severity }}-priority"
+
+  notification:
+    needs: [schema-drift-detection, create-sync-migration]
+    if: always() && needs.schema-drift-detection.outputs.has-drift == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack notification
+        if: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          severity="${{ needs.schema-drift-detection.outputs.drift-severity }}"
+          
+          case "$severity" in
+            "high")
+              color="#FF0000"
+              emoji="🚨"
+              ;;
+            "medium")
+              color="#FFA500"
+              emoji="⚠️"
+              ;;
+            *)
+              color="#FFFF00"
+              emoji="📝"
+              ;;
+          esac
+          
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"attachments\": [{
+                \"color\": \"$color\",
+                \"blocks\": [{
+                  \"type\": \"header\",
+                  \"text\": {
+                    \"type\": \"plain_text\",
+                    \"text\": \"$emoji Schema Drift Detected - $severity Severity\"
+                  }
+                }, {
+                  \"type\": \"section\",
+                  \"fields\": [
+                    {\"type\": \"mrkdwn\", \"text\": \"*Project:* ${{ env.SUPABASE_PROJECT_REF }}\"},
+                    {\"type\": \"mrkdwn\", \"text\": \"*Severity:* $severity\"},
+                    {\"type\": \"mrkdwn\", \"text\": \"*Repository:* ${{ github.repository }}\"},
+                    {\"type\": \"mrkdwn\", \"text\": \"*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>\"}
+                  ]
+                }]
+              }]
+            }" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: GitHub issue for high severity
+        if: needs.schema-drift-detection.outputs.drift-severity == 'high'
+        run: |
+          gh issue create \
+            --title "🚨 HIGH SEVERITY Schema Drift Detected" \
+            --body "## Critical Schema Drift Alert
+
+          **Severity**: HIGH  
+          **Detected**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")  
+          **Workflow Run**: ${{ github.run_number }}
+
+          ### ⚠️ IMMEDIATE ACTION REQUIRED
+
+          High severity schema drift has been detected, which may include:
+          - Table drops
+          - Function drops  
+          - View drops
+          - Other destructive operations
+
+          ### Next Steps
+          1. 🔍 **Review the auto-generated PR immediately**
+          2. 🧪 **Test thoroughly before merging**
+          3. 📞 **Coordinate with team before deployment**
+          4. 🔄 **Consider manual schema review**
+
+          ### Links
+          - [Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - [Schema Drift Report Artifact](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          /cc @tbwa
+          " \
+            --label "critical,schema-drift,high-priority"

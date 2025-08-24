@@ -1,0 +1,407 @@
+{
+  "name": "Scout Analytics Integrated Dashboard",
+  "version": "2.0.0",
+  "description": "Comprehensive dashboard for Scout Analytics with Dataset Publisher integration",
+  "created_at": "2025-08-16",
+  "author": "Scout Analytics Platform",
+  
+  "database": {
+    "connection": {
+      "host": "aws-0-us-west-1.pooler.supabase.com",
+      "port": 6543,
+      "database": "postgres",
+      "schema": "scout",
+      "project_ref": "cxzllzyxwpyptfretryc"
+    },
+    "api": {
+      "base_url": "https://cxzllzyxwpyptfretryc.supabase.co",
+      "rest_endpoint": "/rest/v1/",
+      "graphql_endpoint": "/graphql/v1"
+    }
+  },
+  
+  "panels": [
+    {
+      "id": "executive-summary",
+      "title": "Executive Summary",
+      "type": "kpi-grid",
+      "position": { "row": 0, "col": 0, "width": 12, "height": 2 },
+      "datasource": {
+        "view": "scout.v_migration_summary",
+        "refresh_interval": 300
+      },
+      "metrics": [
+        {
+          "label": "Total Revenue",
+          "field": "total_revenue",
+          "format": "currency",
+          "icon": "💰"
+        },
+        {
+          "label": "Active Stores",
+          "field": "stores_count",
+          "format": "number",
+          "icon": "🏪"
+        },
+        {
+          "label": "Transaction Count",
+          "field": "transaction_count",
+          "format": "number",
+          "icon": "📊"
+        },
+        {
+          "label": "Daily Aggregates",
+          "field": "daily_aggregates_count",
+          "format": "number",
+          "icon": "📈"
+        }
+      ]
+    },
+    
+    {
+      "id": "revenue-trend",
+      "title": "Revenue Trend (30 Days)",
+      "type": "line-chart",
+      "position": { "row": 2, "col": 0, "width": 8, "height": 4 },
+      "datasource": {
+        "view": "scout.dashboard_revenue_timeseries",
+        "filters": {
+          "date_range": "last_30_days"
+        }
+      },
+      "axes": {
+        "x": {
+          "field": "date",
+          "label": "Date",
+          "format": "date"
+        },
+        "y": {
+          "field": "revenue",
+          "label": "Revenue (₱)",
+          "format": "currency"
+        }
+      },
+      "series": [
+        {
+          "name": "Daily Revenue",
+          "color": "#667eea"
+        },
+        {
+          "name": "7-Day Average",
+          "color": "#764ba2",
+          "type": "dashed"
+        }
+      ]
+    },
+    
+    {
+      "id": "store-performance",
+      "title": "Store Performance Rankings",
+      "type": "bar-chart",
+      "position": { "row": 2, "col": 8, "width": 4, "height": 4 },
+      "datasource": {
+        "view": "scout.dashboard_store_locations",
+        "sort": {
+          "field": "total_revenue",
+          "order": "desc"
+        },
+        "limit": 5
+      },
+      "axes": {
+        "x": {
+          "field": "store_name",
+          "label": "Store"
+        },
+        "y": {
+          "field": "total_revenue",
+          "label": "Revenue",
+          "format": "currency"
+        }
+      }
+    },
+    
+    {
+      "id": "geographic-heatmap",
+      "title": "Geographic Distribution",
+      "type": "choropleth-map",
+      "position": { "row": 6, "col": 0, "width": 6, "height": 5 },
+      "datasource": {
+        "view": "scout.geo_choropleth_data",
+        "geojson": "scout.geographic_boundaries"
+      },
+      "map": {
+        "center": [12.8797, 121.7740],
+        "zoom": 6,
+        "style": "mapbox://styles/mapbox/light-v11"
+      },
+      "layers": [
+        {
+          "id": "revenue-heat",
+          "type": "fill",
+          "source": "revenue",
+          "paint": {
+            "fill-color": {
+              "property": "revenue_density",
+              "stops": [
+                [0, "#f7fbff"],
+                [100, "#deebf7"],
+                [500, "#c6dbef"],
+                [1000, "#9ecae1"],
+                [5000, "#6baed6"],
+                [10000, "#3182bd"],
+                [50000, "#08519c"]
+              ]
+            },
+            "fill-opacity": 0.7
+          }
+        }
+      ]
+    },
+    
+    {
+      "id": "brand-performance",
+      "title": "Brand Performance Matrix",
+      "type": "treemap",
+      "position": { "row": 6, "col": 6, "width": 6, "height": 5 },
+      "datasource": {
+        "function": "scout.get_brand_market_share",
+        "parameters": {
+          "days": 7
+        }
+      },
+      "dimensions": {
+        "size": "market_share",
+        "color": "growth_rate",
+        "label": "brand_name"
+      },
+      "colorScale": {
+        "negative": "#d62728",
+        "neutral": "#ff7f0e",
+        "positive": "#2ca02c"
+      }
+    },
+    
+    {
+      "id": "transcript-insights",
+      "title": "Customer Demographics (from Transcripts)",
+      "type": "pie-chart",
+      "position": { "row": 11, "col": 0, "width": 4, "height": 3 },
+      "datasource": {
+        "query": "SELECT customer_gender as segment, COUNT(*) as value FROM scout.fact_transactions WHERE customer_gender IS NOT NULL GROUP BY customer_gender"
+      },
+      "dimensions": {
+        "label": "segment",
+        "value": "value"
+      },
+      "colors": {
+        "male": "#3498db",
+        "female": "#e74c3c",
+        "unknown": "#95a5a6"
+      }
+    },
+    
+    {
+      "id": "dataset-health",
+      "title": "Dataset Publisher Health",
+      "type": "table",
+      "position": { "row": 11, "col": 4, "width": 8, "height": 3 },
+      "datasource": {
+        "view": "public.v_dataset_health_dashboard",
+        "sort": {
+          "field": "downloads_7d",
+          "order": "desc"
+        }
+      },
+      "columns": [
+        {
+          "field": "dataset_name",
+          "header": "Dataset",
+          "width": "30%"
+        },
+        {
+          "field": "current_version",
+          "header": "Version",
+          "width": "10%"
+        },
+        {
+          "field": "size_mb",
+          "header": "Size (MB)",
+          "width": "10%",
+          "format": "number"
+        },
+        {
+          "field": "downloads_7d",
+          "header": "Downloads (7d)",
+          "width": "15%",
+          "format": "number"
+        },
+        {
+          "field": "unique_users_7d",
+          "header": "Users (7d)",
+          "width": "10%",
+          "format": "number"
+        },
+        {
+          "field": "replicated_regions",
+          "header": "Regions",
+          "width": "10%"
+        },
+        {
+          "field": "active_subscribers",
+          "header": "Subscribers",
+          "width": "15%",
+          "format": "number"
+        }
+      ]
+    },
+    
+    {
+      "id": "replication-monitor",
+      "title": "Cross-Region Replication Status",
+      "type": "status-grid",
+      "position": { "row": 14, "col": 0, "width": 12, "height": 2 },
+      "datasource": {
+        "view": "public.v_replication_monitor",
+        "refresh_interval": 60
+      },
+      "statusMap": {
+        "completed": { "color": "green", "icon": "✓" },
+        "in_progress": { "color": "yellow", "icon": "⟳" },
+        "pending": { "color": "gray", "icon": "⏳" },
+        "failed": { "color": "red", "icon": "✗" }
+      }
+    }
+  ],
+  
+  "filters": [
+    {
+      "id": "date-range",
+      "type": "date-range",
+      "label": "Date Range",
+      "default": "last_30_days",
+      "options": [
+        { "value": "today", "label": "Today" },
+        { "value": "yesterday", "label": "Yesterday" },
+        { "value": "last_7_days", "label": "Last 7 Days" },
+        { "value": "last_30_days", "label": "Last 30 Days" },
+        { "value": "last_90_days", "label": "Last 90 Days" },
+        { "value": "custom", "label": "Custom Range" }
+      ]
+    },
+    {
+      "id": "store-filter",
+      "type": "multi-select",
+      "label": "Stores",
+      "datasource": {
+        "query": "SELECT DISTINCT store_id as value, store_id as label FROM scout.dim_stores WHERE is_active = true ORDER BY store_id"
+      },
+      "default": "all"
+    },
+    {
+      "id": "region-filter",
+      "type": "dropdown",
+      "label": "Region",
+      "datasource": {
+        "query": "SELECT DISTINCT region as value, region as label FROM scout.dim_stores ORDER BY region"
+      },
+      "default": "all"
+    },
+    {
+      "id": "brand-filter",
+      "type": "search",
+      "label": "Brand",
+      "placeholder": "Search brands...",
+      "datasource": {
+        "query": "SELECT brand_name as value, brand_name as label FROM scout.master_brands ORDER BY brand_name"
+      }
+    }
+  ],
+  
+  "alerts": [
+    {
+      "id": "low-inventory",
+      "name": "Low Inventory Alert",
+      "condition": {
+        "metric": "inventory_level",
+        "operator": "<",
+        "threshold": 10
+      },
+      "channels": ["email", "slack"],
+      "severity": "warning"
+    },
+    {
+      "id": "revenue-drop",
+      "name": "Revenue Drop Alert",
+      "condition": {
+        "metric": "daily_revenue_change",
+        "operator": "<",
+        "threshold": -20,
+        "unit": "percent"
+      },
+      "channels": ["email", "webhook"],
+      "severity": "critical"
+    },
+    {
+      "id": "replication-failure",
+      "name": "Replication Failure",
+      "condition": {
+        "metric": "failed_replications",
+        "operator": ">",
+        "threshold": 0
+      },
+      "channels": ["slack"],
+      "severity": "error"
+    }
+  ],
+  
+  "refresh": {
+    "default_interval": 300,
+    "min_interval": 60,
+    "auto_refresh": true
+  },
+  
+  "export": {
+    "formats": ["pdf", "csv", "excel"],
+    "schedule": {
+      "enabled": true,
+      "frequency": "daily",
+      "time": "06:00",
+      "recipients": ["analytics@scout.io"]
+    }
+  },
+  
+  "theme": {
+    "primary_color": "#667eea",
+    "secondary_color": "#764ba2",
+    "success_color": "#10b981",
+    "warning_color": "#f59e0b",
+    "danger_color": "#ef4444",
+    "font_family": "Inter, system-ui, sans-serif",
+    "dark_mode": false
+  },
+  
+  "permissions": {
+    "roles": {
+      "admin": ["view", "edit", "export", "configure"],
+      "analyst": ["view", "export"],
+      "viewer": ["view"]
+    },
+    "row_level_security": true
+  },
+  
+  "integrations": {
+    "slack": {
+      "webhook_url": "${SLACK_WEBHOOK_URL}",
+      "channel": "#analytics"
+    },
+    "email": {
+      "smtp_host": "${SMTP_HOST}",
+      "smtp_port": 587,
+      "from_address": "analytics@scout.io"
+    },
+    "mapbox": {
+      "access_token": "${MAPBOX_TOKEN}",
+      "style": "mapbox://styles/mapbox/light-v11"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-name: DB/Build/Test
+name: CI (Schema drift, Build & Test)
 on:
   pull_request:
     paths:
@@ -7,20 +7,81 @@ on:
       - 'services/**'
       - 'packages/**'
       - 'infra/docker/**'
+      - 'supabase/migrations/**'
       - '.github/workflows/ci.yml'
   push:
-    branches: [main]
+    branches: [main, feature/**]
     paths:
       - 'db/**'
       - 'dq/**'
       - 'services/**'
       - 'packages/**'
       - 'infra/docker/**'
+      - 'supabase/migrations/**'
       - '.github/workflows/ci.yml'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  schema-drift-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        run: npm i -g supabase@latest
+
+      - name: Schema drift check against production
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -e
+          echo "🔗 Linking to production project cxzllzyxwpyptfretryc..."
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --no-open
+          
+          echo "🔍 Checking for schema drift..."
+          supabase db diff > diff.sql || true
+          
+          if [ -s diff.sql ]; then
+            echo "❌ Schema drift detected (objects exist in prod but not in repo or vice-versa):"
+            echo "First 200 lines of diff:"
+            sed -n '1,200p' diff.sql
+            echo ""
+            echo "📋 Full diff saved as artifact. Please review and sync schemas."
+            exit 1
+          fi
+          
+          echo "✅ No schema drift detected. Repository is in sync with production."
+
+      - name: Upload drift diff (if found)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-drift-diff
+          path: diff.sql
+          retention-days: 7
+
+      - name: Validate migration files
+        run: |
+          echo "🔍 Validating migration file naming..."
+          for file in supabase/migrations/*.sql db/migrations/*.sql; do
+            if [ -f "$file" ]; then
+              basename_file=$(basename "$file")
+              if [[ "$file" =~ supabase/migrations/ ]] && [[ ! "$basename_file" =~ ^[0-9]{14}_[a-zA-Z0-9_]+\.sql$ ]]; then
+                echo "❌ Invalid Supabase migration filename: $basename_file"
+                echo "   Expected format: YYYYMMDDHHMMSS_description.sql"
+                exit 1
+              fi
+              
+              # Basic SQL safety checks
+              if grep -qi "TRUNCATE\|DROP.*CASCADE" "$file"; then
+                echo "⚠️  WARNING: Destructive operation found in $file - review carefully"
+              fi
+            fi
+          done
+          echo "✅ Migration file validation passed."
   db-build-test:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -34,7 +95,15 @@ jobs:
           --health-interval=5s --health-timeout=3s --health-retries=30
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with: 
+          fetch-depth: 0
+          submodules: recursive
+      
+      - name: Initialize submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+      
       - name: Install psql client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - uses: pnpm/action-setup@v4

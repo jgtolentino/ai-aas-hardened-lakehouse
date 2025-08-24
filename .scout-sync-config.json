@@ -1,0 +1,47 @@
+{
+  "sync_patterns": {
+    "include": [
+      "scout_*.sql",
+      "*scout*.sql",
+      "*sari_sari*.sql",
+      "*dal_*.sql",
+      "*isko*.sql",
+      "*agentic*.sql",
+      "*products*.sql",
+      "*brands*.sql",
+      "*silver*.sql",
+      "*gold*.sql",
+      "*platinum*.sql",
+      "*medallion*.sql",
+      "*warehouse*.sql"
+    ],
+    "exclude": [
+      "*test*.sql",
+      "*backup*.sql",
+      "*temp*.sql",
+      "*.bak.sql"
+    ]
+  },
+  "source_directories": [
+    "platform/scout/scout-databank/migrations",
+    "platform/scout/scout-databank/supabase/migrations"
+  ],
+  "target_directory": "supabase/migrations",
+  "sync_options": {
+    "preserve_timestamps": true,
+    "create_backup": true,
+    "validate_sql": true,
+    "auto_commit": true,
+    "create_pr": true
+  },
+  "notifications": {
+    "slack": {
+      "enabled": false,
+      "channel": "#scout-deployments"
+    },
+    "email": {
+      "enabled": false,
+      "recipients": ["team@example.com"]
+    }
+  }
+}

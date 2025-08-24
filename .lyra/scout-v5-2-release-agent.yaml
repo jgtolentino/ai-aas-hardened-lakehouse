@@ -1,0 +1,248 @@
+# ============================================================
+# LYRA AGENT CONFIGURATION - Scout v5.2 Release Captain
+# ============================================================
+
+agent:
+  name: scout-v5-2-release-captain
+  role: "Senior Release Captain + Repo Auditor + CI/CD Fixer + Compliance Gate"
+  description: "Automated agent for Scout Analytics v5.2 full project readiness and release"
+  version: "1.0.0"
+
+# Runtime inputs (can be overridden via CLI or environment)
+inputs:
+  ROOT_REPO: "${ROOT_REPO:-https://github.com/tbwa/ai-aas-hardened-lakehouse}"
+  SCOUT_FRONTEND_REPO: "${SCOUT_FRONTEND_REPO:-https://github.com/tbwa/scout-databank-new}"
+  BLUEPRINT_REPO: "${BLUEPRINT_REPO:-https://github.com/tbwa/scout-analytics-blueprint-doc}"
+  SUPABASE_PROJECT_REF: "${SUPABASE_PROJECT_REF:-cxzllzyxwpyptfretryc}"
+  PGURI: "${PGURI:-postgresql://postgres:postgres@localhost:5432/postgres}"
+  MAPBOX_TOKEN: "${MAPBOX_TOKEN}"
+  ENV: "${ENV:-staging}"
+  BRANCH: "${BRANCH:-release/v5.2}"
+
+# Success criteria gates
+gates:
+  - name: ci_pipelines_green
+    description: "All CI pipelines must be green"
+    required: true
+    threshold: 100
+  
+  - name: migration_parity
+    description: "Migrations manifest must match actual files"
+    required: true
+    
+  - name: prd_compliance_score
+    description: "Scout PRD compliance score"
+    required: true
+    threshold: 95
+    
+  - name: privacy_check
+    description: "No audio/video storage tables"
+    required: true
+    
+  - name: dashboard_ready
+    description: "Dashboard builds and passes tests"
+    required: true
+    
+  - name: performance_sla
+    description: "P95 performance metrics within SLA"
+    required: true
+    thresholds:
+      geo_query_ms: 1500
+      dashboard_load_ms: 3000
+
+# Tools available to the agent
+tools:
+  - git
+  - psql
+  - bruno
+  - curl
+  - node
+  - pnpm
+  - python
+  - mcp_supabase
+  - docker
+
+# Execution plan
+plan:
+  phases:
+    - name: inventory_and_submodules
+      steps:
+        - clone_repos_with_submodules
+        - list_all_migrations
+        - generate_migration_hashes
+        - compare_with_manifest
+
+    - name: migration_parity_and_drift
+      steps:
+        - create_manifest_if_missing
+        - verify_migration_manifest_table
+        - apply_missing_migrations
+        - verify_edge_stt_migrations
+
+    - name: database_checks
+      steps:
+        - verify_no_audio_video_tables
+        - verify_rls_policies
+        - run_smoke_tests
+        - check_fact_dimension_counts
+
+    - name: etl_and_data_quality
+      steps:
+        - run_bronze_to_silver_etl
+        - run_silver_to_gold_etl
+        - execute_great_expectations
+        - validate_data_quality
+
+    - name: api_and_rpc_testing
+      steps:
+        - test_dashboard_kpis_rpc
+        - test_sales_trend_rpc
+        - test_edge_device_rpcs
+        - run_bruno_test_suite
+
+    - name: dashboard_deployment
+      steps:
+        - import_superset_bundles
+        - build_react_dashboard
+        - run_e2e_tests
+        - measure_performance_sla
+
+    - name: ci_cd_configuration
+      steps:
+        - ensure_pnpm_usage
+        - add_migration_drift_job
+        - add_manifest_parity_job
+        - add_dq_bruno_jobs
+
+    - name: release_hygiene
+      steps:
+        - merge_pending_prs
+        - create_release_tag
+        - generate_changelog
+        - prepare_rollback_plan
+
+    - name: final_report
+      steps:
+        - generate_compliance_scorecard
+        - capture_ci_summary
+        - document_sla_metrics
+        - create_readiness_report
+
+# Compliance checklist
+compliance_checklist:
+  schema_and_layers:
+    - bronze_silver_gold_platinum_present: 5
+    - edge_tables_exist: 5
+    - stt_tables_no_audio: 5
+    - fact_tables_complete: 5
+    - dimension_tables_scd2: 5
+    - master_vs_dim_separation: 5
+    - silver_layer_complete: 5
+
+  geo:
+    - postgis_installed: 5
+    - geo_adm_tables: 5
+    - choropleth_datasets: 5
+
+  privacy_security:
+    - rls_enabled: 5
+    - no_audio_video_storage: 5
+    - secrets_via_env: 5
+
+  etl_quality:
+    - idempotent_ingestion: 5
+    - great_expectations_integrated: 5
+    - materialized_views_locked: 5
+
+  dashboards_slas:
+    - dashboard_builds_successfully: 5
+    - performance_within_sla: 5
+
+  docs_release:
+    - api_documentation_complete: 5
+    - changelog_and_rollback: 5
+
+# Commands the agent will execute
+commands:
+  clone_repos:
+    cmd: |
+      git clone --recurse-submodules "$ROOT_REPO"
+      cd ai-aas-hardened-lakehouse
+      git submodule update --init --recursive
+
+  compute_migration_hashes:
+    cmd: |
+      find platform/scout/migrations supabase/migrations -type f -name "*.sql" \
+        -exec sh -c 'echo "$(basename "$1" .sql),$(shasum -a 256 "$1" | cut -d" " -f1)"' _ {} \;
+
+  apply_migrations:
+    cmd: |
+      for f in $(ls -1 platform/scout/migrations/*.sql | sort); do
+        echo "Applying: $f"
+        psql "$PGURI" -v ON_ERROR_STOP=1 -f "$f"
+      done
+
+  privacy_check:
+    cmd: |
+      psql "$PGURI" -c "
+        SELECT COUNT(*) as audio_video_tables
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid=c.relnamespace
+        WHERE n.nspname='scout' AND relkind='r'
+        AND relname ~* '(audio|video|recording|media|biometric)'"
+
+  run_smoke_tests:
+    cmd: |
+      psql "$PGURI" -f scripts/scout_smoke_tests.sql
+
+  run_bruno_tests:
+    cmd: |
+      cd bruno && BRUNO_ENV=$ENV npm run test:ci
+
+  measure_sla:
+    cmd: |
+      python scripts/measure_scout_sla.py --env $ENV --output sla_metrics.json
+
+# Output artifacts
+outputs:
+  - name: readiness_report.md
+    path: reports/readiness_report.md
+    required: true
+    
+  - name: manifest.yaml
+    path: migrations/manifest.yaml
+    required: true
+    
+  - name: compliance_scorecard.json
+    path: reports/compliance_scorecard.json
+    required: true
+    
+  - name: sla_metrics.json
+    path: reports/sla_metrics.json
+    required: true
+
+# Guardrails and stops
+guardrails:
+  - condition: "audio_video_tables_found"
+    action: "stop"
+    message: "STOP: Audio/video storage tables detected. Opening blocking PR."
+    
+  - condition: "rls_disabled_on_sensitive_tables"
+    action: "stop"
+    message: "STOP: RLS disabled on sensitive tables. Creating policies."
+    
+  - condition: "migration_drift_in_production"
+    action: "stop"
+    message: "STOP: Migration drift detected. Requires human approval."
+
+# Notifications
+notifications:
+  on_success:
+    - type: slack
+      channel: "#scout-releases"
+      message: "✅ Scout v5.2 release readiness complete. Score: {prd_compliance_score}/100"
+      
+  on_failure:
+    - type: slack
+      channel: "#scout-alerts"
+      message: "❌ Scout v5.2 release blocked: {failure_reason}"

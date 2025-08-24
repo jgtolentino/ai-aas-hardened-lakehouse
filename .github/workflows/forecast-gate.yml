@@ -1,0 +1,37 @@
+name: Forecast Math Gate
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: {}
+
+jobs:
+  forecast-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run Forecast Gate
+        env:
+          PGHOST:       ${{ secrets.PGHOST }}
+          PGPORT:       ${{ secrets.PGPORT }}
+          PGDATABASE:   ${{ secrets.PGDATABASE }}
+          PGUSER:       ${{ secrets.PGUSER }}
+          PGPASSWORD:   ${{ secrets.PGPASSWORD }}
+          # Optional overrides (can also be set as repo/ORG variables or PR envs)
+          MODEL_NAME:   ${{ vars.MODEL_NAME || 'demand_forecast' }}
+          MODEL_VERSION: ${{ vars.MODEL_VERSION || '' }}
+          DAYS:         ${{ vars.FG_DAYS || '30' }}
+          SN_PERIOD:    ${{ vars.FG_SN_PERIOD || '7' }}
+          WAPE_TOL:     ${{ vars.FG_WAPE_TOL || '1.02' }}
+          SMAPE_TOL:    ${{ vars.FG_SMAPE_TOL || '1.02' }}
+          MIN_COVERAGE: ${{ vars.FG_MIN_COVERAGE || '0.75' }}
+          MAX_COVERAGE: ${{ vars.FG_MAX_COVERAGE || '0.90' }}
+        run: |
+          bash scripts/ci/run_forecast_gate.sh

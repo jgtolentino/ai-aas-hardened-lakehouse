@@ -1,0 +1,378 @@
+name: Production Readiness Gate
+
+on:
+  pull_request:
+    branches: [main, production]
+  workflow_dispatch:
+  push:
+    branches: [staging]
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --workspace platform/scout/blueprint-dashboard
+      
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+      
+      - name: Run type checking
+        run: npm run type-check
+        continue-on-error: true
+      
+      - name: Run tests
+        run: npm test
+        continue-on-error: true
+
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup k6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+      
+      - name: Start test server
+        run: |
+          cd platform/scout/blueprint-dashboard
+          npm ci
+          npm run build
+          npm run preview &
+          sleep 10
+        env:
+          VITE_SUPABASE_URL: http://localhost:5432
+          VITE_SUPABASE_ANON_KEY: test-key
+      
+      - name: Run k6 performance tests
+        run: |
+          k6 run scripts/k6/api-readiness.js \
+            --out json=k6-results.json \
+            --summary-export=k6-summary.json
+        env:
+          API_BASE: http://localhost:4173
+      
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-results
+          path: |
+            k6-results.json
+            k6-summary.json
+
+  data-quality:
+    name: Data Quality Checks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      
+      - name: Run data quality checks
+        run: |
+          psql "${{ secrets.SUPABASE_DB_URL }}" -f scripts/sql/dq_gate.sql > dq-results.log
+          if grep -q "FAIL" dq-results.log; then
+            echo "::error::Data quality checks failed"
+            cat dq-results.log
+            exit 1
+          fi
+        continue-on-error: true
+      
+      - name: Upload DQ results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dq-results
+          path: dq-results.log
+
+  rls-security:
+    name: RLS Security Checks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      
+      - name: Run RLS security checks
+        run: |
+          psql "${{ secrets.SUPABASE_DB_URL }}" -f scripts/sql/rls_check.sql > rls-results.log
+          if grep -q "FAIL - Critical" rls-results.log; then
+            echo "::error::Critical RLS security issues found"
+            cat rls-results.log
+            exit 1
+          fi
+      
+      - name: Upload RLS results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rls-results
+          path: rls-results.log
+
+  build-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --workspace platform/scout/blueprint-dashboard
+      
+      - name: Build application
+        run: |
+          npm run build
+          npm run dash:build
+      
+      - name: Check build output
+        run: |
+          # Check if dist directory exists and has content
+          if [ ! -d "platform/scout/blueprint-dashboard/dist" ]; then
+            echo "::error::Build output directory not found"
+            exit 1
+          fi
+          
+          # Check build size
+          BUILD_SIZE=$(du -sb platform/scout/blueprint-dashboard/dist | cut -f1)
+          echo "Build size: $BUILD_SIZE bytes"
+          
+          if [ $BUILD_SIZE -gt 10485760 ]; then  # 10MB
+            echo "::warning::Build size exceeds 10MB"
+          fi
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: platform/scout/blueprint-dashboard/dist/
+
+  deployment-readiness:
+    name: Deployment Readiness
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, build-test]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check required files
+        run: |
+          required_files=(
+            "package.json"
+            ".env.example"
+            "README.md"
+            "platform/scout/blueprint-dashboard/package.json"
+            "platform/scout/blueprint-dashboard/vite.config.ts"
+          )
+          
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "::error::Required file missing: $file"
+              exit 1
+            fi
+          done
+      
+      - name: Validate package.json
+        run: |
+          # Check for required scripts
+          for script in build dev test; do
+            if ! jq -e ".scripts.$script" package.json > /dev/null; then
+              echo "::error::Missing required script: $script"
+              exit 1
+            fi
+          done
+      
+      - name: Check environment variables
+        run: |
+          # Check .env.example has required vars
+          required_vars=(
+            "VITE_SUPABASE_URL"
+            "VITE_SUPABASE_ANON_KEY"
+          )
+          
+          for var in "${required_vars[@]}"; do
+            if ! grep -q "^$var=" platform/scout/blueprint-dashboard/.env.example 2>/dev/null; then
+              echo "::warning::Missing environment variable in .env.example: $var"
+            fi
+          done
+
+  gate-decision:
+    name: Production Gate Decision
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, performance-test, build-test, deployment-readiness]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: gate-artifacts
+      
+      - name: Analyze gate results
+        id: gate-analysis
+        run: |
+          GATE_PASSED=true
+          FAILURES=""
+          
+          # Check job statuses
+          if [ "${{ needs.security-scan.result }}" != "success" ]; then
+            GATE_PASSED=false
+            FAILURES="${FAILURES}Security scanning failed. "
+          fi
+          
+          if [ "${{ needs.build-test.result }}" != "success" ]; then
+            GATE_PASSED=false
+            FAILURES="${FAILURES}Build/test failed. "
+          fi
+          
+          if [ "${{ needs.deployment-readiness.result }}" != "success" ]; then
+            GATE_PASSED=false
+            FAILURES="${FAILURES}Deployment readiness failed. "
+          fi
+          
+          echo "gate_passed=$GATE_PASSED" >> $GITHUB_OUTPUT
+          echo "failures=$FAILURES" >> $GITHUB_OUTPUT
+      
+      - name: Create gate summary
+        run: |
+          cat > gate-summary.md << EOF
+          # Production Readiness Gate Summary
+          
+          **Date:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+          
+          ## Gate Status: ${{ steps.gate-analysis.outputs.gate_passed == 'true' && '✅ PASSED' || '❌ FAILED' }}
+          
+          ### Check Results:
+          - Security Scan: ${{ needs.security-scan.result == 'success' && '✅' || '❌' }}
+          - Code Quality: ${{ needs.code-quality.result == 'success' && '✅' || '❌' }}
+          - Performance: ${{ needs.performance-test.result == 'success' && '✅' || '❌' }}
+          - Build/Test: ${{ needs.build-test.result == 'success' && '✅' || '❌' }}
+          - Deployment Ready: ${{ needs.deployment-readiness.result == 'success' && '✅' || '❌' }}
+          
+          ${{ steps.gate-analysis.outputs.failures != '' && '### Failures:' || '' }}
+          ${{ steps.gate-analysis.outputs.failures }}
+          
+          ### Artifacts:
+          - [Build Output](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - [Security Report](https://github.com/${{ github.repository }}/security/code-scanning)
+          EOF
+          
+          cat gate-summary.md >> $GITHUB_STEP_SUMMARY
+      
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('gate-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+      
+      - name: Set deployment status
+        if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ steps.gate-analysis.outputs.gate_passed }}' === 'true' ? 'success' : 'failure';
+            
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: status,
+              context: 'Production Readiness Gate',
+              description: status === 'success' ? 'All checks passed' : 'Some checks failed',
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+      
+      - name: Fail if gate failed
+        if: steps.gate-analysis.outputs.gate_passed != 'true'
+        run: |
+          echo "::error::Production readiness gate failed"
+          exit 1

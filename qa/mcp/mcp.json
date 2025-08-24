@@ -5,7 +5,27 @@
       "args": ["-y", "browser-use-mcp@latest", "--headless", "--port", "5173"],
       "transport": "stdio",
       "env": { "MCP_PORT": "5173" }
+    },
+    "supabase_lakehouse": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=cxzllzyxwpyptfretryc",
+        "--feature-groups=database,projects,functions,storage,secrets"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_05fcd9a214adbb2721dd54f2f39478e5efcbeffa",
+        "SUPABASE_ROLE": "service_role"
+      }
+    },
+    "postgres_qa": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres@latest",
+        "postgresql://postgres:postgres@localhost:54322/postgres"
+      ]
     }
   }
 }
-EOF < /dev/null
