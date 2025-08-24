@@ -55,10 +55,10 @@ Provides browser automation capabilities for Scout Platform testing.
 ```
 
 ### 3. Supabase MCP Server
-Direct database access for Scout Platform data operations.
+Direct database access for Scout Platform data operations with full service role access.
 
 **Package**: `@supabase/mcp-server-supabase@latest`  
-**Purpose**: Database queries, migrations, real-time data access
+**Purpose**: Database queries, migrations, real-time data access, edge functions, storage operations
 
 **Configuration**:
 ```json
@@ -68,10 +68,25 @@ Direct database access for Scout Platform data operations.
     "args": [
       "-y",
       "@supabase/mcp-server-supabase@latest",
-      "--project-ref=cxzllzyxwpyptfretryc"
+      "--project-ref=cxzllzyxwpyptfretryc",
+      "--feature-groups=database,projects,functions,storage,secrets"
     ],
     "env": {
-      "SUPABASE_ACCESS_TOKEN": "sbp_c4c5fa81cc1fde770145ace4e79a33572748b25f"
+      "SUPABASE_ACCESS_TOKEN": "sbp_05fcd9a214adbb2721dd54f2f39478e5efcbeffa",
+      "SUPABASE_ROLE": "service_role"
+    }
+  },
+  "supabase_alternate": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "@supabase/mcp-server-supabase@latest",
+      "--project-ref=texxwmlroefdisgxpszc",
+      "--feature-groups=database,projects,functions,storage,secrets"
+    ],
+    "env": {
+      "SUPABASE_ACCESS_TOKEN": "sbp_05fcd9a214adbb2721dd54f2f39478e5efcbeffa",
+      "SUPABASE_ROLE": "service_role"
     }
   }
 }

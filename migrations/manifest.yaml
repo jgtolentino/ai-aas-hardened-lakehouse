@@ -1,0 +1,99 @@
+version: '1.0'
+project: scout-analytics-v5-2
+generated_at: '2025-08-24T16:00:00Z'
+supabase_project_ref: cxzllzyxwpyptfretryc
+migrations:
+- file: 001_scout_enums_dims.sql
+  path: platform/scout/migrations/001_scout_enums_dims.sql
+  sha256: 0b3d564810916492ae4921fa8245e22332ed665ac3b090fa1f4845ebeeed5353
+  description: Scout enums and dimension tables
+  applied: false
+  applied_at: null
+- file: 002_scout_bronze_silver.sql
+  path: platform/scout/migrations/002_scout_bronze_silver.sql
+  sha256: 5daa387b45fc5d05d7144313705ece22485b59cb849d55e5aa400184573948e7
+  description: Bronze and Silver layer tables
+  applied: false
+  applied_at: null
+- file: 003_scout_gold_views.sql
+  path: platform/scout/migrations/003_scout_gold_views.sql
+  sha256: 8312a8fedae00078c737f334906ff2fa14f198e664f0f5ad88286ea1bca04e5a
+  description: Gold layer analytics views
+  applied: false
+  applied_at: null
+- file: 010_geo_boundaries.sql
+  path: platform/scout/migrations/010_geo_boundaries.sql
+  sha256: b5e08f298de7d9d88395623a28778757dd7a40fde1b8185950e4366905fca462
+  description: PostGIS geo boundaries
+  applied: false
+  applied_at: null
+- file: 026_edge_device_schema.sql
+  path: platform/scout/migrations/026_edge_device_schema.sql
+  sha256: a542e63cf28872e204c50a81c36d8caafe3eff533dbb081750ec0034d0e6b71b
+  description: Edge device health monitoring tables
+  applied: false
+  applied_at: null
+- file: 027_stt_detection_schema.sql
+  path: platform/scout/migrations/027_stt_detection_schema.sql
+  sha256: f78ba7ff2316cfebed10ee8abb8afa28240274d2811b11e062f90e1a0c357693
+  description: STT brand detection (no audio storage)
+  applied: false
+  applied_at: null
+- file: 028_standardize_dim_names.sql
+  path: platform/scout/migrations/028_standardize_dim_names.sql
+  sha256: 83d34c9dfb23769754ca124b097d9f260b305002120eb9cdbc466d6db06fa5cf
+  description: Standardize table naming conventions
+  applied: false
+  applied_at: null
+- file: 029_silver_line_items.sql
+  path: platform/scout/migrations/029_silver_line_items.sql
+  sha256: 9bd7f8856ef6dd13f7bc6b7558be18ba6fd8b81de2f51a964cdd126dee7fc1ee
+  description: Silver layer line items table
+  applied: false
+  applied_at: null
+- file: 20250824130000_scout_connectivity_layer.sql
+  path: supabase/migrations/20250824130000_scout_connectivity_layer.sql
+  sha256: 084663d8e280745fbf54c58a5d45075986219bfcc47c181f49e2f6225eb26544
+  description: Scout connectivity layer for edge monitoring
+  applied: false
+  applied_at: null
+- file: 20250824140000_connectivity_enhancements.sql
+  path: supabase/migrations/20250824140000_connectivity_enhancements.sql
+  sha256: ce36b9253ed2f22e80d312cc04d89da5373e10b569941dace0570e8be72a3aa1
+  description: Auto-registration and enhanced monitoring
+  applied: false
+  applied_at: null
+- file: 20250824150000_installation_connectivity_alignment.sql
+  path: supabase/migrations/20250824150000_installation_connectivity_alignment.sql
+  sha256: 18f20eb3c6086545908b88f904e453cb3a0b5cc2590e1bfb6b80e912eeb1d044
+  description: Installation checks integration
+  applied: false
+  applied_at: null
+- file: 20250824160000_scout_v5_2_alignment_patch.sql
+  path: supabase/migrations/20250824160000_scout_v5_2_alignment_patch.sql
+  sha256: 2de765657b009d547d9f599bca13b4836fd6028c76bfbd1e85fd3407005f884a
+  description: PRD alignment patch with fact tables and compatibility
+  applied: false
+  applied_at: null
+verification:
+  table_counts:
+    query: "SELECT \n  'fact_tables' as category,\n  COUNT(*) as count\nFROM pg_tables\n\
+      WHERE schemaname = 'scout'\nAND tablename LIKE 'fact_%'\n"
+  edge_health_check:
+    query: "SELECT EXISTS(\n  SELECT 1 FROM pg_tables \n  WHERE schemaname = 'scout'\
+      \ \n  AND tablename IN ('edge_health', 'edge_devices', 'edge_installation_checks')\n\
+      ) as edge_tables_exist\n"
+  privacy_compliance:
+    query: "SELECT COUNT(*) = 0 as privacy_compliant\nFROM pg_tables \nWHERE schemaname\
+      \ = 'scout' \nAND tablename ~* '(audio|video|recording|media|biometric)'\n"
+rollback:
+  strategy: point_in_time_restore
+  backup_required: true
+  feature_flags:
+  - feature_flag_enable_edge
+  - feature_flag_enable_stt
+dependencies:
+- postgis: 3.0+
+- pg_vector: 0.4+
+- pg_cron: 1.4+
+- supabase_realtime: latest

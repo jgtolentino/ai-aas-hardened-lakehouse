@@ -1,0 +1,304 @@
+# Scout v5.2 Superset Dashboard Configuration
+# Import this into Superset for complete dashboard setup
+
+version: 1.0
+dashboard:
+  title: "Scout Analytics v5.2 - Competitive & Geo Intelligence"
+  slug: scout-v52-competitive-geo
+  position_json: |
+    {
+      "CHART-transaction-trends": {
+        "children": [],
+        "id": "CHART-transaction-trends",
+        "meta": {
+          "chartId": 1,
+          "height": 50,
+          "sliceName": "Transaction Trends",
+          "width": 6
+        },
+        "type": "CHART"
+      },
+      "CHART-brand-share": {
+        "children": [],
+        "id": "CHART-brand-share",
+        "meta": {
+          "chartId": 2,
+          "height": 50,
+          "sliceName": "Brand Market Share",
+          "width": 6
+        },
+        "type": "CHART"
+      },
+      "CHART-substitution-sankey": {
+        "children": [],
+        "id": "CHART-substitution-sankey",
+        "meta": {
+          "chartId": 3,
+          "height": 60,
+          "sliceName": "Brand Substitution Flow",
+          "width": 12
+        },
+        "type": "CHART"
+      },
+      "CHART-geo-choropleth": {
+        "children": [],
+        "id": "CHART-geo-choropleth",
+        "meta": {
+          "chartId": 4,
+          "height": 70,
+          "sliceName": "Regional Performance",
+          "width": 8
+        },
+        "type": "CHART"
+      },
+      "MARKDOWN-ai-panel": {
+        "children": [],
+        "id": "MARKDOWN-ai-panel",
+        "meta": {
+          "code": "## AI Recommendations\n\n{{ ai_recommendations }}",
+          "height": 70,
+          "width": 4
+        },
+        "type": "MARKDOWN"
+      }
+    }
+
+datasets:
+  - name: scout_brand_competitive_30d
+    sql: SELECT * FROM scout.gold_brand_competitive_30d
+    columns:
+      - column_name: store_id
+        type: VARCHAR
+        is_dttm: false
+      - column_name: category
+        type: VARCHAR
+        is_dttm: false
+      - column_name: brand
+        type: VARCHAR
+        is_dttm: false
+      - column_name: units
+        type: BIGINT
+        is_dttm: false
+      - column_name: revenue
+        type: DOUBLE PRECISION
+        is_dttm: false
+      - column_name: share_units
+        type: DOUBLE PRECISION
+        is_dttm: false
+      - column_name: share_revenue
+        type: DOUBLE PRECISION
+        is_dttm: false
+      - column_name: price_index
+        type: DOUBLE PRECISION
+        is_dttm: false
+      - column_name: has_promo
+        type: BOOLEAN
+        is_dttm: false
+
+  - name: scout_substitution_sankey_30d
+    sql: SELECT * FROM scout.gold_substitution_sankey_30d
+    columns:
+      - column_name: category
+        type: VARCHAR
+        is_dttm: false
+      - column_name: from_brand
+        type: VARCHAR
+        is_dttm: false
+      - column_name: to_brand
+        type: VARCHAR
+        is_dttm: false
+      - column_name: substitution_count
+        type: BIGINT
+        is_dttm: false
+      - column_name: percentage
+        type: DOUBLE PRECISION
+        is_dttm: false
+      - column_name: reason
+        type: VARCHAR
+        is_dttm: false
+
+  - name: scout_region_choropleth
+    sql: SELECT * FROM scout.gold_region_choropleth
+    columns:
+      - column_name: transaction_date
+        type: DATE
+        is_dttm: true
+      - column_name: region_key
+        type: VARCHAR
+        is_dttm: false
+      - column_name: region_name
+        type: VARCHAR
+        is_dttm: false
+      - column_name: geom
+        type: GEOMETRY
+        is_dttm: false
+      - column_name: txn_count
+        type: BIGINT
+        is_dttm: false
+      - column_name: revenue
+        type: DOUBLE PRECISION
+        is_dttm: false
+      - column_name: revenue_per_capita
+        type: DOUBLE PRECISION
+        is_dttm: false
+
+charts:
+  - name: "Transaction Trends"
+    viz_type: line_multi
+    datasource: scout_brand_competitive_30d
+    params:
+      metrics:
+        - revenue
+        - units
+      groupby:
+        - category
+      time_grain_sqla: P1D
+      time_range: Last 30 days
+      row_limit: 10000
+
+  - name: "Brand Market Share"
+    viz_type: bar
+    datasource: scout_brand_competitive_30d
+    params:
+      metrics:
+        - share_revenue
+      groupby:
+        - brand
+        - category
+      bar_stacked: true
+      order_bars: true
+      show_legend: true
+      y_axis_format: ".1%"
+
+  - name: "Brand Substitution Flow"
+    viz_type: sankey
+    datasource: scout_substitution_sankey_30d
+    params:
+      groupby:
+        - from_brand
+        - to_brand
+      metric: substitution_count
+      color_scheme: supersetColors
+
+  - name: "Regional Performance"
+    viz_type: deck_geojson
+    datasource: scout_region_choropleth
+    params:
+      deck_slices:
+        mapbox_token: "{{ mapbox_token }}"
+        viewport:
+          latitude: 14.5995
+          longitude: 120.9842
+          zoom: 6
+        layers:
+          - type: GeoJsonLayer
+            id: regions
+            data: geom
+            getFillColor: 
+              type: quantile
+              attr: revenue
+              colors:
+                - [255, 255, 178]
+                - [254, 217, 118]
+                - [254, 178, 76]
+                - [253, 141, 60]
+                - [252, 78, 42]
+                - [227, 26, 28]
+                - [177, 0, 38]
+            getLineColor: [255, 255, 255]
+            getLineWidth: 1
+            pickable: true
+
+filters:
+  - name: date_filter
+    type: daterange
+    targets:
+      - datasetId: 1
+        column: transaction_date
+    default: Last 30 days
+    
+  - name: region_filter
+    type: select
+    targets:
+      - datasetId: 3
+        column: region_name
+    multiple: true
+    
+  - name: category_filter
+    type: select
+    targets:
+      - datasetId: 1
+        column: category
+      - datasetId: 2
+        column: category
+    multiple: true
+    
+  - name: brand_filter
+    type: select
+    targets:
+      - datasetId: 1
+        column: brand
+      - datasetId: 2
+        column: from_brand
+    multiple: true
+
+css: |
+  /* Scout v5.2 Dashboard Styles */
+  .dashboard-component {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .dashboard-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+    color: white;
+    padding: 1rem;
+  }
+  
+  .filter-bar {
+    background: #f3f4f6;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem;
+  }
+  
+  .chart-container {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+  }
+  
+  .ai-panel {
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .ai-panel h2 {
+    color: #92400e;
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .ai-recommendation {
+    background: white;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+metadata:
+  mapbox_token: "{{ MAPBOX_TOKEN }}"
+  refresh_frequency: 600  # 10 minutes
+  default_filters:
+    time_range: "Last 30 days"
+  cross_filters_enabled: true
+  native_filters_enabled: true
+  
+row_level_security:
+  - name: store_access
+    clause: store_id IN (SELECT store_id FROM scout.user_store_access WHERE user_id = current_user_id())
+    datasets:
+      - scout_brand_competitive_30d
+      
+cache_timeout: 300  # 5 minutes

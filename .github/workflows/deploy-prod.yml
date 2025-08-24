@@ -1,0 +1,175 @@
+name: Deploy DB (Production)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/seed.sql"
+      - "db/migrations/**"
+      - ".github/workflows/deploy-prod.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        run: npm i -g supabase@latest
+
+      - name: Link to production project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "🔗 Linking to production project cxzllzyxwpyptfretryc..."
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --no-open
+
+      - name: Pre-deployment validation
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "🔍 Pre-deployment validation..."
+          
+          # Check that we can connect to production
+          echo "SELECT 'Production connection OK' as status;" | supabase db execute
+          
+          # Validate migration order and naming
+          echo "📝 Validating migration files..."
+          for file in supabase/migrations/*.sql; do
+            if [ -f "$file" ]; then
+              basename_file=$(basename "$file")
+              if [[ ! "$basename_file" =~ ^[0-9]{14}_[a-zA-Z0-9_]+\.sql$ ]]; then
+                echo "❌ Invalid migration filename: $basename_file"
+                exit 1
+              fi
+            fi
+          done
+          
+          echo "✅ Pre-deployment validation passed."
+
+      - name: Apply Supabase migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "🚀 Applying Supabase migrations to production..."
+          supabase db push --include-roles --include-extensions
+          echo "✅ Supabase migrations applied successfully."
+
+      - name: Apply legacy DB migrations (if any)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -d "db/migrations" ] && [ "$(ls -A db/migrations/*.sql 2>/dev/null)" ]; then
+            echo "🔄 Applying legacy db/migrations..."
+            for file in db/migrations/*.sql; do
+              if [ -f "$file" ]; then
+                echo "Applying: $(basename "$file")"
+                psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f "$file"
+              fi
+            done
+            echo "✅ Legacy migrations applied successfully."
+          else
+            echo "📋 No legacy db/migrations found, skipping."
+          fi
+
+      - name: Load seed data from bucket (production only)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "🌱 Loading production seed data from storage bucket..."
+          
+          # Check if seed data loader function exists
+          if echo "SELECT to_regclass('scout.fn_load_seed_data');" | supabase db execute | grep -q "fn_load_seed_data"; then
+            echo "   ✅ Seed loader function found"
+            
+            # Load seed data from bucket (this is safe - uses ON CONFLICT DO NOTHING)
+            echo "SELECT scout.fn_load_seed_data();" | supabase db execute
+            
+            echo "   ✅ Seed data loaded successfully"
+          else
+            echo "   ⚠️  Seed loader function not found, skipping"
+          fi
+
+      - name: Post-deployment verification
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "🔍 Post-deployment verification..."
+          
+          # Smoke tests for critical objects
+          echo "SELECT 
+            to_regclass('scout.fct_transactions') as fct_transactions,
+            to_regclass('scout.dim_product') as dim_product,
+            to_regclass('scout.ref_categories') as ref_categories,
+            to_regclass('scout.customer_personas') as customer_personas,
+            to_regclass('scout.knowledge_documents') as knowledge_documents
+          ;" | supabase db execute
+          
+          # Check that vector extension is enabled
+          echo "SELECT extname FROM pg_extension WHERE extname = 'vector';" | supabase db execute
+          
+          # Validate Scout v5.2 features are present
+          echo "SELECT COUNT(*) as migration_count FROM scout.migration_manifest WHERE status = 'applied';" | supabase db execute || echo "⚠️  Migration manifest not found"
+          
+          # Validate seed data bucket access
+          echo "SELECT file_name, exists, size_bytes FROM scout.fn_validate_seed_bucket() ORDER BY file_name;" | supabase db execute || echo "⚠️  Seed bucket validation not available"
+          
+          # Check reference data counts
+          echo "SELECT 
+            (SELECT COUNT(*) FROM scout.ref_categories) as categories,
+            (SELECT COUNT(*) FROM scout.ref_brands) as brands,
+            (SELECT COUNT(*) FROM scout.ref_health_category_rules) as health_rules,
+            (SELECT COUNT(*) FROM scout.ref_category_seasonality) as seasonality_rules
+          ;" | supabase db execute
+          
+          echo "✅ Post-deployment verification completed."
+
+      - name: Update deployment status
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          echo "📝 Recording deployment..."
+          
+          # Create deployment record (if table exists)
+          echo "
+          INSERT INTO scout.deployment_log (
+            deployed_at, 
+            git_sha, 
+            git_ref, 
+            deployment_type, 
+            status
+          ) VALUES (
+            NOW(), 
+            '${{ github.sha }}', 
+            '${{ github.ref_name }}', 
+            'production', 
+            'success'
+          ) ON CONFLICT DO NOTHING;
+          " | supabase db execute || echo "⚠️  Deployment log table not found, skipping record"
+          
+          echo "🎉 Production deployment completed successfully!"
+          echo "📊 Deployed commit: ${{ github.sha }}"
+          echo "🌐 Project: cxzllzyxwpyptfretryc"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ PRODUCTION DEPLOYMENT FAILED"
+          echo "🚨 Immediate action required:"
+          echo "1. Check logs above for specific error"
+          echo "2. Verify production database state"
+          echo "3. Consider rollback if necessary"
+          echo "4. Update team on incident status"
+          exit 1

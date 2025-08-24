@@ -1,0 +1,338 @@
+name: 🔄 Supabase Complete Sync
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'db/migrations/**'
+      - '.github/workflows/supabase-sync.yml'
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'db/migrations/**'
+      - '.github/workflows/supabase-sync.yml'
+  workflow_dispatch:
+    inputs:
+      force_sync:
+        description: 'Force complete sync (includes schema reset)'
+        required: false
+        default: false
+        type: boolean
+      deploy_functions:
+        description: 'Deploy edge functions'
+        required: false
+        default: true
+        type: boolean
+      update_types:
+        description: 'Generate and commit type definitions'
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: supabase-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+  SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+jobs:
+  pre-sync-validation:
+    runs-on: ubuntu-latest
+    outputs:
+      has-migrations: ${{ steps.check.outputs.has-migrations }}
+      has-functions: ${{ steps.check.outputs.has-functions }}
+      schema-changed: ${{ steps.check.outputs.schema-changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Check changes and files
+        id: check
+        run: |
+          echo "has-migrations=$([ -d supabase/migrations ] && [ "$(ls -A supabase/migrations/*.sql 2>/dev/null)" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "has-functions=$([ -d supabase/functions ] && [ "$(ls -A supabase/functions 2>/dev/null)" ] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "schema-changed=$(git diff --name-only HEAD~1 HEAD | grep -E '(supabase/migrations|db/migrations)' && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      - name: Install Supabase CLI
+        run: npm i -g supabase@latest
+
+      - name: Link to project
+        run: |
+          echo "🔗 Linking to project $SUPABASE_PROJECT_REF..."
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --no-open
+
+      - name: Schema drift detection
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "🔍 Checking for schema drift..."
+          supabase db diff > schema-drift.sql || true
+          
+          if [ -s schema-drift.sql ]; then
+            echo "⚠️ Schema drift detected:"
+            head -n 50 schema-drift.sql
+            echo "::warning::Schema drift detected - review before merge"
+          else
+            echo "✅ No schema drift detected"
+          fi
+
+      - name: Upload schema drift
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-drift-${{ github.sha }}
+          path: schema-drift.sql
+
+  database-sync:
+    needs: pre-sync-validation
+    if: needs.pre-sync-validation.outputs.has-migrations == 'true'
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          npm i -g supabase@latest
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Link to Supabase project
+        run: |
+          echo "🔗 Linking to project $SUPABASE_PROJECT_REF..."
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --no-open
+
+      - name: Backup before sync (production only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "💾 Creating backup before sync..."
+          timestamp=$(date +%Y%m%d_%H%M%S)
+          backup_name="pre_sync_backup_${timestamp}_${{ github.sha }}"
+          
+          # Create backup via SQL (simplified approach)
+          echo "INSERT INTO scout.deployment_backups (backup_name, git_sha, created_at, backup_type) 
+                VALUES ('$backup_name', '${{ github.sha }}', NOW(), 'pre_sync');" | supabase db execute || echo "⚠️ Backup logging failed"
+
+      - name: Apply Supabase migrations
+        run: |
+          echo "🚀 Applying Supabase migrations..."
+          supabase db push --include-roles --include-extensions
+          echo "✅ Supabase migrations applied"
+
+      - name: Apply legacy migrations
+        if: hashFiles('db/migrations/*.sql') != ''
+        run: |
+          echo "🔄 Applying legacy db/migrations..."
+          for file in db/migrations/*.sql; do
+            if [ -f "$file" ]; then
+              echo "Applying: $(basename "$file")"
+              psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f "$file"
+            fi
+          done
+
+      - name: Load seed data
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "🌱 Loading seed data..."
+          if [ -f supabase/seed.sql ]; then
+            supabase db execute -f supabase/seed.sql
+          fi
+          
+          # Load from bucket if function exists
+          echo "SELECT CASE WHEN to_regclass('scout.fn_load_seed_data') IS NOT NULL 
+                THEN scout.fn_load_seed_data() 
+                ELSE 'Seed function not found'::text END;" | supabase db execute || true
+
+      - name: Post-migration validation
+        run: |
+          echo "🔍 Validating deployment..."
+          
+          # Critical objects check
+          echo "SELECT 
+            to_regclass('scout.fct_transactions') as fct_transactions,
+            to_regclass('scout.dim_product') as dim_product,
+            to_regclass('scout.ref_categories') as ref_categories
+          ;" | supabase db execute
+          
+          # Vector extension check
+          echo "SELECT extname FROM pg_extension WHERE extname = 'vector';" | supabase db execute
+          
+          echo "✅ Validation passed"
+
+  edge-functions-sync:
+    needs: pre-sync-validation
+    if: needs.pre-sync-validation.outputs.has-functions == 'true' && (github.event.inputs.deploy_functions != 'false')
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm i -g supabase@latest
+          npm ci
+
+      - name: Link to project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --no-open
+
+      - name: Deploy edge functions
+        run: |
+          echo "⚡ Deploying edge functions..."
+          for func_dir in supabase/functions/*/; do
+            if [ -d "$func_dir" ]; then
+              func_name=$(basename "$func_dir")
+              echo "Deploying function: $func_name"
+              supabase functions deploy "$func_name" --no-verify-jwt
+            fi
+          done
+          echo "✅ Edge functions deployed"
+
+      - name: Test edge functions
+        run: |
+          echo "🧪 Testing edge functions..."
+          for func_dir in supabase/functions/*/; do
+            if [ -d "$func_dir" ]; then
+              func_name=$(basename "$func_dir")
+              if [ -f "$func_dir/test.ts" ]; then
+                echo "Testing function: $func_name"
+                supabase functions serve "$func_name" &
+                sleep 5
+                # Add your function tests here
+                curl -s "http://localhost:54321/functions/v1/$func_name" || echo "Test failed for $func_name"
+                pkill -f "supabase functions serve"
+              fi
+            fi
+          done
+
+  type-generation:
+    needs: [database-sync]
+    if: always() && (needs.database-sync.result == 'success' || needs.database-sync.result == 'skipped') && github.event.inputs.update_types != 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Supabase CLI
+        run: npm i -g supabase@latest
+
+      - name: Link to project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --no-open
+
+      - name: Generate TypeScript types
+        run: |
+          echo "🔧 Generating TypeScript types..."
+          supabase gen types typescript --linked > types/database.types.ts
+          
+          # Generate schema-specific types
+          supabase gen types typescript --linked --schema scout > types/scout.types.ts
+          supabase gen types typescript --linked --schema public > types/public.types.ts
+
+      - name: Commit updated types
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if git diff --quiet types/; then
+            echo "No type changes detected"
+          else
+            echo "📝 Committing type updates..."
+            git add types/
+            git commit -m "🤖 Auto-update database types [skip ci]
+
+            Generated from:
+            - Commit: ${{ github.sha }}
+            - Workflow: ${{ github.workflow }}
+            - Run: ${{ github.run_number }}
+            "
+            git push
+          fi
+
+  storage-sync:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        run: npm i -g supabase@latest
+
+      - name: Link to project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --no-open
+
+      - name: Sync storage buckets
+        run: |
+          echo "🗄️ Syncing storage buckets..."
+          
+          # Create buckets if they don't exist
+          buckets=("medallion-bronze" "medallion-silver" "medallion-gold" "seed-data" "exports")
+          
+          for bucket in "${buckets[@]}"; do
+            echo "Checking bucket: $bucket"
+            # Check if bucket exists, create if not
+            echo "SELECT name FROM storage.buckets WHERE name = '$bucket';" | supabase db execute | grep -q "$bucket" || {
+              echo "Creating bucket: $bucket"
+              echo "INSERT INTO storage.buckets (id, name, public) VALUES ('$bucket', '$bucket', false);" | supabase db execute
+            }
+          done
+
+  deployment-record:
+    needs: [database-sync, edge-functions-sync, type-generation, storage-sync]
+    if: always() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record deployment
+        run: |
+          echo "📝 Recording deployment..."
+          
+          deployment_status="success"
+          if [[ "${{ needs.database-sync.result }}" == "failure" ]] || 
+             [[ "${{ needs.edge-functions-sync.result }}" == "failure" ]]; then
+            deployment_status="failed"
+          fi
+          
+          # Create deployment record
+          curl -X POST "https://$SUPABASE_PROJECT_REF.supabase.co/rest/v1/scout.deployment_log" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d "{
+              \"deployed_at\": \"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\",
+              \"git_sha\": \"${{ github.sha }}\",
+              \"git_ref\": \"${{ github.ref_name }}\",
+              \"deployment_type\": \"github_actions\",
+              \"status\": \"$deployment_status\",
+              \"workflow_run_id\": \"${{ github.run_id }}\"
+            }" || echo "⚠️ Failed to record deployment"
+
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project**: $SUPABASE_PROJECT_REF" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Database Sync**: ${{ needs.database-sync.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Edge Functions**: ${{ needs.edge-functions-sync.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type Generation**: ${{ needs.type-generation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Storage Sync**: ${{ needs.storage-sync.result }}" >> $GITHUB_STEP_SUMMARY

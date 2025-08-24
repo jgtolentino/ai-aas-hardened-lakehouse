@@ -1,21 +1,36 @@
 # GitHub Actions Secrets Configuration
 
+## 🚀 Quick Setup (Recommended)
+
+Run the automated setup script:
+```bash
+chmod +x .github/workflows/setup-secrets.sh
+./.github/workflows/setup-secrets.sh
+```
+
+## 📋 Manual Setup
+
 Set these in **Settings → Secrets and variables → Actions**:
 
-## Required Secrets
+## Required Secrets for Supabase Sync
 
-### Database
-- `PGURI` - Full Postgres URI for Supabase
-  ```
-  postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
-  ```
-
-### Supabase
+### Core Supabase Configuration
+- `SUPABASE_ACCESS_TOKEN` - Personal Access Token from Supabase dashboard
+- `SUPABASE_PROJECT_REF` - Project reference (cxzllzyxwpyptfretryc)
+- `SUPABASE_PROJECT_ID` - Same as project ref
 - `SUPABASE_URL` - Your Supabase project URL
   ```
-  https://[PROJECT-REF].supabase.co
+  https://cxzllzyxwpyptfretryc.supabase.co
   ```
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key (keep secret!)
+- `SUPABASE_ANON_KEY` - Anonymous key for API access
+- `SUPABASE_DB_URL` - Direct database connection string
+  ```
+  postgresql://postgres:[YOUR-PASSWORD]@db.cxzllzyxwpyptfretryc.supabase.co:5432/postgres
+  ```
+
+### Legacy Database Support
+- `PGURI` - Full Postgres URI for Supabase (same as SUPABASE_DB_URL)
 
 ### Superset Connection
 - `SB_HOST` - Supabase hostname
