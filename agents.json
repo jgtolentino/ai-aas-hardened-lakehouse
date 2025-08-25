@@ -1,0 +1,93 @@
+[
+  {
+    "name": "suqi-agentic-intel",
+    "codename": "suqi-agentic-intel",
+    "version": "1.0.0",
+    "source": "./config/agentic-analytics.yaml",
+    "description": "Suqi Agentic Intelligence configuration for Scout analytics platform"
+  },
+  {
+    "name": "DocsWriter",
+    "codename": "DocsWriter",
+    "version": "unknown",
+    "source": "./mcp/agents/docs-writer.yaml",
+    "description": ""
+  },
+  {
+    "name": "scout-docs-writer",
+    "codename": "scout-docs-writer",
+    "version": "unknown",
+    "source": "./mcp/agents/scout-docs-writer.yaml",
+    "description": ""
+  },
+  {
+    "name": "Dash",
+    "codename": "dash-v1",
+    "version": "1.0.0",
+    "source": "./pulser/agents/dash.yaml",
+    "description": "TypeScript/React UI component generation agent"
+  },
+  {
+    "name": "devops-architect",
+    "codename": "devops-architect",
+    "version": "1.0.0",
+    "source": "./pulser/agents/devops-architect.yaml",
+    "description": "Automate infrastructure and deployment processes with focus on reliability and observability"
+  },
+  {
+    "name": "Devstral",
+    "codename": "devstral-v1",
+    "version": "1.0.0",
+    "source": "./pulser/agents/devstral.yaml",
+    "description": "System architecture and PRD generation agent"
+  },
+  {
+    "name": "Maya",
+    "codename": "maya-v1",
+    "version": "1.0.0",
+    "source": "./pulser/agents/maya.yaml",
+    "description": "Documentation generation and maintenance agent"
+  },
+  {
+    "name": "quality-engineer",
+    "codename": "quality-engineer",
+    "version": "2.0.0",
+    "source": "./pulser/agents/quality-engineer.yaml",
+    "description": "Expert CI/QA + Visualization engineer. Enforces backend/FE gates and can implement a React dashboard with pixel parity to Superset, aligned to design tokens/guidelines and approved libraries."
+  },
+  {
+    "name": "security-engineer",
+    "codename": "security-engineer",
+    "version": "1.0.0",
+    "source": "./pulser/agents/security-engineer.yaml",
+    "description": "Dependency scanning, vulnerability assessment, security compliance, and threat detection"
+  },
+  {
+    "name": "SecurityScanner",
+    "codename": "security-scanner-v1",
+    "version": "1.0.0",
+    "source": "./pulser/agents/security-scanner.yaml",
+    "description": "Security scanning and vulnerability assessment agent"
+  },
+  {
+    "name": "superclaude-cicd-orchestrator",
+    "codename": "superclaude-cicd-orchestrator",
+    "version": "1.0.0",
+    "source": "./pulser/agents/superclaude-cicd-workflow.yaml",
+    "description": "SuperClaude-powered CI/CD troubleshooting and PR cleanup automation"
+  },
+  {
+    "name": "technical-writer",
+    "codename": "technical-writer",
+    "version": "1.0.0",
+    "source": "./pulser/agents/technical-writer.yaml",
+    "description": "Create clear, comprehensive technical documentation tailored to specific audiences"
+  },
+  {
+    "name": "agents-list",
+    "codename": "agents-list",
+    "version": "1.0.0",
+    "source": "./pulser/tasks/agents-list.yaml",
+    "description": "List all registered agents in the repository"
+  }
+]
