@@ -1,0 +1,38 @@
+metadata:
+  name: agents-dev
+  version: "1.0.0"
+  description: Run and validate agents via Pulser
+tasks:
+  - name: agent:run
+    description: "Run one agent against an input"
+    agent: devops-architect-v1
+    params:
+      - name: codename
+        required: true
+      - name: input
+        required: true
+      - name: schema
+        required: false
+    run: |
+      CODENAME="{{ codename }}"; INPUT="{{ input }}"; SCHEMA="{{ schema }}"
+      if [ -n "$SCHEMA" ]; then
+        SCHEMA_PATH="$SCHEMA" bash scripts/agent-dev-run.sh . "$CODENAME" "$INPUT"
+      else
+        bash scripts/agent-dev-run.sh . "$CODENAME" "$INPUT"
+      fi
+  - name: agents:smoke
+    description: "Smoke-test all agents"
+    agent: quality-engineer-v2
+    run: bash scripts/agents-smoke.sh .
+  - name: agents:batch
+    description: "Submit Anthropic Batch eval jobs from evals/batch/jobs.jsonl"
+    agent: technical-writer-v1
+    params:
+      - name: action
+        required: false
+        default: submit
+    run: bash scripts/agents-batch-eval.sh "{{ action }}"
+  - name: agents:report
+    description: "Summarize token usage from traces/"
+    agent: security-engineer-v1
+    run: bash scripts/agent-usage-report.sh . > traces/usage/usage-latest.csv && column -t -s, traces/usage/usage-latest.csv
