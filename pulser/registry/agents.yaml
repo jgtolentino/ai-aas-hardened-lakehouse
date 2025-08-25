@@ -1,0 +1,69 @@
+# Canonical Agent Registry (managed)
+version: 1
+updated: 2025-08-25
+owners:
+  default_team: "InsightPulseAI"
+schema:
+  codename: "^[a-z0-9][a-z0-9-]*-v[0-9]+$"
+  version: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+agents:
+  - codename: devops-architect-v1
+    file: pulser/agents/devops-architect.yaml
+    owner: "platform-devops@insightpulse.ai"
+    status: active
+  - codename: quality-engineer-v2
+    file: pulser/agents/quality-engineer.yaml
+    owner: "quality@insightpulse.ai"
+    status: active
+  - codename: security-engineer-v1
+    file: pulser/agents/security-engineer.yaml
+    owner: "security@insightpulse.ai"
+    status: active
+  - codename: technical-writer-v1
+    file: pulser/agents/technical-writer.yaml
+    owner: "docs@insightpulse.ai"
+    status: active
+  - codename: backend-architect-v1
+    file: pulser/agents/backend-architect.yaml
+    owner: "backend@insightpulse.ai"
+    status: active
+  - codename: frontend-architect-v1
+    file: pulser/agents/frontend-architect.yaml
+    owner: "frontend@insightpulse.ai"
+    status: active
+  - codename: performance-engineer-v1
+    file: pulser/agents/performance-engineer.yaml
+    owner: "performance@insightpulse.ai"
+    status: active
+  - codename: dash-v1
+    file: pulser/agents/dash.yaml
+    owner: "ui@insightpulse.ai"
+    status: active
+  - codename: devstral-v1
+    file: pulser/agents/devstral.yaml
+    owner: "architecture@insightpulse.ai"
+    status: active
+  - codename: maya-v1
+    file: pulser/agents/maya.yaml
+    owner: "docs@insightpulse.ai"
+    status: active
+  - codename: superclaude-cicd-orchestrator-v1
+    file: pulser/agents/superclaude-cicd-workflow.yaml
+    owner: "cicd@insightpulse.ai"
+    status: active
+  - codename: qa-browser-use-v1
+    file: qa/pulser/agents/qa-browser-use.yaml
+    owner: "qa@insightpulse.ai"
+    status: active
+  - codename: docs-writer-v1
+    file: mcp/agents/docs-writer.yaml
+    owner: "docs@insightpulse.ai"
+    status: active
+  - codename: scout-docs-writer-v1
+    file: mcp/agents/scout-docs-writer.yaml
+    owner: "scout@insightpulse.ai"
+    status: active
+  - codename: suqi-agentic-intel-v1
+    file: config/agentic-analytics.yaml
+    owner: "analytics@insightpulse.ai"
+    status: active

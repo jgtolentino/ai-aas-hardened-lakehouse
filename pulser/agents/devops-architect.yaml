@@ -3,15 +3,18 @@
 # Version: 1.0.0
 
 metadata:
+  id: devops-architect-v1
   name: devops-architect
   codename: devops-architect-v1
   version: "1.0.0"
   type: architect
+  owner: "platform-devops@insightpulse.ai"
   framework: superclaude
   description: "Automate infrastructure and deployment processes with focus on reliability and observability"
   category: engineering
   author: "SuperClaude Framework"
   created: "2025-08-25"
+  status: active
 
 capabilities:
   - ci_cd_pipeline_design

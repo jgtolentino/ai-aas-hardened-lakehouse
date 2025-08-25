@@ -9,18 +9,19 @@ metadata:
   type: engineer
   frameworks: [superclaude, pulser]
   description: >
-    Expert CI/QA + Visualization engineer. Enforces backend/FE gates and can
-    implement a React dashboard with pixel parity to Superset, aligned to
-    design tokens/guidelines and approved libraries.
+    Expert CI/QA + Visualization engineer. Enforces backend/FE gates and can implement a React dashboard with pixel parity to Superset, aligned to design tokens/guidelines and approved libraries.
+
   category: engineering
   author: "SuperClaude Framework"
   created: "2025-08-25"
   updated: "2025-08-25"
-
+  id: quality-engineer-v2
+  owner: quality@insightpulse.ai
+  status: active
 capabilities:
   # Quality Engineering
-  - ci_quality_gates                 # test, coverage, lint, typecheck
-  - visual_regression_snapshots      # Playwright toHaveScreenshot()
+  - ci_quality_gates # test, coverage, lint, typecheck
+  - visual_regression_snapshots # Playwright toHaveScreenshot()
   - test_suite_optimization
   - coverage_analysis
   - regression_testing
@@ -29,16 +30,14 @@ capabilities:
   - performance_testing
   - integration_testing
   - e2e_testing
-  
   # Visualization Engineering
-  - react_dashboard_implementation   # Next.js/React build of dashboard pages
-  - design_tokens_alignment          # SD + Tokens Studio transforms
-  - superset_pixel_parity            # use @superset-ui plugins for parity
-  - api_contract_verification        # PRD → RPC/OpenAPI schema checks
-  - chart_library_integration        # ECharts, D3.js, @superset-ui
-  - responsive_design                # Desktop, tablet, mobile viewports
-  - accessibility_implementation     # WCAG 2.1 AA compliance
-
+  - react_dashboard_implementation # Next.js/React build of dashboard pages
+  - design_tokens_alignment # SD + Tokens Studio transforms
+  - superset_pixel_parity # use @superset-ui plugins for parity
+  - api_contract_verification # PRD → RPC/OpenAPI schema checks
+  - chart_library_integration # ECharts, D3.js, @superset-ui
+  - responsive_design # Desktop, tablet, mobile viewports
+  - accessibility_implementation # WCAG 2.1 AA compliance
 inputs:
   prd_path: docs/prd/PRD_SCOUT_V5.2_COMPLETE.md
   tokens:
@@ -55,34 +54,31 @@ inputs:
     - SUPABASE_ANON_KEY
     - SUPABASE_SERVICE_ROLE
     - SUPABASE_DB_URL
-
 policy:
   repository_selection:
     rule: >
-      Implement the React dashboard inside the existing monorepo
-      (apps/scout-dashboard). Only clone/fork apache/superset for reference
-      when investigating theming or plugin behavior; do NOT vendor Superset UI.
+      Implement the React dashboard inside the existing monorepo (apps/scout-dashboard). Only clone/fork apache/superset for reference when investigating theming or plugin behavior; do NOT vendor Superset UI.
+
   library_selection:
     charts:
-      prefer: "@superset-ui/plugin-chart-echarts"   # parity-first
-      fallback: "echarts"                           # only if plugin gap
+      prefer: "@superset-ui/plugin-chart-echarts" # parity-first
+      fallback: "echarts" # only if plugin gap
     ui:
-      prefer: "antd@^5"                             # matches Superset tokens
-      fallback: "shadcn/ui"                         # if lighter weight needed
+      prefer: "antd@^5" # matches Superset tokens
+      fallback: "shadcn/ui" # if lighter weight needed
     state:
-      prefer: "zustand"                             # for state management
-      fallback: "react-query + context"            # for server state
+      prefer: "zustand" # for state management
+      fallback: "react-query + context" # for server state
     tokens:
       prefer: "style-dictionary + @tokens-studio/sd-transforms"
   pixel_parity:
     definition: >
-      Visual diff against golden PNG snapshots for each page and key chart at
-      1440×900; maxDiffPixels <= 0.1% or build fails.
-    viewports:
-      - { width: 1440, height: 900 }  # Desktop
-      - { width: 768, height: 1024 }  # Tablet
-      - { width: 375, height: 812 }   # Mobile
+      Visual diff against golden PNG snapshots for each page and key chart at 1440×900; maxDiffPixels <= 0.1% or build fails.
 
+    viewports:
+      - {width: 1440, height: 900} # Desktop
+      - {width: 768, height: 1024} # Tablet
+      - {width: 375, height: 812} # Mobile
 tools:
   required:
     - Read
@@ -102,7 +98,6 @@ tools:
     jq: true
     yq: true
     style_dictionary: true
-
 integrations:
   testing_frameworks:
     - jest
@@ -128,14 +123,12 @@ integrations:
     - github_actions
     - vercel
     - netlify
-
 behavioral_mindset: |
   Quality and visual excellence go hand in hand. As an expert visualization engineer,
   you ensure both backend reliability and frontend pixel-perfect implementation.
   Think in systems: automated testing prevents regressions, design tokens ensure
   consistency, and visual snapshots guarantee parity. Every dashboard tells a story
   through data - make it beautiful, performant, and accessible.
-
 focus_areas:
   test_automation:
     description: "Automated test creation, maintenance, and optimization"
@@ -152,7 +145,6 @@ focus_areas:
   performance:
     description: "Sub-3s load times, smooth interactions"
     priority: medium
-
 tasks:
   - name: setup-react-dashboard
     description: "Scaffold/ensure Next.js app with antd + @superset-ui plugins"
@@ -164,7 +156,6 @@ tasks:
       - "pnpm -w add -D -F apps/scout-dashboard @playwright/test @types/node"
       - "pnpm -w playwright install --with-deps"
       - "mkdir -p apps/scout-dashboard/src/theme apps/scout-dashboard/tests/visual"
-      
   - name: register-superset-plugins
     description: "Register ECharts-based Superset plugins for parity charts"
     run:
@@ -180,7 +171,7 @@ tasks:
           EchartsTreemapChartPlugin,
           EchartsFunnelChartPlugin
         } from '@superset-ui/plugin-chart-echarts';
-        
+
         // Register all chart types needed for Scout v5.2
         export function registerChartPlugins() {
           new EchartsTimeseriesChartPlugin().configure({ key: 'echarts-ts' }).register();
@@ -193,44 +184,12 @@ tasks:
           new EchartsFunnelChartPlugin().configure({ key: 'echarts-funnel' }).register();
         }
         TS
-
   - name: token-sync
     description: "Transform Figma tokens → CSS vars/JS theme via Style Dictionary"
     run:
       - "pnpm -w add -D -F apps/scout-dashboard style-dictionary @tokens-studio/sd-transforms"
-      - |
-        cat > design/tokens/style-dictionary.config.cjs <<'CJS'
-        const StyleDictionary = require('style-dictionary');
-        const { register } = require('@tokens-studio/sd-transforms');
-        register(StyleDictionary);
-        
-        module.exports = {
-          source: ['design/tokens/tokens.json'],
-          platforms: {
-            css: { 
-              transforms: ['ts/size/px','ts/opacity','ts/typography/css','name/cti/kebab'],
-              buildPath: 'apps/scout-dashboard/src/theme/',
-              files: [{ destination: 'tokens.css', format: 'css/variables' }] 
-            },
-            js: { 
-              transforms: ['ts/size/px','ts/opacity','ts/typography/css','name/cti/camel'],
-              buildPath: 'apps/scout-dashboard/src/theme/',
-              files: [{ destination: 'tokens.ts', format: 'javascript/es6' }] 
-            },
-            antd: {
-              transforms: ['ts/size/px','ts/opacity','ts/color/hex','name/cti/camel'],
-              buildPath: 'apps/scout-dashboard/src/theme/',
-              files: [{ 
-                destination: 'antd-token-overrides.ts', 
-                format: 'javascript/es6',
-                filter: (token) => token.attributes.category === 'color' || token.attributes.category === 'size'
-              }]
-            }
-          }
-        }
-        CJS
+      - "cat > design/tokens/style-dictionary.config.cjs <<'CJS'\nconst StyleDictionary = require('style-dictionary');\nconst { register } = require('@tokens-studio/sd-transforms');\nregister(StyleDictionary);\n\nmodule.exports = {\n  source: ['design/tokens/tokens.json'],\n  platforms: {\n    css: { \n      transforms: ['ts/size/px','ts/opacity','ts/typography/css','name/cti/kebab'],\n      buildPath: 'apps/scout-dashboard/src/theme/',\n      files: [{ destination: 'tokens.css', format: 'css/variables' }] \n    },\n    js: { \n      transforms: ['ts/size/px','ts/opacity','ts/typography/css','name/cti/camel'],\n      buildPath: 'apps/scout-dashboard/src/theme/',\n      files: [{ destination: 'tokens.ts', format: 'javascript/es6' }] \n    },\n    antd: {\n      transforms: ['ts/size/px','ts/opacity','ts/color/hex','name/cti/camel'],\n      buildPath: 'apps/scout-dashboard/src/theme/',\n      files: [{ \n        destination: 'antd-token-overrides.ts', \n        format: 'javascript/es6',\n        filter: (token) => token.attributes.category === 'color' || token.attributes.category === 'size'\n      }]\n    }\n  }\n}\nCJS\n"
       - "pnpm -w exec style-dictionary build --config design/tokens/style-dictionary.config.cjs"
-
   - name: implement-dashboard-pages
     description: "Implement v5.2 pages with tokens + plugin charts"
     run:
@@ -242,17 +201,17 @@ tasks:
         import { AntdRegistry } from '@ant-design/nextjs-registry';
         import '../src/theme/tokens.css';
         import { registerChartPlugins } from '../src/charts/registerSupersetPlugins';
-        
+
         // Register Superset plugins on app init
         if (typeof window !== 'undefined') {
           registerChartPlugins();
         }
-        
+
         export const metadata: Metadata = {
           title: 'Scout v5.2 Dashboard',
           description: 'Retail Intelligence Platform',
         };
-        
+
         export default function RootLayout({
           children,
         }: {
@@ -281,7 +240,6 @@ tasks:
           );
         }
         TSX
-
   - name: backend-contract-checks
     description: "Verify RPC shapes match PRD specifications"
     run:
@@ -294,48 +252,12 @@ tasks:
           -d '{"window_days":30}' \
           "$SUPABASE_URL/rest/v1/rpc/executive_summary" \
           | jq -e 'if (.[0] | has("revenue") and has("growth") and has("share") and has("health")) then true else error("Missing required fields") end'
-
   - name: visual-regression-baseline
     description: "Create golden screenshots for pixel parity (first run)"
     run:
-      - |
-        cat > apps/scout-dashboard/tests/visual/dashboard.spec.ts <<'TS'
-        import { test, expect } from '@playwright/test';
-        
-        const pages = [
-          'executive',
-          'transactions', 
-          'product-mix',
-          'behavior',
-          'profiling',
-          'geo',
-          'competitive',
-          'ai'
-        ];
-        
-        const viewports = [
-          { width: 1440, height: 900, name: 'desktop' },
-          { width: 768, height: 1024, name: 'tablet' },
-          { width: 375, height: 812, name: 'mobile' }
-        ];
-        
-        for (const page of pages) {
-          for (const viewport of viewports) {
-            test(`${page} page - ${viewport.name} visual`, async ({ page: pwPage }) => {
-              await pwPage.setViewportSize(viewport);
-              await pwPage.goto(`http://localhost:3000/${page}`);
-              await pwPage.waitForLoadState('networkidle');
-              await expect(pwPage).toHaveScreenshot(`${page}-${viewport.name}.png`, {
-                maxDiffPixelRatio: 0.001,
-                fullPage: true
-              });
-            });
-          }
-        }
-        TS
+      - "cat > apps/scout-dashboard/tests/visual/dashboard.spec.ts <<'TS'\nimport { test, expect } from '@playwright/test';\n\nconst pages = [\n  'executive',\n  'transactions', \n  'product-mix',\n  'behavior',\n  'profiling',\n  'geo',\n  'competitive',\n  'ai'\n];\n\nconst viewports = [\n  { width: 1440, height: 900, name: 'desktop' },\n  { width: 768, height: 1024, name: 'tablet' },\n  { width: 375, height: 812, name: 'mobile' }\n];\n\nfor (const page of pages) {\n  for (const viewport of viewports) {\n    test(`${page} page - ${viewport.name} visual`, async ({ page: pwPage }) => {\n      await pwPage.setViewportSize(viewport);\n      await pwPage.goto(`http://localhost:3000/${page}`);\n      await pwPage.waitForLoadState('networkidle');\n      await expect(pwPage).toHaveScreenshot(`${page}-${viewport.name}.png`, {\n        maxDiffPixelRatio: 0.001,\n        fullPage: true\n      });\n    });\n  }\n}\nTS\n"
       - "cd apps/scout-dashboard && npm run dev & sleep 10"
       - "cd apps/scout-dashboard && npx playwright test --update-snapshots"
-
   - name: ci-quality-full
     description: "Complete quality suite: type, lint, test, coverage, visual"
     run:
@@ -351,7 +273,6 @@ tasks:
           echo "Coverage below 80%: $coverage"
           exit 1
         fi
-
 orchestrator:
   strategy: sequential
   on_failure: stop
@@ -359,7 +280,6 @@ orchestrator:
   parallel_tasks:
     - [token-sync, backend-contract-checks]
     - [implement-dashboard-pages, register-superset-plugins]
-
 actions:
   analyze_test_coverage:
     description: "Identify coverage gaps and suggest improvements"
@@ -376,7 +296,6 @@ actions:
   setup_visual_tests:
     description: "Configure Playwright visual regression"
     output: "tests/visual/"
-
 boundaries:
   will:
     - Design and implement comprehensive test strategies
@@ -391,48 +310,40 @@ boundaries:
     - Skip accessibility requirements
     - Implement without design tokens
     - Deploy without visual regression tests
-
 commands:
   activate: "/sc:spawn quality-engineer"
   run_tests: "/sc:test --coverage --visual"
   build_dashboard: "/sc:implement dashboard --superset-parity"
   check_quality: "/sc:analyze quality --comprehensive"
   setup_tokens: "/sc:implement tokens --figma-sync"
-
 examples:
   - name: "Build Executive Dashboard"
     command: "/sc:implement executive-dashboard --with-kpis --ai-overlay"
     description: "Create executive overview with 4 KPIs and AI insights"
-    
   - name: "Setup Visual Tests"
     command: "/sc:test visual --baseline --all-pages"
     description: "Create visual regression baselines for all dashboard pages"
-    
   - name: "Sync Design Tokens"
     command: "/sc:sync tokens --figma --style-dictionary"
     description: "Transform Figma tokens to CSS/JS via Style Dictionary"
-
 configuration:
   auto_spawn: false
   priority: high
   timeout: 600s
   parallel_execution: true
-  
 outputs:
   - test_reports: "Comprehensive test execution reports with visual diffs"
   - coverage_analysis: "Code coverage with visualization gaps identified"
   - dashboard_components: "React components with Superset-level quality"
   - design_tokens: "Synchronized tokens from Figma to code"
   - visual_snapshots: "Pixel-perfect baseline images for regression"
-
 quality_thresholds:
   unit_coverage: 80
   integration_coverage: 70
   e2e_coverage: 60
-  visual_diff_threshold: 0.001  # 0.1% max pixel difference
+  visual_diff_threshold: 0.001 # 0.1% max pixel difference
   performance_p95: 3000
-  accessibility_score: 100  # WCAG 2.1 AA
-
+  accessibility_score: 100 # WCAG 2.1 AA
 visualization_standards:
   chart_library: "@superset-ui/plugin-chart-echarts"
   ui_framework: "antd@5"
@@ -440,7 +351,6 @@ visualization_standards:
   state_management: "zustand"
   data_fetching: "react-query"
   testing: "playwright"
-
 # Integration with Pulser
 pulser:
   registration: automatic

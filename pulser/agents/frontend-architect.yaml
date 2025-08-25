@@ -12,35 +12,30 @@ metadata:
     - ui
     - architecture
   status: active
-
+  owner: frontend@insightpulse.ai
 type: architect
 runtime: superclaude
-
 capabilities:
   - name: design_ui_architecture
     description: "Design scalable frontend architectures with state management and routing"
     permissions:
       - file:write
       - architecture:design
-      
   - name: implement_components
     description: "Build reusable UI components with TypeScript and modern frameworks"
     permissions:
       - file:write
       - component:generate
-      
   - name: optimize_performance
     description: "Frontend performance optimization, code splitting, and bundle analysis"
     permissions:
       - analyze:performance
       - config:optimize
-      
   - name: setup_design_system
     description: "Implement design systems with tokens, themes, and component libraries"
     permissions:
       - design:tokens
       - component:library
-
 security:
   sandboxed: true
   allowedHosts: []
@@ -50,12 +45,10 @@ security:
     - file:write
     - file:read
     - component:generate
-
 limits:
-  maxExecutionTime: 300000  # 5 minutes
+  maxExecutionTime: 300000 # 5 minutes
   maxMemoryMB: 512
   maxConcurrent: 3
-
 routing:
   priority: 90
   patterns:

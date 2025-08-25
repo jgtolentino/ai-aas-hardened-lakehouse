@@ -10,10 +10,9 @@ metadata:
     - docusaurus
     - technical-writing
   status: active
-
+  owner: docs@insightpulse.ai
 type: generator
 runtime: bruno
-
 capabilities:
   - name: generate_docs
     description: "Generate technical documentation"
@@ -35,7 +34,6 @@ capabilities:
     permissions:
       - file:write
       - template:read
-
   - name: create_adr
     description: "Create Architecture Decision Records"
     inputSchema:
@@ -52,20 +50,17 @@ capabilities:
     permissions:
       - file:write
       - adr:template
-
   - name: generate_api_docs
     description: "Generate API documentation from OpenAPI/code"
     permissions:
       - file:read
       - file:write
       - schema:read
-
   - name: update_changelog
     description: "Update changelog based on commits"
     permissions:
       - git:read
       - file:write
-
 security:
   sandboxed: true
   allowedHosts: []
@@ -76,12 +71,10 @@ security:
     - file:write
     - file:read
     - template:read
-
 limits:
-  maxExecutionTime: 180000  # 3 minutes
+  maxExecutionTime: 180000 # 3 minutes
   maxMemoryMB: 256
   maxConcurrent: 5
-
 routing:
   priority: 60
   patterns:
