@@ -11,10 +11,9 @@ metadata:
     - documentation
     - planning
   status: active
-
+  owner: architecture@insightpulse.ai
 type: generator
 runtime: bruno
-
 capabilities:
   - name: generate_prd
     description: "Generate Product Requirements Documents"
@@ -39,7 +38,6 @@ capabilities:
     permissions:
       - file:write
       - template:read
-
   - name: design_architecture
     description: "Design system architecture"
     inputSchema:
@@ -57,19 +55,16 @@ capabilities:
     permissions:
       - file:write
       - diagram:generate
-
   - name: create_technical_spec
     description: "Create detailed technical specifications"
     permissions:
       - file:write
       - spec:generate
-
   - name: generate_adr
     description: "Generate Architecture Decision Records"
     permissions:
       - file:write
       - adr:template
-
 security:
   sandboxed: true
   allowedHosts: []
@@ -80,12 +75,10 @@ security:
     - file:write
     - file:read
     - template:read
-
 limits:
-  maxExecutionTime: 300000  # 5 minutes
+  maxExecutionTime: 300000 # 5 minutes
   maxMemoryMB: 512
   maxConcurrent: 3
-
 routing:
   priority: 80
   patterns:

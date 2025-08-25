@@ -7,7 +7,9 @@ metadata:
   version: "1.0.0"
   type: analytics
   description: "Suqi Agentic Intelligence configuration for Scout analytics platform"
-
+  id: suqi-agentic-intel-v1
+  owner: analytics@insightpulse.ai
+  status: active
 version: 1.0
 platform: scout-genieview
 governance:
@@ -66,3 +68,7 @@ delivery:
   ops:
     alert_channels: [slack, email]
     approval_mode: manual
+tools:
+  - Read
+  - Write
+  - Bash

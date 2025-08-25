@@ -3,7 +3,10 @@ metadata:
   version: "1.0.0"
   description: "Scout-specific documentation generator with analytics focus"
   type: mcp
-
+  id: scout-docs-writer-v1
+  codename: scout-docs-writer-v1
+  owner: scout@insightpulse.ai
+  status: active
 role: "Generate Scout platform documentation with focus on analytics and dashboards"
 entrypoint:
   type: shell
@@ -18,3 +21,5 @@ permissions:
     - scripts/**
 environment:
   SCOUT_DOCS_DIR: docs/scout
+tools:
+  required: [Read, Write, Bash]

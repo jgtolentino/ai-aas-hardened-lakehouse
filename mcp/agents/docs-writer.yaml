@@ -3,7 +3,10 @@ metadata:
   version: "1.0.0"
   description: "AI docs generator for Docusaurus + GitHub Wiki mirror"
   type: mcp
-  
+  id: docs-writer-v1
+  codename: docs-writer-v1
+  owner: docs@insightpulse.ai
+  status: active
 role: "AI docs generator for Docusaurus + GitHub Wiki mirror"
 entrypoint:
   type: shell
@@ -23,3 +26,5 @@ permissions:
     - scripts/**
 environment:
   DOCUSAURUS_DIR: docs-site
+tools:
+  required: [Read, Write, Bash]

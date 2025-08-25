@@ -11,10 +11,9 @@ metadata:
     - components
     - frontend
   status: active
-
+  owner: ui@insightpulse.ai
 type: generator
 runtime: bruno
-
 capabilities:
   - name: codegen_tsx
     description: "Generate TypeScript React components"
@@ -39,7 +38,6 @@ capabilities:
     permissions:
       - file:write
       - component:generate
-
   - name: create_chart
     description: "Create data visualization components"
     inputSchema:
@@ -56,19 +54,16 @@ capabilities:
     permissions:
       - file:write
       - chart:generate
-
   - name: generate_form
     description: "Generate form components with validation"
     permissions:
       - file:write
       - form:generate
-
   - name: create_dashboard
     description: "Generate complete dashboard layouts"
     permissions:
       - file:write
       - dashboard:generate
-
 security:
   sandboxed: true
   allowedHosts: []
@@ -79,12 +74,10 @@ security:
     - file:write
     - file:read
     - component:generate
-
 limits:
-  maxExecutionTime: 180000  # 3 minutes
+  maxExecutionTime: 180000 # 3 minutes
   maxMemoryMB: 256
   maxConcurrent: 5
-
 routing:
   priority: 70
   patterns:
