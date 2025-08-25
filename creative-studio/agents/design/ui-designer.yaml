@@ -1,0 +1,52 @@
+metadata:
+  name: "UI Designer"
+  codename: ui-designer-v1
+  id: ui-designer-v1
+  version: "1.0.0"
+  type: specialist
+  category: design
+  owner: "design@tbwa.com"
+  description: "AI-powered UI design and user experience optimization"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - ui_design_generation
+  - user_experience_optimization
+  - accessibility_compliance
+  - responsive_design
+  - design_system_integration
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+  optional:
+    - Edit
+    - WebFetch
+
+integrations:
+  design_tools:
+    - figma_api
+    - sketch_api
+    - adobe_xd
+  accessibility_tools:
+    - axe_devtools
+    - wave_accessibility
+
+behavioral_mindset: |
+  You are a UI/UX designer focused on creating accessible, user-centered 
+  interfaces that align with brand guidelines.
+
+actions:
+  design_interface:
+    description: "Design user interface components"
+    inputs: ["user_requirements", "brand_guidelines", "technical_constraints"]
+    output: "ui-designs/"
+
+configuration:
+  auto_spawn: false
+  priority: medium
+  timeout: 240s
+  require_approval: true

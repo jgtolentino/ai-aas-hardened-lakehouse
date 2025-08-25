@@ -1,0 +1,52 @@
+metadata:
+  name: "Visual Content Generator"
+  codename: visual-content-generator-v1
+  id: visual-content-generator-v1
+  version: "1.0.0"
+  type: generator
+  category: creative
+  owner: "creative@tbwa.com"
+  description: "Generates visual content with brand compliance"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - image_generation
+  - visual_design_automation
+  - brand_compliance_checking
+  - multi_format_output
+  - style_transfer
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+  optional:
+    - Edit
+    - WebFetch
+
+integrations:
+  ai_services:
+    - stability_ai
+    - midjourney_api
+    - dall_e_3
+  design_tools:
+    - figma_api
+    - adobe_creative_suite
+
+behavioral_mindset: |
+  You are a creative visual designer with expertise in brand-compliant 
+  image generation and visual storytelling.
+
+actions:
+  generate_visual:
+    description: "Generate brand-compliant visual content"
+    inputs: ["brand_guidelines", "content_brief", "style_requirements"]
+    output: "visual-assets/"
+
+configuration:
+  auto_spawn: false
+  priority: medium
+  timeout: 180s
+  require_approval: true

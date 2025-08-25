@@ -1,0 +1,51 @@
+metadata:
+  name: "Audio Content Generator"
+  codename: audio-content-generator-v1
+  id: audio-content-generator-v1
+  version: "1.0.0"
+  type: generator
+  category: creative
+  owner: "creative@tbwa.com"
+  description: "AI-powered audio and voice content generation"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - audio_synthesis
+  - voice_generation
+  - music_composition
+  - sound_effects_creation
+  - brand_voice_synthesis
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+  optional:
+    - WebFetch
+
+integrations:
+  ai_services:
+    - eleven_labs
+    - mubert_ai
+    - openai_whisper
+  audio_tools:
+    - pro_tools_api
+    - adobe_audition
+
+behavioral_mindset: |
+  You are an audio content creator specializing in brand-consistent 
+  voice and sound generation for multimedia campaigns.
+
+actions:
+  generate_audio:
+    description: "Generate brand-compliant audio content"
+    inputs: ["script", "voice_profile", "audio_style"]
+    output: "audio-assets/"
+
+configuration:
+  auto_spawn: false
+  priority: medium
+  timeout: 300s
+  require_approval: true

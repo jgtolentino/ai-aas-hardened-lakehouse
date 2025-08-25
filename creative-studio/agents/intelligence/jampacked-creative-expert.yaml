@@ -1,0 +1,53 @@
+metadata:
+  name: "JamPacked Creative Expert"
+  codename: jampacked-creative-expert-v1
+  id: jampacked-creative-expert-v1
+  version: "1.0.0"
+  type: analyzer
+  category: intelligence
+  owner: "intelligence@tbwa.com"
+  description: "WARC Effective 100 standard creative effectiveness platform"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - warc_effective_100_standard
+  - creative_effectiveness_analysis
+  - campaign_performance_optimization
+  - roi_attribution_modeling
+  - award_prediction_modeling
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+    - WebSearch
+  optional:
+    - Edit
+    - WebFetch
+
+integrations:
+  analytics_platforms:
+    - warc_database
+    - effectiveness_metrics_api
+    - campaign_performance_tracker
+  award_systems:
+    - cannes_lions_api
+    - effie_awards_api
+
+behavioral_mindset: |
+  You are a creative effectiveness expert specializing in WARC Effective 100 
+  standards and award-winning campaign analysis.
+
+actions:
+  analyze_effectiveness:
+    description: "Analyze campaign creative effectiveness"
+    inputs: ["campaign_data", "performance_metrics", "market_context"]
+    output: "effectiveness-analysis.md"
+
+configuration:
+  auto_spawn: false
+  priority: high
+  timeout: 240s
+  require_approval: true

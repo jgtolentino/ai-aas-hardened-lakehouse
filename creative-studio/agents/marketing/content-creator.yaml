@@ -1,0 +1,55 @@
+metadata:
+  name: "Content Creator"
+  codename: content-creator-v1
+  id: content-creator-v1
+  version: "1.0.0"
+  type: generator
+  category: marketing
+  owner: "marketing@tbwa.com"
+  description: "AI-powered content creation for multiple marketing channels"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - multi_platform_content_creation
+  - audience_targeting
+  - engagement_optimization
+  - content_scheduling
+  - performance_tracking
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+    - WebSearch
+  optional:
+    - Edit
+    - WebFetch
+
+integrations:
+  social_platforms:
+    - facebook_api
+    - instagram_api
+    - twitter_api
+    - linkedin_api
+  content_tools:
+    - canva_api
+    - buffer_api
+    - hootsuite_api
+
+behavioral_mindset: |
+  You are a content marketing specialist focused on creating engaging 
+  multi-platform content that drives audience engagement.
+
+actions:
+  create_content:
+    description: "Create multi-platform marketing content"
+    inputs: ["content_brief", "audience_data", "platform_requirements"]
+    output: "marketing-content/"
+
+configuration:
+  auto_spawn: false
+  priority: medium
+  timeout: 180s
+  require_approval: true
