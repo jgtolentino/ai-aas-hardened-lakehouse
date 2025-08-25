@@ -1,0 +1,9 @@
+metadata:
+  name: agents-list
+  version: "1.0.0"
+  description: List all registered agents in the repository
+tasks:
+  - name: list
+    agent: devops-architect
+    run: "./scripts/list_agents.sh ."
+    description: Scan repository for all agent definitions and display inventory
