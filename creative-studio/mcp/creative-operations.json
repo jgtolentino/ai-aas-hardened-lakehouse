@@ -1,0 +1,412 @@
+{
+  "mcpServers": {
+    "creative_assets": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@tbwa/creative-assets-mcp-server@latest",
+        "--project-ref=cxzllzyxwpyptfretryc"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_CREATIVE_TOKEN}",
+        "CREATIVE_SCHEMA": "creative_assets",
+        "MCP_PORT": "8901",
+        "MCP_ALIASES": "creative,assets,brand",
+        "ALLOWED_OPERATIONS": "asset_analysis,brand_compliance,visual_recognition,metadata_extraction"
+      },
+      "capabilities": [
+        "multimodal_creative_analysis",
+        "distinctive_asset_recognition", 
+        "visual_brand_consistency",
+        "automated_tagging",
+        "compliance_scoring"
+      ],
+      "description": "Creative assets management with AI-powered analysis and brand compliance"
+    },
+    
+    "campaign_performance": {
+      "command": "npx", 
+      "args": [
+        "-y",
+        "@tbwa/campaign-performance-mcp-server@latest",
+        "--project-ref=cxzllzyxwpyptfretryc"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ANALYTICS_TOKEN}",
+        "ANALYTICS_SCHEMA": "campaign_analytics",
+        "MCP_PORT": "8902",
+        "MCP_ALIASES": "campaigns,performance,analytics",
+        "REAL_TIME_TRACKING": "true"
+      },
+      "capabilities": [
+        "real_time_performance_tracking",
+        "cross_platform_attribution",
+        "incrementality_measurement",
+        "roi_optimization",
+        "competitive_analysis"
+      ],
+      "description": "Real-time campaign tracking and attribution modeling"
+    },
+
+    "creative_intelligence": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@tbwa/creative-intelligence-mcp-server@latest", 
+        "--project-ref=cxzllzyxwpyptfretryc"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_INTELLIGENCE_TOKEN}",
+        "INTELLIGENCE_SCHEMA": "creative_intelligence",
+        "MCP_PORT": "8903",
+        "MCP_ALIASES": "intelligence,awards,trends",
+        "WARC_INTEGRATION": "true",
+        "AWARD_PREDICTION": "true"
+      },
+      "capabilities": [
+        "award_prediction_modeling",
+        "competitor_creative_analysis", 
+        "industry_benchmarking",
+        "trend_identification",
+        "effectiveness_scoring"
+      ],
+      "description": "Creative intelligence with award prediction and competitive analysis"
+    },
+
+    "brand_guardian": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@tbwa/brand-guardian-mcp-server@latest",
+        "--project-ref=cxzllzyxwpyptfretryc"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_BRAND_TOKEN}",
+        "BRAND_SCHEMA": "brand_systems",
+        "MCP_PORT": "8904",
+        "MCP_ALIASES": "brand,compliance,guardian",
+        "REAL_TIME_VALIDATION": "true",
+        "STRICT_ENFORCEMENT": "true"
+      },
+      "capabilities": [
+        "real_time_brand_monitoring",
+        "automated_compliance_checking",
+        "logo_usage_validation",
+        "color_palette_enforcement", 
+        "typography_compliance",
+        "voice_tone_consistency"
+      ],
+      "description": "Real-time brand compliance monitoring and enforcement"
+    },
+
+    "studio_operations": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@tbwa/studio-operations-mcp-server@latest",
+        "--project-ref=cxzllzyxwpyptfretryc"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_OPERATIONS_TOKEN}",
+        "OPERATIONS_SCHEMA": "studio_operations",
+        "MCP_PORT": "8905",
+        "MCP_ALIASES": "studio,ops,projects",
+        "WORKFLOW_AUTOMATION": "true",
+        "RESOURCE_OPTIMIZATION": "true"
+      },
+      "capabilities": [
+        "project_orchestration",
+        "resource_allocation_optimization",
+        "timeline_management",
+        "deliverable_tracking",
+        "team_performance_analytics",
+        "budget_monitoring"
+      ],
+      "description": "Studio operations management and workflow automation"
+    },
+
+    "content_generation": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@tbwa/content-generation-mcp-server@latest",
+        "--openai-key=${OPENAI_API_KEY}",
+        "--stability-key=${STABILITY_API_KEY}"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_CONTENT_TOKEN}",
+        "CONTENT_SCHEMA": "generated_content",
+        "MCP_PORT": "8906",
+        "MCP_ALIASES": "content,generation,ai",
+        "BRAND_VOICE_INTEGRATION": "true",
+        "MULTI_MODAL_GENERATION": "true"
+      },
+      "capabilities": [
+        "ai_powered_copywriting",
+        "visual_content_generation",
+        "audio_synthesis",
+        "video_content_creation",
+        "brand_voice_adaptation",
+        "multi_language_support"
+      ],
+      "description": "AI-powered content generation across all media types"
+    },
+
+    "social_media_optimizer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@tbwa/social-media-mcp-server@latest",
+        "--tiktok-api-key=${TIKTOK_API_KEY}",
+        "--instagram-token=${INSTAGRAM_ACCESS_TOKEN}"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_SOCIAL_TOKEN}",
+        "SOCIAL_SCHEMA": "social_media",
+        "MCP_PORT": "8907", 
+        "MCP_ALIASES": "social,tiktok,instagram",
+        "TREND_MONITORING": "true",
+        "ALGORITHM_OPTIMIZATION": "true"
+      },
+      "capabilities": [
+        "platform_specific_optimization",
+        "trend_analysis_integration",
+        "hashtag_strategy_optimization",
+        "influencer_matching",
+        "engagement_prediction",
+        "viral_potential_scoring"
+      ],
+      "description": "Social media platform optimization and trend integration"
+    },
+
+    "creative_rag": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@tbwa/creative-rag-mcp-server@latest",
+        "--vector-db=supabase",
+        "--embedding-model=openai"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_RAG_TOKEN}",
+        "RAG_SCHEMA": "creative_knowledge",
+        "MCP_PORT": "8908",
+        "MCP_ALIASES": "rag,knowledge,search",
+        "VECTOR_SEARCH": "true",
+        "SEMANTIC_SEARCH": "true"
+      },
+      "capabilities": [
+        "vector_powered_asset_discovery",
+        "semantic_creative_search",
+        "knowledge_base_integration",
+        "contextual_recommendations",
+        "historical_campaign_analysis"
+      ],
+      "description": "Vector-powered RAG system for creative asset discovery and analysis"
+    },
+
+    "econometric_modeling": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@tbwa/econometric-modeling-mcp-server@latest",
+        "--project-ref=cxzllzyxwpyptfretryc"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_MODELING_TOKEN}",
+        "MODELING_SCHEMA": "econometric_models",
+        "MCP_PORT": "8909",
+        "MCP_ALIASES": "modeling,mmm,attribution",
+        "ADVANCED_ATTRIBUTION": "true",
+        "MMM_INTEGRATION": "true"
+      },
+      "capabilities": [
+        "media_mix_modeling",
+        "incrementality_testing",
+        "attribution_modeling",
+        "roi_optimization",
+        "budget_allocation_optimization",
+        "long_term_brand_impact"
+      ],
+      "description": "Advanced econometric modeling for media mix and attribution"
+    },
+
+    "quality_assurance": {
+      "command": "npx", 
+      "args": [
+        "-y",
+        "@tbwa/quality-assurance-mcp-server@latest",
+        "--project-ref=cxzllzyxwpyptfretryc"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_QA_TOKEN}",
+        "QA_SCHEMA": "quality_assurance",
+        "MCP_PORT": "8910",
+        "MCP_ALIASES": "qa,testing,validation",
+        "AUTOMATED_TESTING": "true",
+        "PERFORMANCE_BENCHMARKING": "true"
+      },
+      "capabilities": [
+        "automated_creative_testing",
+        "performance_benchmarking",
+        "accessibility_validation",
+        "cross_platform_compatibility",
+        "load_testing",
+        "security_scanning"
+      ],
+      "description": "Comprehensive quality assurance and testing automation"
+    }
+  },
+
+  "agent_orchestration": {
+    "workflows": {
+      "creative_production": {
+        "description": "End-to-end creative production workflow",
+        "agents": ["creative_brief_generator", "visual_content_generator", "brand_guardian", "quality_assurance"],
+        "triggers": ["brief_approved", "asset_created", "compliance_checked"],
+        "outputs": ["approved_creative", "performance_forecast", "deployment_ready"]
+      },
+      
+      "campaign_optimization": {
+        "description": "Real-time campaign performance optimization",
+        "agents": ["campaign_performance", "creative_intelligence", "social_media_optimizer"],
+        "triggers": ["performance_threshold", "trend_detected", "budget_limit"],
+        "outputs": ["optimization_recommendations", "budget_reallocation", "creative_variants"]
+      },
+
+      "brand_compliance": {
+        "description": "Automated brand compliance monitoring",
+        "agents": ["brand_guardian", "creative_assets", "quality_assurance"],
+        "triggers": ["asset_uploaded", "campaign_launched", "scheduled_audit"],
+        "outputs": ["compliance_report", "violation_alerts", "corrective_actions"]
+      }
+    },
+
+    "coordination": {
+      "message_broker": "supabase_realtime",
+      "event_sourcing": true,
+      "state_management": "distributed",
+      "failure_recovery": "automated"
+    }
+  },
+
+  "security": {
+    "authentication": {
+      "type": "service_role",
+      "token_rotation": "24h",
+      "access_control": "role_based"
+    },
+    
+    "data_protection": {
+      "encryption_at_rest": true,
+      "encryption_in_transit": true,
+      "pii_detection": true,
+      "data_anonymization": true
+    },
+
+    "compliance": {
+      "gdpr_compliance": true,
+      "ccpa_compliance": true,
+      "brand_guidelines": "enforced",
+      "audit_logging": "comprehensive"
+    }
+  },
+
+  "monitoring": {
+    "health_checks": {
+      "interval": "30s",
+      "timeout": "10s",
+      "retry_attempts": 3
+    },
+
+    "performance_metrics": [
+      "response_time",
+      "throughput",
+      "error_rate",
+      "creative_quality_score",
+      "brand_compliance_rate"
+    ],
+
+    "alerting": {
+      "channels": ["slack", "email", "webhook"],
+      "thresholds": {
+        "error_rate": "> 5%",
+        "response_time": "> 2000ms",
+        "compliance_rate": "< 95%"
+      }
+    }
+  },
+
+  "deployment": {
+    "environments": {
+      "development": {
+        "auto_scaling": false,
+        "debug_mode": true,
+        "rate_limiting": false
+      },
+      "staging": {
+        "auto_scaling": true,
+        "debug_mode": false,
+        "rate_limiting": true
+      },
+      "production": {
+        "auto_scaling": true,
+        "debug_mode": false,
+        "rate_limiting": true,
+        "high_availability": true
+      }
+    },
+
+    "scaling": {
+      "min_instances": 2,
+      "max_instances": 20,
+      "cpu_threshold": "70%",
+      "memory_threshold": "80%"
+    }
+  },
+
+  "integration_points": {
+    "design_tools": {
+      "figma": {
+        "webhook_url": "${FIGMA_WEBHOOK_URL}",
+        "api_token": "${FIGMA_API_TOKEN}",
+        "team_id": "${FIGMA_TEAM_ID}"
+      },
+      "adobe_creative": {
+        "api_key": "${ADOBE_API_KEY}",
+        "organization_id": "${ADOBE_ORG_ID}"
+      },
+      "sketch": {
+        "library_sync": true,
+        "asset_management": true
+      }
+    },
+
+    "analytics_platforms": {
+      "google_analytics": {
+        "property_id": "${GA_PROPERTY_ID}",
+        "service_account": "${GA_SERVICE_ACCOUNT}"
+      },
+      "adobe_analytics": {
+        "report_suite": "${ADOBE_REPORT_SUITE}",
+        "api_key": "${ADOBE_ANALYTICS_KEY}"
+      }
+    },
+
+    "social_platforms": {
+      "tiktok": {
+        "app_id": "${TIKTOK_APP_ID}",
+        "api_key": "${TIKTOK_API_KEY}",
+        "webhook_secret": "${TIKTOK_WEBHOOK_SECRET}"
+      },
+      "instagram": {
+        "app_id": "${INSTAGRAM_APP_ID}",
+        "access_token": "${INSTAGRAM_ACCESS_TOKEN}"
+      },
+      "facebook": {
+        "app_id": "${FACEBOOK_APP_ID}",
+        "access_token": "${FACEBOOK_ACCESS_TOKEN}"
+      }
+    }
+  }
+}

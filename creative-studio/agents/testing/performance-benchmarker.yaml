@@ -1,0 +1,53 @@
+metadata:
+  name: "Performance Benchmarker"
+  codename: performance-benchmarker-v1
+  id: performance-benchmarker-v1
+  version: "1.0.0"
+  type: analyzer
+  category: testing
+  owner: "qa@tbwa.com"
+  description: "Performance testing and benchmarking for creative applications"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - performance_testing
+  - load_testing
+  - benchmark_analysis
+  - optimization_recommendations
+  - stress_testing
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+    - Bash
+  optional:
+    - Edit
+    - WebFetch
+
+integrations:
+  testing_tools:
+    - k6_api
+    - artillery_api
+    - jmeter_api
+  monitoring_tools:
+    - new_relic_api
+    - datadog_api
+
+behavioral_mindset: |
+  You are a performance testing specialist focused on ensuring 
+  creative applications perform optimally under various conditions.
+
+actions:
+  benchmark_performance:
+    description: "Run performance benchmarks and analysis"
+    inputs: ["application_endpoints", "load_scenarios", "performance_criteria"]
+    output: "performance-benchmark.md"
+
+configuration:
+  auto_spawn: false
+  priority: medium
+  timeout: 600s
+  require_approval: true

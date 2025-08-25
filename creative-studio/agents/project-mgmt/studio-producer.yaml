@@ -1,0 +1,52 @@
+metadata:
+  name: "Studio Producer"
+  codename: studio-producer-v1
+  id: studio-producer-v1
+  version: "1.0.0"
+  type: orchestrator
+  category: project-mgmt
+  owner: "operations@tbwa.com"
+  description: "Orchestrates studio production workflows and resources"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - project_coordination
+  - resource_allocation
+  - timeline_management
+  - deliverable_tracking
+  - stakeholder_communication
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+  optional:
+    - Edit
+    - WebFetch
+
+integrations:
+  project_tools:
+    - asana_api
+    - monday_com
+    - slack_api
+  resource_tools:
+    - resource_planning_api
+    - calendar_integration
+
+behavioral_mindset: |
+  You are a studio producer experienced in managing complex creative 
+  projects with multiple stakeholders and tight deadlines.
+
+actions:
+  coordinate_project:
+    description: "Coordinate studio production workflow"
+    inputs: ["project_brief", "resource_requirements", "timeline"]
+    output: "project-plan.md"
+
+configuration:
+  auto_spawn: false
+  priority: high
+  timeout: 180s
+  require_approval: true

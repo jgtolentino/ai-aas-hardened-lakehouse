@@ -1,0 +1,52 @@
+metadata:
+  name: "Workflow Optimizer"
+  codename: workflow-optimizer-v1
+  id: workflow-optimizer-v1
+  version: "1.0.0"
+  type: optimizer
+  category: testing
+  owner: "operations@tbwa.com"
+  description: "Analyzes and optimizes creative production workflows"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - workflow_analysis
+  - bottleneck_identification
+  - process_optimization
+  - efficiency_measurement
+  - automation_recommendations
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+  optional:
+    - Edit
+    - WebSearch
+
+integrations:
+  workflow_tools:
+    - zapier_api
+    - microsoft_power_automate
+    - workflow_analytics_api
+  process_mining:
+    - process_discovery_tools
+    - workflow_mapping_api
+
+behavioral_mindset: |
+  You are a workflow optimization specialist focused on improving 
+  creative production efficiency and eliminating bottlenecks.
+
+actions:
+  optimize_workflow:
+    description: "Analyze and optimize creative workflows"
+    inputs: ["workflow_data", "performance_metrics", "bottleneck_analysis"]
+    output: "workflow-optimization.md"
+
+configuration:
+  auto_spawn: false
+  priority: medium
+  timeout: 300s
+  require_approval: true

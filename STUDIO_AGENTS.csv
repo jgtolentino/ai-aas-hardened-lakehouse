@@ -1,0 +1,27 @@
+NAME,CODENAME,ID,VERSION,TYPE,OWNER,FILE,CLASS,DESCRIPTION
+,,,,,,./STUDIO_AGENTS.json,other,
+Analytics Reporter,analytics-reporter-v1,analytics-reporter-v1,1.0.0,tracker,analytics@tbwa.com,./creative-studio/agents/studio-ops/analytics-reporter.yaml,creative,Automated analytics reporting and dashboard generation
+Audio Content Generator,audio-content-generator-v1,audio-content-generator-v1,1.0.0,generator,creative@tbwa.com,./creative-studio/agents/creative/audio-generator.yaml,creative,AI-powered audio and voice content generation
+Backend Architect,backend-architect-v1,backend-architect-v1,1.0.0,specialist,engineering@tbwa.com,./creative-studio/agents/engineering/backend-architect.yaml,creative,Backend architecture and API development for creative platforms
+Brand Guardian,brand-guardian-v1,brand-guardian-v1,1.0.0,guardian,design@tbwa.com,./creative-studio/agents/design/brand-guardian.yaml,creative,Ensures brand consistency across all creative assets
+Content Creator,content-creator-v1,content-creator-v1,1.0.0,generator,marketing@tbwa.com,./creative-studio/agents/marketing/content-creator.yaml,creative,AI-powered content creation for multiple marketing channels
+Copy Content Generator,copy-content-generator-v1,copy-content-generator-v1,1.0.0,generator,creative@tbwa.com,./creative-studio/agents/creative/copy-generator.yaml,creative,AI copywriter with brand voice consistency
+Creative Brief Generator,creative-brief-generator-v1,creative-brief-generator-v1,1.0.0,generator,creative@tbwa.com,./creative-studio/agents/creative/brief-generator.yaml,creative,AI-powered brief generator for creative campaigns with brand voice integration
+Creative Performance Analyzer,creative-performance-analyzer-v1,creative-performance-analyzer-v1,1.0.0,analyzer,analytics@tbwa.com,./creative-studio/agents/intelligence/performance-analyzer.yaml,creative,Real-time creative campaign performance analysis
+Creative/Studio Agents Sweep,unknown,unknown,unknown,unknown,unknown,./.github/workflows/creative-agents.yml,other,
+Dash Visual Intelligence,dash-visual-intelligence-v2,dash-visual-intelligence-v2,2.0.0,analyzer,intelligence@tbwa.com,./creative-studio/agents/intelligence/dash-visual-intel.yaml,creative,Advanced visual intelligence with multi-tool integration
+Finance Tracker,finance-tracker-v1,finance-tracker-v1,1.0.0,tracker,finance@tbwa.com,./creative-studio/agents/studio-ops/finance-tracker.yaml,creative,Financial tracking and budget optimization for studio operations
+Frontend Developer,frontend-developer-v1,frontend-developer-v1,1.0.0,specialist,engineering@tbwa.com,./creative-studio/agents/engineering/frontend-developer.yaml,creative,Frontend development with focus on creative tools UI/UX
+Growth Hacker,growth-hacker-v1,growth-hacker-v1,1.0.0,optimizer,growth@tbwa.com,./creative-studio/agents/marketing/growth-hacker.yaml,creative,Data-driven growth hacking and user acquisition
+JamPacked Creative Expert,jampacked-creative-expert-v1,jampacked-creative-expert-v1,1.0.0,analyzer,intelligence@tbwa.com,./creative-studio/agents/intelligence/jampacked-creative-expert.yaml,creative,WARC Effective 100 standard creative effectiveness platform
+Performance Benchmarker,performance-benchmarker-v1,performance-benchmarker-v1,1.0.0,analyzer,qa@tbwa.com,./creative-studio/agents/testing/performance-benchmarker.yaml,creative,Performance testing and benchmarking for creative applications
+Studio Coach,studio-coach-v1,studio-coach-v1,1.0.0,specialist,operations@tbwa.com,./creative-studio/agents/studio-ops/studio-coach.yaml,creative,Provides coaching and optimization for studio teams
+Studio Producer,studio-producer-v1,studio-producer-v1,1.0.0,orchestrator,operations@tbwa.com,./creative-studio/agents/project-mgmt/studio-producer.yaml,creative,Orchestrates studio production workflows and resources
+studio-agents-sweep,unknown,unknown,1.0.0,unknown,unknown,./pulser/tasks/studio-agents-sweep.yaml,other,Sweep root & sibling studios for agent manifests; export & update registry
+TikTok Strategist,tiktok-strategist-v1,tiktok-strategist-v1,1.0.0,specialist,social@tbwa.com,./creative-studio/agents/marketing/tiktok-strategist.yaml,creative,Specialized TikTok marketing strategy and optimization
+UI Designer,ui-designer-v1,ui-designer-v1,1.0.0,specialist,design@tbwa.com,./creative-studio/agents/design/ui-designer.yaml,creative,AI-powered UI design and user experience optimization
+unknown,unknown,unknown,1.0.0,unknown,unknown,./creative-studio/registry/creative-agents.yaml,creative,Unified registry for TBWA Creative Studio, Operations, and AI-powered creative agents
+unknown,unknown,unknown,unknown,unknown,unknown,./creative-studio/mcp/creative-operations.json,mcp,
+Visual Content Generator,visual-content-generator-v1,visual-content-generator-v1,1.0.0,generator,creative@tbwa.com,./creative-studio/agents/creative/visual-generator.yaml,creative,Generates visual content with brand compliance
+Visual Storyteller,visual-storyteller-v1,visual-storyteller-v1,1.0.0,specialist,design@tbwa.com,./creative-studio/agents/design/visual-storyteller.yaml,creative,Creates compelling visual narratives and storyboards
+Workflow Optimizer,workflow-optimizer-v1,workflow-optimizer-v1,1.0.0,optimizer,operations@tbwa.com,./creative-studio/agents/testing/workflow-optimizer.yaml,creative,Analyzes and optimizes creative production workflows

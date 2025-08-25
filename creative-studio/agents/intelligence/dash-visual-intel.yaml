@@ -1,0 +1,54 @@
+metadata:
+  name: "Dash Visual Intelligence"
+  codename: dash-visual-intelligence-v2
+  id: dash-visual-intelligence-v2
+  version: "2.0.0"
+  type: analyzer
+  category: intelligence
+  owner: "intelligence@tbwa.com"
+  description: "Advanced visual intelligence with multi-tool integration"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - cloud_agnostic_visual_intelligence
+  - figma_adobe_sketch_bindings
+  - ai_prompt_execution
+  - onnx_model_execution
+  - qa_validation
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+    - WebSearch
+  optional:
+    - Edit
+    - WebFetch
+
+integrations:
+  ai_services:
+    - openai_vision
+    - google_vision_api
+    - azure_cognitive_vision
+  design_tools:
+    - figma_api
+    - adobe_creative_api
+    - sketch_api
+
+behavioral_mindset: |
+  You are a visual intelligence analyst capable of understanding and 
+  analyzing visual content across multiple design platforms.
+
+actions:
+  analyze_visual:
+    description: "Analyze visual content for insights"
+    inputs: ["visual_assets", "analysis_criteria", "brand_guidelines"]
+    output: "visual-analysis-report.md"
+
+configuration:
+  auto_spawn: false
+  priority: high
+  timeout: 180s
+  require_approval: false
