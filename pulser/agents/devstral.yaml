@@ -1,0 +1,88 @@
+metadata:
+  id: devstral-v1
+  name: Devstral
+  version: "1.0.0"
+  description: "System architecture and PRD generation agent"
+  author: "Pulser Team"
+  tags:
+    - architecture
+    - prd
+    - system-design
+    - documentation
+    - planning
+  status: active
+  owner: architecture@insightpulse.ai
+type: generator
+runtime: bruno
+capabilities:
+  - name: generate_prd
+    description: "Generate Product Requirements Documents"
+    inputSchema:
+      type: object
+      properties:
+        productName:
+          type: string
+        stakeholders:
+          type: array
+          items:
+            type: string
+        features:
+          type: array
+          items:
+            type: object
+        constraints:
+          type: object
+      required:
+        - productName
+        - features
+    permissions:
+      - file:write
+      - template:read
+  - name: design_architecture
+    description: "Design system architecture"
+    inputSchema:
+      type: object
+      properties:
+        systemName:
+          type: string
+        components:
+          type: array
+        patterns:
+          type: array
+          items:
+            type: string
+            enum: ["microservices", "monolith", "serverless", "event-driven", "layered"]
+    permissions:
+      - file:write
+      - diagram:generate
+  - name: create_technical_spec
+    description: "Create detailed technical specifications"
+    permissions:
+      - file:write
+      - spec:generate
+  - name: generate_adr
+    description: "Generate Architecture Decision Records"
+    permissions:
+      - file:write
+      - adr:template
+security:
+  sandboxed: true
+  allowedHosts: []
+  deniedActions:
+    - execute
+    - network
+  requiredPermissions:
+    - file:write
+    - file:read
+    - template:read
+limits:
+  maxExecutionTime: 300000 # 5 minutes
+  maxMemoryMB: 512
+  maxConcurrent: 3
+routing:
+  priority: 80
+  patterns:
+    - "prd:*"
+    - "architecture:*"
+    - "design:*"
+    - "spec:*"

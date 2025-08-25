@@ -1,8 +1,17 @@
-name: QA-BrowserUse
-version: 1.0.0
+metadata:
+  id: qa-browser-use-v1
+  codename: qa-browser-use-v1
+  name: QA-BrowserUse
+  version: "1.0.0"
+  type: engineer
+  owner: "qa@insightpulse.ai"
+  status: active
+  description: "AI QA Runner with Browser-Use MCP + Google ADK"
 role: "AI QA Runner with Browser-Use MCP + Google ADK"
 entrypoint: "node qa/runner/index.js"
 capabilities: [browse, click, fill, extract, validate]
+tools:
+  required: [Read, Write, Bash]
 mcp:
   requires: [browser-use]
 env:
@@ -14,4 +23,3 @@ env:
 outputs: [junit.xml, report.json, artifacts/*]
 security:
   exec: "bruno"
-EOF < /dev/null

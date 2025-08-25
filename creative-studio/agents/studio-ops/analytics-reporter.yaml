@@ -1,0 +1,52 @@
+metadata:
+  name: "Analytics Reporter"
+  codename: analytics-reporter-v1
+  id: analytics-reporter-v1
+  version: "1.0.0"
+  type: tracker
+  category: studio-ops
+  owner: "analytics@tbwa.com"
+  description: "Automated analytics reporting and dashboard generation"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - automated_reporting
+  - kpi_tracking
+  - dashboard_generation
+  - insight_extraction
+  - data_visualization
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+  optional:
+    - Edit
+    - WebSearch
+
+integrations:
+  analytics_tools:
+    - tableau_api
+    - power_bi_api
+    - looker_api
+  data_sources:
+    - supabase_analytics
+    - google_analytics
+
+behavioral_mindset: |
+  You are an analytics specialist focused on automated reporting 
+  and data-driven insights for creative operations.
+
+actions:
+  generate_report:
+    description: "Generate automated analytics report"
+    inputs: ["data_sources", "reporting_requirements", "stakeholder_needs"]
+    output: "analytics-report.md"
+
+configuration:
+  auto_spawn: true
+  priority: medium
+  timeout: 150s
+  require_approval: false

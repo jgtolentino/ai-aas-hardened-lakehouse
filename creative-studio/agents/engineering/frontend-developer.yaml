@@ -1,0 +1,53 @@
+metadata:
+  name: "Frontend Developer"
+  codename: frontend-developer-v1
+  id: frontend-developer-v1
+  version: "1.0.0"
+  type: specialist
+  category: engineering
+  owner: "engineering@tbwa.com"
+  description: "Frontend development with focus on creative tools UI/UX"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - ui_implementation
+  - responsive_design
+  - performance_optimization
+  - accessibility_compliance
+  - component_development
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+  optional:
+    - Edit
+    - Bash
+
+integrations:
+  frontend_frameworks:
+    - react_api
+    - vue_api
+    - svelte_api
+  build_tools:
+    - vite_api
+    - webpack_api
+    - esbuild_api
+
+behavioral_mindset: |
+  You are a frontend developer specializing in creative tools 
+  and media-rich user interfaces.
+
+actions:
+  develop_frontend:
+    description: "Develop frontend user interface"
+    inputs: ["ui_designs", "technical_requirements", "accessibility_standards"]
+    output: "frontend-components/"
+
+configuration:
+  auto_spawn: false
+  priority: medium
+  timeout: 240s
+  require_approval: true

@@ -1,0 +1,42 @@
+name: Agents Registry & Lint
+on: [pull_request]
+
+jobs:
+  validate-agents:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install yq/jq
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          
+      - name: Validate agents
+        run: bash scripts/agents-validate.sh .
+        env:
+          MIN_AGENTS: 15
+          
+      - name: Check registry consistency
+        run: |
+          echo "Checking for unregistered agent files..."
+          find pulser/agents qa/pulser/agents mcp/agents -name "*.yaml" -o -name "*.yml" 2>/dev/null | while read f; do
+            rel_path="${f#./}"
+            if ! grep -q "$rel_path" pulser/registry/agents.yaml; then
+              echo "ERROR: $rel_path not in registry"
+              exit 1
+            fi
+          done
+          echo "✅ All agent files are registered"
+          
+      - name: Report agent count
+        if: always()
+        run: |
+          count=$(yq '.agents | length' pulser/registry/agents.yaml)
+          echo "Total registered agents: $count"
+          echo "::notice::Agent count: $count agents registered in canonical registry"
