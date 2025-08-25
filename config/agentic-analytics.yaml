@@ -1,0 +1,68 @@
+# Suqi Agentic Intelligence Configuration
+# Version: 1.0.0
+
+metadata:
+  name: suqi-agentic-intel
+  codename: suqi-agentic-intel-v1
+  version: "1.0.0"
+  type: analytics
+  description: "Suqi Agentic Intelligence configuration for Scout analytics platform"
+
+version: 1.0
+platform: scout-genieview
+governance:
+  data_contracts:
+    - schema: scout.gold_sales_daily
+      enforce: true
+      checks: [not_null, unique, foreign_key]
+  roles:
+    regional_manager:
+      actions: [create_insight, schedule_ab_test]
+      max_budget_php: 20000
+    analyst:
+      actions: [create_insight, dashboard_slice]
+      max_budget_php: 0
+metrics:
+  revenue:
+    expr: sum(net_amount)
+    unit: PHP
+    aliases: ["sales"]
+  units:
+    expr: sum(qty)
+    aliases: ["volume"]
+  avg_price:
+    expr: revenue / nullif(units,0)
+monitors:
+  - name: demand_spike_brand
+    sql: |
+      select brand, sum(units) as u
+      from scout.gold_sales_15min
+      where ts >= now() - interval '60 min'
+      group by brand
+      having sum(units) > 1.5 * (
+        select coalesce(avg(units),0)
+        from scout.gold_sales_15min
+        where ts between now()-interval '7 day' and now()-interval '1 day'
+          and brand = gold_sales_15min.brand)
+    threshold: 1.0
+    window: 60
+ledger:
+  table: scout.platinum_agent_action_ledger
+  fields:
+    - id: uuid
+    - ts: timestamptz
+    - agent: text
+    - monitor: text
+    - decision: text
+    - action_payload: jsonb
+    - approval_status: enum(auto,manual,rejected)
+    - verify_after: interval
+    - success_criteria: jsonb
+    - status: enum(pending,success,failed)
+delivery:
+  ui:
+    agent_feed: enabled
+    actions: [explain, see_slice, save_insight]
+  ops:
+    alert_channels: [slack, email]
+    approval_mode: manual
