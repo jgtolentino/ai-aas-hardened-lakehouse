@@ -1,0 +1,94 @@
+metadata:
+  id: dash-v1
+  name: Dash
+  version: "1.0.0"
+  description: "TypeScript/React UI component generation agent"
+  author: "Pulser Team"
+  tags:
+    - ui
+    - react
+    - typescript
+    - components
+    - frontend
+  status: active
+
+type: generator
+runtime: bruno
+
+capabilities:
+  - name: codegen_tsx
+    description: "Generate TypeScript React components"
+    inputSchema:
+      type: object
+      properties:
+        componentName:
+          type: string
+        props:
+          type: array
+          items:
+            type: object
+        hooks:
+          type: array
+          items:
+            type: string
+        styling:
+          type: string
+          enum: ["styled-components", "emotion", "css-modules", "tailwind"]
+      required:
+        - componentName
+    permissions:
+      - file:write
+      - component:generate
+
+  - name: create_chart
+    description: "Create data visualization components"
+    inputSchema:
+      type: object
+      properties:
+        chartType:
+          type: string
+          enum: ["line", "bar", "pie", "scatter", "heatmap", "treemap"]
+        dataSource:
+          type: string
+        library:
+          type: string
+          enum: ["recharts", "victory", "nivo", "@superset-ui"]
+    permissions:
+      - file:write
+      - chart:generate
+
+  - name: generate_form
+    description: "Generate form components with validation"
+    permissions:
+      - file:write
+      - form:generate
+
+  - name: create_dashboard
+    description: "Generate complete dashboard layouts"
+    permissions:
+      - file:write
+      - dashboard:generate
+
+security:
+  sandboxed: true
+  allowedHosts: []
+  deniedActions:
+    - execute
+    - network
+  requiredPermissions:
+    - file:write
+    - file:read
+    - component:generate
+
+limits:
+  maxExecutionTime: 180000  # 3 minutes
+  maxMemoryMB: 256
+  maxConcurrent: 5
+
+routing:
+  priority: 70
+  patterns:
+    - "ui:*"
+    - "component:*"
+    - "dashboard:*"
+    - "chart:*"
