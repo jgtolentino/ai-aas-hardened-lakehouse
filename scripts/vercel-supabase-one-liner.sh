@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-PROJECT_REF="sbp_830d652c8d86db9dd9a7e907f1c6ab3a8b0bb781"
+PROJECT_REF="cxzllzyxwpyptfretryc"
 SUPABASE_URL="https://${PROJECT_REF}.supabase.co"
 
 echo "🚀 Setting up Supabase environment variables in Vercel..."
@@ -30,8 +30,7 @@ echo "vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY $ANON_KEY && \\"
 echo "vercel env add SUPABASE_URL $SUPABASE_URL && \\"
 echo "vercel env add SUPABASE_SERVICE_ROLE_KEY $SERVICE_ROLE_KEY && \\"
 echo "vercel env add SUPABASE_PROJECT_REF $PROJECT_REF && \\"
-echo "vercel env add SUPABASE_DB_URL '$DB_URL' && \\"
-echo "vercel env add SUPABASE_ACCESS_TOKEN $PROJECT_REF --git-branch main"
+echo "vercel env add SUPABASE_DB_URL '$DB_URL'"
 echo
 echo "💡 Tip: Make sure you're in the correct Vercel project directory!"
 echo "📊 You can also set these manually in Vercel dashboard → Settings → Environment Variables"
