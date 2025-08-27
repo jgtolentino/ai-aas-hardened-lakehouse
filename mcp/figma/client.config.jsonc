@@ -1,0 +1,16 @@
+// Generic MCP client config. Different hosts (Claude Code, Cursor, Windsurf) have UI installers,
+// but this file documents the canonical settings your agents should use.
+{
+  "servers": [
+    {
+      "name": "Figma Dev Mode MCP",
+      "transport": "http-sse",
+      "url": "http://127.0.0.1:3845/sse",
+      "fallbacks": [
+        { "transport": "http-sse", "url": "http://127.0.0.1:3845/mcp" }
+      ],
+      "tools": ["get_selection", "get_variables", "get_components", "generate_code"],
+      "notes": "Toggle the server in Figma Preferences if connection shows red. Ensure a file is open with a selected frame."
+    }
+  ]
+}

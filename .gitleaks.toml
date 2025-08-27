@@ -1,0 +1,39 @@
+title = "Scout Hardening — Gitleaks Rules"
+
+[[rules]]
+id = "github-pat"
+description = "GitHub Personal Access Token"
+regex = '''ghp_[A-Za-z0-9]{36}'''
+tags = ["key","github"]
+
+[[rules]]
+id = "supabase-key"
+description = "Supabase key (anon/service/JWT)"
+regex = '''\b(sbp_[A-Za-z0-9]{40,}|eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+)\b'''
+tags = ["key","supabase","jwt"]
+
+[[rules]]
+id = "mapbox-token"
+description = "Mapbox token"
+regex = '''\b(pk|sk)\.[A-Za-z0-9]{60,}\b'''
+tags = ["key","mapbox"]
+
+[[rules]]
+id = "vercel-token"
+description = "Vercel token"
+regex = '''\b(vercel\.[A-Za-z0-9_\-]{20,})\b'''
+tags = ["key","vercel"]
+
+[[rules]]
+id = "generic-bearer"
+description = "Generic bearer token"
+regex = '''\b(bearer|authorization):?\s*[A-Za-z0-9\-\._~\+\/]+=*\b'''
+ignorecase = true
+tags = ["key","generic"]
+
+[[allowlist]]
+description = "Allow .env.example and docs"
+files = [
+  '''\.env\.example$''',
+  '''/docs/.*'''
+]
