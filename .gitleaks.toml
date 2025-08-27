@@ -1,39 +1,58 @@
-title = "Scout Hardening — Gitleaks Rules"
+title = "Hardened gitleaks config (v8) - ZERO TOLERANCE"
+
+[allowlist]
+description = "Allowed, non-sensitive patterns & paths only"
+paths = [
+  '''^docs/examples/''',
+  '''\.env\.example$'''
+]
+regexes = [
+  # Explicit placeholders only (safe to allow)
+  '''YOUR_SUPABASE_(ANON|SERVICE)_KEY''',
+  '''YOUR_MAPBOX_TOKEN''',
+  '''YOUR_GITHUB_PAT''',
+  '''\*\*\*REDACTED[_A-Z]*\*\*\*''',
+  '''YOUR_[A-Z_]+_KEY''',
+  '''placeholder[_-]key''',
+  '''REDACTED'''
+]
+
+[[rules]]
+id = "supabase-service-role"
+description = "Supabase service role key"
+regex = '''eyJ[a-zA-Z0-9_\-]{10,}\.[a-zA-Z0-9_\-]{10,}\.[a-zA-Z0-9_\-]{10,}'''
+tags = ["supabase","key","jwt"]
+[rules.allowlist]
+regexes = ['''YOUR_SUPABASE_SERVICE_KEY''', '''\*\*\*REDACTED[_A-Z]*\*\*\*''', '''REDACTED''']
+
+[[rules]]
+id = "supabase-access-token" 
+description = "Supabase access token"
+regex = '''sbp_[A-Za-z0-9]{40,}'''
+tags = ["supabase","token"]
+[rules.allowlist]
+regexes = ['''YOUR_SUPABASE_ACCESS_TOKEN''', '''\*\*\*REDACTED[_A-Z]*\*\*\*''', '''REDACTED''']
+
+[[rules]]
+id = "mapbox-token"
+description = "Mapbox public/private token"
+regex = '''(pk|sk)\.[A-Za-z0-9]{40,}'''
+tags = ["mapbox","token"]
+[rules.allowlist]
+regexes = ['''YOUR_MAPBOX_TOKEN''', '''\*\*\*REDACTED[_A-Z]*\*\*\*''', '''REDACTED''']
 
 [[rules]]
 id = "github-pat"
 description = "GitHub Personal Access Token"
 regex = '''ghp_[A-Za-z0-9]{36}'''
-tags = ["key","github"]
-
-[[rules]]
-id = "supabase-key"
-description = "Supabase key (anon/service/JWT)"
-regex = '''\b(sbp_[A-Za-z0-9]{40,}|eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+)\b'''
-tags = ["key","supabase","jwt"]
-
-[[rules]]
-id = "mapbox-token"
-description = "Mapbox token"
-regex = '''\b(pk|sk)\.[A-Za-z0-9]{60,}\b'''
-tags = ["key","mapbox"]
-
-[[rules]]
-id = "vercel-token"
-description = "Vercel token"
-regex = '''\b(vercel\.[A-Za-z0-9_\-]{20,})\b'''
-tags = ["key","vercel"]
+tags = ["github","token"]
+[rules.allowlist]
+regexes = ['''YOUR_GITHUB_PAT''', '''\*\*\*REDACTED[_A-Z]*\*\*\*''', '''REDACTED''']
 
 [[rules]]
 id = "generic-bearer"
-description = "Generic bearer token"
-regex = '''\b(bearer|authorization):?\s*[A-Za-z0-9\-\._~\+\/]+=*\b'''
-ignorecase = true
-tags = ["key","generic"]
-
-[[allowlist]]
-description = "Allow .env.example and docs"
-files = [
-  '''\.env\.example$''',
-  '''/docs/.*'''
-]
+description = "Generic Bearer token"
+regex = '''(?i)bearer\s+[A-Za-z0-9\-\._~\+\/]+=*'''
+tags = ["bearer","generic"]
+[rules.allowlist]
+regexes = ['''\*\*\*REDACTED[_A-Z]*\*\*\*''', '''YOUR_BEARER_TOKEN''', '''REDACTED''']

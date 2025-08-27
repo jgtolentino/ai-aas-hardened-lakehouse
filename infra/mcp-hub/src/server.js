@@ -7,6 +7,9 @@ import { z } from "zod";
 import openapi from "./openapi.js";
 import { handleSupabase } from "./adapters/supabase.js";
 import { handleMapbox } from "./adapters/mapbox.js";
+import { handleFigma } from "./adapters/figma.js";
+import { handleGitHub } from "./adapters/github.js";
+import { handleFigmaGitHubSync } from "./adapters/figma-github-sync.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -29,7 +32,7 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.get("/openapi.json", (_req, res) => res.json(openapi));
 
 const RunSchema = z.object({
-  server: z.enum(["supabase","mapbox"]),
+  server: z.enum(["supabase","mapbox","figma","github","sync"]),
   tool: z.string().min(1),
   args: z.record(z.any()).default({})
 });
@@ -40,6 +43,9 @@ app.post("/mcp/run", requireApiKey, async (req, res) => {
     let out;
     if (server === "supabase") out = await handleSupabase(tool, args);
     else if (server === "mapbox") out = await handleMapbox(tool, args);
+    else if (server === "figma") out = await handleFigma(tool, args);
+    else if (server === "github") out = await handleGitHub(tool, args);
+    else if (server === "sync") out = await handleFigmaGitHubSync(tool, args);
     else out = { error: "unsupported server" };
 
     if (out?.error) return res.status(400).json(out);

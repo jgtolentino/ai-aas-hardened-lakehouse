@@ -1,0 +1,304 @@
+{
+  "name": "Figma GitHub Sync Bot",
+  "description": "Export Figma designs and automatically sync them to GitHub repositories",
+  "instructions": "You are a specialized bot that helps sync Figma design files to GitHub repositories. You can export entire Figma files, specific nodes, or images and commit them to GitHub automatically. Always ask for the Figma file key if not provided. Handle errors gracefully and provide clear status updates.",
+  "conversation_starters": [
+    "Sync my Figma file to GitHub",
+    "Export specific frames from Figma", 
+    "Set up automated design sync",
+    "Check the status of my last sync"
+  ],
+  "capabilities": {
+    "web_browsing": false,
+    "dalle_image_generation": false,
+    "code_interpreter": false
+  },
+  "actions": [
+    {
+      "name": "syncFigmaFileToGitHub",
+      "description": "Export a complete Figma file and sync it to GitHub",
+      "method": "POST",
+      "url": "https://your-mcp-hub-domain.com/mcp/run",
+      "headers": {
+        "X-API-Key": "{{api_key}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "server": "sync",
+        "tool": "sync.figmaFileToRepo", 
+        "args": {
+          "fileKey": "{{fileKey}}",
+          "commitPath": "{{commitPath}}",
+          "message": "{{message}}"
+        }
+      },
+      "parameters": [
+        {
+          "name": "fileKey",
+          "type": "string",
+          "description": "The Figma file key from the URL",
+          "required": true
+        },
+        {
+          "name": "commitPath", 
+          "type": "string",
+          "description": "Path in the repository where to save the file",
+          "required": false,
+          "default": "design/figma/export.json"
+        },
+        {
+          "name": "message",
+          "type": "string", 
+          "description": "Git commit message",
+          "required": false,
+          "default": "chore(figma): sync design updates"
+        }
+      ]
+    },
+    {
+      "name": "exportFigmaFile",
+      "description": "Export a Figma file as JSON without committing",
+      "method": "POST",
+      "url": "https://your-mcp-hub-domain.com/mcp/run",
+      "headers": {
+        "X-API-Key": "{{api_key}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "server": "figma",
+        "tool": "file.exportJSON",
+        "args": {
+          "fileKey": "{{fileKey}}"
+        }
+      },
+      "parameters": [
+        {
+          "name": "fileKey",
+          "type": "string",
+          "description": "The Figma file key from the URL", 
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "exportFigmaNodes",
+      "description": "Export specific Figma nodes/frames",
+      "method": "POST", 
+      "url": "https://your-mcp-hub-domain.com/mcp/run",
+      "headers": {
+        "X-API-Key": "{{api_key}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "server": "figma",
+        "tool": "nodes.get",
+        "args": {
+          "fileKey": "{{fileKey}}",
+          "ids": "{{nodeIds}}"
+        }
+      },
+      "parameters": [
+        {
+          "name": "fileKey",
+          "type": "string",
+          "description": "The Figma file key from the URL",
+          "required": true
+        },
+        {
+          "name": "nodeIds",
+          "type": "array",
+          "description": "Array of node IDs to export",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "exportFigmaImages",
+      "description": "Export Figma frames as images",
+      "method": "POST",
+      "url": "https://your-mcp-hub-domain.com/mcp/run", 
+      "headers": {
+        "X-API-Key": "{{api_key}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "server": "figma",
+        "tool": "images.export",
+        "args": {
+          "fileKey": "{{fileKey}}",
+          "ids": "{{nodeIds}}",
+          "format": "{{format}}",
+          "scale": "{{scale}}"
+        }
+      },
+      "parameters": [
+        {
+          "name": "fileKey",
+          "type": "string",
+          "description": "The Figma file key from the URL",
+          "required": true
+        },
+        {
+          "name": "nodeIds",
+          "type": "array", 
+          "description": "Array of node IDs to export as images",
+          "required": true
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "description": "Image format (png or jpg)",
+          "required": false,
+          "default": "png"
+        },
+        {
+          "name": "scale",
+          "type": "string",
+          "description": "Image scale (1, 2, 3, 4)",
+          "required": false,
+          "default": "2"
+        }
+      ]
+    },
+    {
+      "name": "commitToGitHub",
+      "description": "Commit content to GitHub repository",
+      "method": "POST",
+      "url": "https://your-mcp-hub-domain.com/mcp/run",
+      "headers": {
+        "X-API-Key": "{{api_key}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "server": "github",
+        "tool": "repo.commitFile",
+        "args": {
+          "path": "{{path}}",
+          "content": "{{content}}",
+          "message": "{{message}}",
+          "branch": "{{branch}}"
+        }
+      },
+      "parameters": [
+        {
+          "name": "path",
+          "type": "string", 
+          "description": "File path in the repository",
+          "required": true
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "description": "File content to commit",
+          "required": true
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "description": "Git commit message", 
+          "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "description": "Git branch name",
+          "required": false,
+          "default": "chore/figma-sync"
+        }
+      ]
+    }
+  ],
+  "authentication": {
+    "type": "api_key",
+    "api_key": "your-mcp-hub-api-key"
+  },
+  "privacy_policy": "https://your-domain.com/privacy",
+  "openapi_spec": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Figma GitHub Sync API",
+      "version": "1.0.0",
+      "description": "API for syncing Figma designs to GitHub repositories"
+    },
+    "servers": [
+      {
+        "url": "https://your-mcp-hub-domain.com"
+      }
+    ],
+    "paths": {
+      "/mcp/run": {
+        "post": {
+          "summary": "Execute MCP tool",
+          "description": "Execute a tool on the specified MCP server",
+          "security": [
+            {
+              "ApiKeyAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "server": {
+                      "type": "string",
+                      "enum": ["figma", "github", "sync"],
+                      "description": "MCP server to use"
+                    },
+                    "tool": {
+                      "type": "string", 
+                      "description": "Tool to execute on the server"
+                    },
+                    "args": {
+                      "type": "object",
+                      "description": "Arguments to pass to the tool"
+                    }
+                  },
+                  "required": ["server", "tool", "args"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "description": "Tool execution result"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request"
+            },
+            "401": {
+              "description": "Unauthorized"  
+            },
+            "500": {
+              "description": "Internal Server Error"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "securitySchemes": {
+        "ApiKeyAuth": {
+          "type": "apiKey",
+          "in": "header",
+          "name": "X-API-Key"
+        }
+      }
+    }
+  }
+}
