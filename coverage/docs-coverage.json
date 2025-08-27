@@ -1,0 +1,11 @@
+{
+  "agents_total": 2,
+  "docs_total": 2,
+  "missing_docs": [
+    "docs-writer"
+  ],
+  "orphans": [
+    "docswriter"
+  ],
+  "coverage_pct": 50
+}

@@ -1,0 +1,11 @@
+{
+  "design_system": "fail",
+  "docs_rag": "fail",
+  "ask_scout_cache": "fail",
+  "playground": "fail",
+  "schema_explorer": "fail",
+  "api_explorer": "fail",
+  "live_metrics": "fail",
+  "learning_paths": "fail",
+  "cdn_caching": "fail"
+}
