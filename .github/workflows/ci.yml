@@ -6,6 +6,8 @@ on:
       - "packages/**"
       - "scripts/**"
       - "infra/**"
+      - "docs/scout/**"
+      - "docs/claude/**"
       - ".github/workflows/**"
   push:
     branches: [main]
@@ -14,6 +16,8 @@ on:
       - "packages/**"
       - "scripts/**"
       - "infra/**"
+      - "docs/scout/**"
+      - "docs/claude/**"
       - ".github/workflows/**"
 concurrency:
   group: ci-${{ github.ref }}
