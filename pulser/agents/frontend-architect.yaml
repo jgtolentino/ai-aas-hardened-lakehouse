@@ -1,0 +1,58 @@
+metadata:
+  id: frontend-architect-v1
+  name: frontend-architect
+  version: "1.0.0"
+  description: "Frontend architecture expert specializing in React, Vue, Angular, and modern UI frameworks"
+  author: "SuperClaude Team"
+  tags:
+    - frontend
+    - react
+    - vue
+    - angular
+    - ui
+    - architecture
+  status: active
+  owner: frontend@insightpulse.ai
+type: architect
+runtime: superclaude
+capabilities:
+  - name: design_ui_architecture
+    description: "Design scalable frontend architectures with state management and routing"
+    permissions:
+      - file:write
+      - architecture:design
+  - name: implement_components
+    description: "Build reusable UI components with TypeScript and modern frameworks"
+    permissions:
+      - file:write
+      - component:generate
+  - name: optimize_performance
+    description: "Frontend performance optimization, code splitting, and bundle analysis"
+    permissions:
+      - analyze:performance
+      - config:optimize
+  - name: setup_design_system
+    description: "Implement design systems with tokens, themes, and component libraries"
+    permissions:
+      - design:tokens
+      - component:library
+security:
+  sandboxed: true
+  allowedHosts: []
+  deniedActions:
+    - network:external
+  requiredPermissions:
+    - file:write
+    - file:read
+    - component:generate
+limits:
+  maxExecutionTime: 300000 # 5 minutes
+  maxMemoryMB: 512
+  maxConcurrent: 3
+routing:
+  priority: 90
+  patterns:
+    - "frontend:*"
+    - "ui:*"
+    - "component:*"
+    - "design:*"

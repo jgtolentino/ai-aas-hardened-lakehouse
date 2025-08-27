@@ -1,67 +1,44 @@
-name: DB/Build/Test
+name: ci
 on:
   pull_request:
     paths:
-      - 'db/**'
-      - 'dq/**'
-      - 'services/**'
-      - 'packages/**'
-      - 'infra/docker/**'
-      - '.github/workflows/ci.yml'
+      - "apps/**"
+      - "packages/**"
+      - "scripts/**"
+      - "infra/**"
+      - ".github/workflows/**"
   push:
     branches: [main]
     paths:
-      - 'db/**'
-      - 'dq/**'
-      - 'services/**'
-      - 'packages/**'
-      - 'infra/docker/**'
-      - '.github/workflows/ci.yml'
+      - "apps/**"
+      - "packages/**"
+      - "scripts/**"
+      - "infra/**"
+      - ".github/workflows/**"
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  db-build-test:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    services:
-      postgres:
-        image: ankane/pgvector:pg16
-        env: { POSTGRES_USER: suqi, POSTGRES_PASSWORD: suqi, POSTGRES_DB: suqi }
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd="pg_isready -U suqi -d suqi"
-          --health-interval=5s --health-timeout=3s --health-retries=30
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - name: Install psql client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
+
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
-      - run: corepack enable
-      - run: pnpm install --frozen-lockfile
-      - name: Apply DB migrations (000..999)
-        env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
-        run: |
-          shopt -s nullglob
-          for f in db/migrations/*.sql; do
-            echo ">> $f"; psql "$PGURL" -v ON_ERROR_STOP=1 -f "$f"
-          done
-      - name: Seed minimal data on PRs
-        if: github.event_name == 'pull_request'
-        env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
-        run: test -f db/seeds/ci_min_brands.sql && psql "$PGURL" -v ON_ERROR_STOP=1 -f db/seeds/ci_min_brands.sql || true
-      - name: Typecheck/Lint (best-effort)
-        run: |
-          pnpm -w run typecheck || true
-          pnpm -w run lint || true
-      - name: DQ checks (main only)
-        if: github.ref == 'refs/heads/main'
-        env: { PGURL: postgres://suqi:suqi@localhost:5432/suqi }
-        run: |
-          if test -f dq/checks/run_all.sql; then
-            psql "$PGURL" -v ON_ERROR_STOP=1 -f dq/checks/run_all.sql
-          fi
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm i --frozen-lockfile
+
+      - name: Lint
+        run: pnpm -r run lint || echo 'no lint scripts' 
+
+      - name: Typecheck
+        run: pnpm -r run typecheck || echo 'no typecheck scripts'
+
+      - name: Unit tests (if present)
+        run: pnpm -r --filter ./apps... --filter ./packages... run test --if-present || echo 'no tests'

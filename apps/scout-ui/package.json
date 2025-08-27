@@ -1,0 +1,11 @@
+{
+  "name": "scout-ui",
+  "private": true,
+  "scripts": {
+    "prebuild": "sh ../../scripts/security/pre_deploy_audit.sh",
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006"
+  }
+}

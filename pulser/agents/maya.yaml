@@ -1,0 +1,84 @@
+metadata:
+  id: maya-v1
+  name: Maya
+  version: "1.0.0"
+  description: "Documentation generation and maintenance agent"
+  author: "Pulser Team"
+  tags:
+    - documentation
+    - markdown
+    - docusaurus
+    - technical-writing
+  status: active
+  owner: docs@insightpulse.ai
+type: generator
+runtime: bruno
+capabilities:
+  - name: generate_docs
+    description: "Generate technical documentation"
+    inputSchema:
+      type: object
+      properties:
+        topic:
+          type: string
+        format:
+          type: string
+          enum: ["markdown", "mdx", "rst", "asciidoc"]
+        sections:
+          type: array
+          items:
+            type: string
+      required:
+        - topic
+        - format
+    permissions:
+      - file:write
+      - template:read
+  - name: create_adr
+    description: "Create Architecture Decision Records"
+    inputSchema:
+      type: object
+      properties:
+        title:
+          type: string
+        context:
+          type: string
+        decision:
+          type: string
+        consequences:
+          type: string
+    permissions:
+      - file:write
+      - adr:template
+  - name: generate_api_docs
+    description: "Generate API documentation from OpenAPI/code"
+    permissions:
+      - file:read
+      - file:write
+      - schema:read
+  - name: update_changelog
+    description: "Update changelog based on commits"
+    permissions:
+      - git:read
+      - file:write
+security:
+  sandboxed: true
+  allowedHosts: []
+  deniedActions:
+    - execute
+    - network
+  requiredPermissions:
+    - file:write
+    - file:read
+    - template:read
+limits:
+  maxExecutionTime: 180000 # 3 minutes
+  maxMemoryMB: 256
+  maxConcurrent: 5
+routing:
+  priority: 60
+  patterns:
+    - "docs:*"
+    - "document:*"
+    - "adr:*"
+    - "changelog:*"

@@ -1,0 +1,57 @@
+metadata:
+  id: backend-architect-v1
+  name: backend-architect
+  version: "1.0.0"
+  description: "Backend architecture design, API development, and database optimization expert"
+  author: "SuperClaude Team"
+  tags:
+    - backend
+    - architecture
+    - api
+    - database
+    - microservices
+  status: active
+  owner: backend@insightpulse.ai
+type: architect
+runtime: superclaude
+capabilities:
+  - name: design_api
+    description: "Design RESTful and GraphQL APIs with OpenAPI/Schema specifications"
+    permissions:
+      - file:write
+      - schema:generate
+  - name: optimize_database
+    description: "Database schema design, query optimization, and migration planning"
+    permissions:
+      - sql:analyze
+      - schema:design
+  - name: implement_backend
+    description: "Implement backend services in Node.js, Python, Go, or Java"
+    permissions:
+      - file:write
+      - test:write
+  - name: setup_microservices
+    description: "Design and implement microservices architecture with service mesh"
+    permissions:
+      - architecture:design
+      - config:write
+security:
+  sandboxed: true
+  allowedHosts: []
+  deniedActions:
+    - network:external
+  requiredPermissions:
+    - file:write
+    - file:read
+    - schema:generate
+limits:
+  maxExecutionTime: 300000 # 5 minutes
+  maxMemoryMB: 512
+  maxConcurrent: 3
+routing:
+  priority: 90
+  patterns:
+    - "backend:*"
+    - "api:*"
+    - "database:*"
+    - "service:*"

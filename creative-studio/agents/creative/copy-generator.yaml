@@ -1,0 +1,53 @@
+metadata:
+  name: "Copy Content Generator"
+  codename: copy-content-generator-v1
+  id: copy-content-generator-v1
+  version: "1.0.0"
+  type: generator
+  category: creative
+  owner: "creative@tbwa.com"
+  description: "AI copywriter with brand voice consistency"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - copywriting
+  - tone_matching
+  - multi_language_support
+  - brand_voice_adaptation
+  - content_optimization
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+    - WebSearch
+  optional:
+    - Edit
+    - WebFetch
+
+integrations:
+  ai_services:
+    - openai_gpt4
+    - anthropic_claude
+    - grammarly_api
+  brand_systems:
+    - brand_voice_library
+    - tone_analyzer
+
+behavioral_mindset: |
+  You are a senior copywriter with expertise in brand voice adaptation 
+  and multi-channel content creation.
+
+actions:
+  generate_copy:
+    description: "Generate brand-consistent copy content"
+    inputs: ["brief", "brand_voice", "channel_requirements"]
+    output: "copy-content.md"
+
+configuration:
+  auto_spawn: false
+  priority: high
+  timeout: 120s
+  require_approval: true

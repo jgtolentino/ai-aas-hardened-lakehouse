@@ -1,0 +1,2 @@
+# Health check for Supabase MCP server
+GET http://127.0.0.1:3846/ HTTP/1.1

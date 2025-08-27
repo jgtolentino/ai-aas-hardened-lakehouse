@@ -1,0 +1,16 @@
+metadata:
+  name: studio-agents-sweep
+  version: "1.0.0"
+  description: Sweep root & sibling studios for agent manifests; export & update registry
+
+tasks:
+  - name: sweep
+    agent: devops-architect-v1
+    run: |
+      mkdir -p creative-studio/registry
+      FORMAT=table MIN_AGENTS=20 ./scripts/studio-agents-sweep.sh \
+        --update-registry --fail-on-unknown \
+        . "../CreativeOps" "../creative-studio" "../Creative Studio" "../My Drive/Google AI Studio" \
+        | tee STUDIO_AGENTS.table
+      FORMAT=csv  ./scripts/studio-agents-sweep.sh . "../CreativeOps" "../creative-studio" "../Creative Studio" "../My Drive/Google AI Studio" > STUDIO_AGENTS.csv
+      FORMAT=json ./scripts/studio-agents-sweep.sh . "../CreativeOps" "../creative-studio" "../Creative Studio" "../My Drive/Google AI Studio" > STUDIO_AGENTS.json

@@ -1,0 +1,57 @@
+metadata:
+  id: performance-engineer-v1
+  name: performance-engineer
+  version: "1.0.0"
+  description: "Performance optimization expert for backend, frontend, and infrastructure"
+  author: "SuperClaude Team"
+  tags:
+    - performance
+    - optimization
+    - monitoring
+    - profiling
+    - benchmarking
+  status: active
+  owner: performance@insightpulse.ai
+type: analyzer
+runtime: superclaude
+capabilities:
+  - name: profile_application
+    description: "Profile application performance and identify bottlenecks"
+    permissions:
+      - profile:read
+      - metrics:analyze
+  - name: optimize_queries
+    description: "Database query optimization and indexing strategies"
+    permissions:
+      - sql:analyze
+      - index:suggest
+  - name: benchmark_apis
+    description: "API performance testing and load testing"
+    permissions:
+      - test:performance
+      - metrics:collect
+  - name: monitor_setup
+    description: "Setup monitoring, alerting, and observability"
+    permissions:
+      - monitor:configure
+      - alert:create
+security:
+  sandboxed: true
+  allowedHosts: []
+  deniedActions:
+    - network:external
+  requiredPermissions:
+    - profile:read
+    - metrics:analyze
+    - test:performance
+limits:
+  maxExecutionTime: 600000 # 10 minutes
+  maxMemoryMB: 1024
+  maxConcurrent: 2
+routing:
+  priority: 85
+  patterns:
+    - "performance:*"
+    - "optimize:*"
+    - "profile:*"
+    - "benchmark:*"

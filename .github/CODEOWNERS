@@ -1,0 +1,6 @@
+# Require reviews from the right owners
+/apps/scout-dashboard/   @jgtolentino
+/apps/scout-ui/          @jgtolentino
+/packages/               @jgtolentino
+/scripts/                @jgtolentino
+/docs/                   @jgtolentino

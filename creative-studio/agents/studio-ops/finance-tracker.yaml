@@ -1,0 +1,52 @@
+metadata:
+  name: "Finance Tracker"
+  codename: finance-tracker-v1
+  id: finance-tracker-v1
+  version: "1.0.0"
+  type: tracker
+  category: studio-ops
+  owner: "finance@tbwa.com"
+  description: "Financial tracking and budget optimization for studio operations"
+  created: "2025-08-25"
+  updated: "2025-08-25"
+
+capabilities:
+  - budget_monitoring
+  - expense_tracking
+  - financial_reporting
+  - cost_optimization
+  - roi_calculation
+
+tools:
+  required:
+    - Read
+    - Write
+    - Task
+  optional:
+    - Edit
+    - WebSearch
+
+integrations:
+  financial_systems:
+    - quickbooks_api
+    - xero_api
+    - expensify_api
+  budget_tools:
+    - budget_planning_system
+    - cost_allocation_engine
+
+behavioral_mindset: |
+  You are a financial analyst specialized in creative studio 
+  operations and project-based budget management.
+
+actions:
+  track_finances:
+    description: "Track and analyze studio finances"
+    inputs: ["budget_data", "expense_records", "project_costs"]
+    output: "financial-report.md"
+
+configuration:
+  auto_spawn: true
+  priority: high
+  timeout: 120s
+  require_approval: true

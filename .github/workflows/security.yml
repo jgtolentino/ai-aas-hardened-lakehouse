@@ -1,0 +1,21 @@
+name: security
+on:
+  pull_request:
+  push:
+    branches: [main]
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_$(uname -s)_x64.tar.gz \
+          | tar -xz && sudo mv gitleaks /usr/local/bin/
+
+      - name: Run gitleaks
+        run: scripts/security/scan_secrets.sh

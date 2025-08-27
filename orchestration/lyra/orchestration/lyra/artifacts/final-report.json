@@ -1,0 +1,85 @@
+{
+  "timestamp": "2025-08-12T17:01:34.214Z",
+  "overall_status": "FAIL",
+  "summary": {
+    "total_gates": 9,
+    "passed_gates": 0,
+    "failed_gates": 9,
+    "pass_rate": 0
+  },
+  "gate_results": {
+    "design_system": "fail",
+    "docs_rag": "fail",
+    "ask_scout_cache": "fail",
+    "playground": "fail",
+    "schema_explorer": "fail",
+    "api_explorer": "fail",
+    "live_metrics": "fail",
+    "learning_paths": "fail",
+    "cdn_caching": "fail"
+  },
+  "detailed_reports": [
+    {
+      "gate": "design_system",
+      "status": "fail",
+      "error": "Report file not found"
+    },
+    {
+      "gate": "docs_rag",
+      "status": "fail",
+      "error": "Report file not found"
+    },
+    {
+      "gate": "ask_scout_cache",
+      "status": "fail",
+      "error": "Report file not found"
+    },
+    {
+      "gate": "playground",
+      "status": "fail",
+      "error": "Report file not found"
+    },
+    {
+      "gate": "schema_explorer",
+      "status": "fail",
+      "error": "Report file not found"
+    },
+    {
+      "gate": "api_explorer",
+      "status": "fail",
+      "error": "Report file not found"
+    },
+    {
+      "gate": "live_metrics",
+      "status": "fail",
+      "error": "Report file not found"
+    },
+    {
+      "gate": "learning_paths",
+      "status": "fail",
+      "error": "Report file not found"
+    },
+    {
+      "gate": "cdn_caching",
+      "status": "fail",
+      "error": "Report file not found"
+    }
+  ],
+  "recommendations": [
+    "Review Azure Design System integration and ensure all components are properly themed",
+    "Check RAG document chunking and embedding process, verify OpenAI API connectivity",
+    "Debug Ask Scout caching mechanism and validate cache hit rates",
+    "Fix SQL Playground security restrictions and saved query functionality",
+    "Validate schema introspection queries and ensure proper RLS visibility",
+    "Check API endpoint accessibility and PostgREST configuration",
+    "Verify gold view data quality and choropleth map rendering",
+    "Test SDK samples locally and ensure all code examples are runnable",
+    "Optimize Vercel configuration and validate Core Web Vitals performance"
+  ],
+  "next_steps": [
+    "Fix failing gates: design_system, docs_rag, ask_scout_cache, playground, schema_explorer, api_explorer, live_metrics, learning_paths, cdn_caching",
+    "Re-run Lyra orchestration after fixes",
+    "Validate all gate conditions are met",
+    "Consider partial deployment if critical gates pass"
+  ]
+}

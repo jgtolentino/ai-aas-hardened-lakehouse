@@ -1,0 +1,253 @@
+# SuperClaude CI/CD Integration for Pulser
+# Integrates SuperClaude Framework agents into Scout/ai-agency monorepo
+# Version: 1.0.0
+
+metadata:
+  name: superclaude-cicd-orchestrator
+  version: "1.0.0"
+  description: "SuperClaude-powered CI/CD troubleshooting and PR cleanup automation"
+  tags: ["ci-cd", "devops", "quality", "security", "superclaude"]
+  author: "TBWA Enterprise Platform"
+  id: superclaude-cicd-orchestrator-v1
+  codename: superclaude-cicd-orchestrator-v1
+  type: orchestrator
+  owner: cicd@insightpulse.ai
+  status: active
+
+tools:
+  required: [Read, Write, Bash, Grep, Task]
+  
+# Agent Registry
+agents:
+  devops-architect:
+    type: superclaude
+    source: "@superclaude/agents/devops-architect"
+    capabilities:
+      - ci_cd_pipeline_design
+      - github_actions_optimization
+      - vercel_deployment_troubleshooting
+      - infrastructure_as_code
+      - monitoring_observability
+    tools:
+      - Read
+      - Write
+      - Edit
+      - Bash
+      - Grep
+    config:
+      auto_spawn: false
+      priority: high
+      timeout: 300s
+  quality-engineer:
+    type: superclaude
+    source: "@superclaude/agents/quality-engineer"
+    capabilities:
+      - test_suite_optimization
+      - coverage_analysis
+      - regression_testing
+      - quality_gates
+      - test_automation
+    tools:
+      - Read
+      - Bash
+      - Grep
+      - Task
+    config:
+      auto_spawn: false
+      priority: medium
+      timeout: 180s
+  security-engineer:
+    type: superclaude
+    source: "@superclaude/agents/security-engineer"
+    capabilities:
+      - dependency_scanning
+      - vulnerability_assessment
+      - security_compliance
+      - secret_detection
+      - sast_dast_analysis
+    tools:
+      - Read
+      - Grep
+      - Bash
+    config:
+      auto_spawn: false
+      priority: high
+      timeout: 120s
+# Workflow Definitions
+workflows:
+  pr-cleanup-complete:
+    description: "Complete PR cleanup with CI/CD fixes"
+    triggers:
+      - type: manual
+        command: "/pulser cicd-fix"
+      - type: webhook
+        events: ["pull_request.opened", "pull_request.synchronize"]
+      - type: schedule
+        cron: "0 */4 * * *" # Every 4 hours
+    stages:
+      - name: analyze
+        agent: devops-architect
+        actions:
+          - command: "/sc:analyze ci-failure --comprehensive"
+          - command: "/sc:git status"
+          - command: "/sc:git analyze-pr --current"
+        on_failure: continue
+      - name: diagnose
+        agent: devops-architect
+        actions:
+          - command: "/sc:troubleshoot '${CI_ERROR}' --type build --trace"
+          - command: "/sc:troubleshoot '${DEPLOY_ERROR}' --type deployment --fix"
+        retry: 2
+        timeout: 300s
+      - name: security-scan
+        agent: security-engineer
+        parallel: true
+        actions:
+          - command: "/sc:analyze dependencies --security"
+          - command: "/sc:scan secrets --fix"
+          - command: "/sc:audit vulnerabilities"
+        on_failure: continue
+      - name: fix-build
+        agent: devops-architect
+        actions:
+          - command: "/sc:build --type ${BUILD_ENV:-prod} --clean --optimize --verbose"
+          - command: "/sc:validate build-artifacts"
+        retry: 1
+      - name: quality-gates
+        agent: quality-engineer
+        actions:
+          - command: "/sc:test unit --coverage --min-coverage 80"
+          - command: "/sc:test integration --verbose"
+          - command: "/sc:test e2e --headless"
+        parallel: true
+        on_failure: fail
+      - name: finalize
+        agent: devops-architect
+        actions:
+          - command: "/sc:git commit --smart-commit"
+          - command: "/sc:git push --verify"
+          - command: "/sc:workflow document-changes"
+  quick-ci-fix:
+    description: "Quick CI/CD troubleshooting for urgent fixes"
+    triggers:
+      - type: manual
+        command: "/pulser quick-fix"
+    stages:
+      - name: rapid-diagnosis
+        agent: devops-architect
+        actions:
+          - command: "/sc:troubleshoot '${ERROR}' --type ${TYPE:-build} --trace --fix"
+          - command: "/sc:build --type dev --quick"
+          - command: "/sc:test smoke --fast"
+        timeout: 120s
+  scheduled-ci-health:
+    description: "Scheduled CI/CD health check and optimization"
+    triggers:
+      - type: schedule
+        cron: "0 2 * * *" # Daily at 2 AM
+    stages:
+      - name: health-check
+        agent: devops-architect
+        actions:
+          - command: "/sc:analyze ci-performance --last-7-days"
+          - command: "/sc:optimize pipeline-config"
+          - command: "/sc:report ci-metrics"
+# Integration Points
+integrations:
+  github:
+    enabled: true
+    config:
+      auto_comment: true
+      status_checks: ["ci-cd-fix", "security-scan", "quality-gates"]
+  vercel:
+    enabled: true
+    config:
+      preview_deployments: true
+      production_checks: true
+  supabase:
+    enabled: true
+    config:
+      migration_checks: true
+      schema_validation: true
+# Environment Variables
+environment:
+  BUILD_ENV: "${GITHUB_REF_NAME == 'main' ? 'prod' : 'dev'}"
+  CI_ERROR: "${GITHUB_ACTION_ERROR || VERCEL_ERROR || 'Unknown error'}"
+  DEPLOY_ERROR: "${VERCEL_BUILD_ERROR || NETLIFY_ERROR || ''}"
+  MIN_COVERAGE: "80"
+  PARALLEL_JOBS: "4"
+# Hooks
+hooks:
+  pre_workflow:
+    - command: "SuperClaude install --check"
+    - command: "git fetch --all"
+  post_workflow:
+    - command: "/sc:report generate --format json > ci-report.json"
+    - command: "/sc:notify slack --channel '#ci-cd-alerts'"
+  on_error:
+    - command: "/sc:troubleshoot '${ERROR}' --emergency --auto-fix"
+    - command: "/sc:notify team --urgent"
+# Configuration
+config:
+  max_retries: 3
+  timeout: 1800s # 30 minutes
+  parallel_execution: true
+  fail_fast: false
+  verbose_logging: true
+  superclaude:
+    mode: "task-management"
+    auto_chain: true
+    smart_commits: true
+  notifications:
+    slack:
+      webhook: "${SLACK_WEBHOOK_URL}"
+      channels:
+        success: "#deployments"
+        failure: "#ci-cd-alerts"
+    email:
+      enabled: false
+      recipients: ["devops@tbwa.com"]
+# Metrics & Monitoring
+metrics:
+  track:
+    - workflow_duration
+    - stage_success_rate
+    - error_frequency
+    - fix_time
+    - test_coverage
+    - build_size
+  export:
+    prometheus: true
+    datadog: false
+    custom_endpoint: "${METRICS_ENDPOINT}"
+# Pulser-specific Configuration
+pulser:
+  version: "2.0"
+  compatibility: ["scout-v5", "ai-agency"]
+  agent_mapping:
+    devops: "devops-architect"
+    qa: "quality-engineer"
+    security: "security-engineer"
+  command_prefix: "/sc:"
+  integration:
+    claude_desktop: true
+    mcp_servers:
+      - playwright
+      - supabase
+      - github
+  features:
+    auto_recovery: true
+    smart_caching: true
+    incremental_builds: true
+    parallel_testing: true
+# Usage Examples
+examples:
+  - name: "Fix failing PR"
+    command: "/pulser cicd-fix"
+    description: "Complete PR cleanup with all checks"
+  - name: "Quick build fix"
+    command: "/pulser quick-fix ERROR='TypeScript compilation' TYPE=build"
+    description: "Rapid build error resolution"
+  - name: "Security audit"
+    command: "/pulser run security-scan"
+    description: "Run security checks only"
