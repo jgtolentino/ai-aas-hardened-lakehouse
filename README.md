@@ -26,6 +26,13 @@ ai-aas-hardened-lakehouse/
 └── .github/workflows/      # CI/CD pipelines
 ```
 
+## CI/CD
+[![CI](https://github.com/jgtolentino/ai-aas-hardened-lakehouse/actions/workflows/ci.yml/badge.svg)](https://github.com/jgtolentino/ai-aas-hardened-lakehouse/actions/workflows/ci.yml)
+[![Security](https://github.com/jgtolentino/ai-aas-hardened-lakehouse/actions/workflows/security.yml/badge.svg)](https://github.com/jgtolentino/ai-aas-hardened-lakehouse/actions/workflows/security.yml)
+<!-- If using YAML deploys, uncomment:
+[![Deploy](https://github.com/jgtolentino/ai-aas-hardened-lakehouse/actions/workflows/deploy-vercel.yml/badge.svg)](https://github.com/jgtolentino/ai-aas-hardened-lakehouse/actions/workflows/deploy-vercel.yml)
+-->
+
 ## 🚀 Quick Start
 
 ### Prerequisites
