@@ -16,3 +16,4 @@ Secure webhook for a Custom GPT Action to reach internal tools (adapters).
 pnpm i
 cp .env.example .env  # fill values
 pnpm start
+CI trigger test - 1756323905
