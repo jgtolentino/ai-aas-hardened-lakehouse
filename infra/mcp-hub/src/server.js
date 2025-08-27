@@ -16,7 +16,15 @@ app.disable("x-powered-by");
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
-app.use(morgan("tiny"));
+// Secure logging - never log sensitive headers
+morgan.token('secure-headers', (req) => {
+  const sanitized = { ...req.headers };
+  delete sanitized['x-api-key'];
+  delete sanitized['authorization'];
+  return JSON.stringify(sanitized);
+});
+
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 
 const limiter = rateLimit({ windowMs: 60_000, max: 60 });
 app.use(limiter);
