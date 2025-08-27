@@ -1,6 +1,8 @@
 SHELL := /bin/bash
 
-.PHONY: sec audit rls mcp-check dev-next dev-vite deploy-next story
+.PHONY: sec audit rls mcp-check dev-next dev-vite deploy-next story preflight
+
+preflight: sec audit rls
 
 sec:
 	scripts/security/scan_secrets.sh

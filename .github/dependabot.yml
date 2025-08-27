@@ -1,53 +1,12 @@
 version: 2
 updates:
-  # Enable version updates for npm
   - package-ecosystem: "npm"
     directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "npm"
-    
-  # Enable version updates for Python
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "monthly"  # Reduced frequency
-      day: "monday"
-      time: "04:00"
-    open-pull-requests-limit: 3  # Max 3 PRs at a time
-    labels:
-      - "dependencies"
-      - "python"
+    schedule: { interval: "weekly" }
+    open-pull-requests-limit: 5
     ignore:
-      # Ignore non-critical dependencies
-      - dependency-name: "pytest*"
-        update-types: ["version-update:semver-minor"]
-      - dependency-name: "pandas"
-        update-types: ["version-update:semver-minor"]
-      
-  # Enable version updates for Docker
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-    labels:
-      - "dependencies"
-      - "docker"
-      
-  # Enable version updates for GitHub Actions
+      - dependency-name: "next"
+        versions: ["<14"]  # ignore ancient bumps
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "04:00"
-    labels:
-      - "dependencies"
-      - "github-actions"
+    schedule: { interval: "monthly" }
