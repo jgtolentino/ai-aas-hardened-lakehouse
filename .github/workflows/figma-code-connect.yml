@@ -1,0 +1,17 @@
+name: Figma Code Connect
+on:
+  pull_request:
+    paths:
+      - 'apps/scout-ui/src/**/*.figma.tsx'
+      - 'figma.config.json'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: corepack enable
+      - run: pnpm i --frozen-lockfile
+      - name: Validate Code Connect mappings
+        run: pnpm run figma:connect:validate

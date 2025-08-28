@@ -1,0 +1,268 @@
+---
+# Scout UI Backlog - Schema-Compliant Format
+# Purpose: Track features implemented elsewhere but not yet in
+# Scout Dashboard UI v6.0
+# Source of Truth: This file is the canonical backlog registry
+
+backlog_metadata:
+  version: "1.0.1"
+  last_updated: "2025-08-29"
+  total_items: 10
+
+backlog_items:
+  - id: "SCOUT-BL-001"
+    title: "Predictive revenue & share forecasting (ForecastChart)"
+    type: "New"
+    layer: ["UI", "API/RPC"]
+    area: "Analytics"
+    priority: "P1"
+    risk: "Med"
+    readiness: "R2"
+    status: "Proposed"
+    target_release: "v6.1"
+    flag: "scout.forecasting"
+    owner: "analytics"
+    metrics:
+      - "Revenue prediction accuracy >85%"
+      - "User engagement with forecast toggle >20%"
+    acceptance:
+      - "Forecast chart renders with confidence intervals"
+      - "Toggle shows/hides forecast overlay"
+      - "Performance <200ms render time"
+      - "Accessibility compliance WCAG 2.1 AA"
+    links:
+      prd: "docs/PRD/SCOUT_UI_v6.0.md#forecasting"
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-002"
+    title: "Saved Queries & History with sharing"
+    type: "New"
+    layer: ["UI", "API/RPC"]
+    area: "AI"
+    priority: "P2"
+    risk: "Low"
+    readiness: "R1"
+    status: "Proposed"
+    target_release: "v6.1"
+    flag: "scout.saved_queries"
+    owner: "platform"
+    metrics:
+      - "Query save/load success rate >99%"
+      - "Share URL generation <100ms"
+    acceptance:
+      - "Save query with custom name"
+      - "Load saved query from history"
+      - "Generate shareable URL with filters"
+      - "Pin/unpin queries to sidebar"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-003"
+    title: "Insight Templates (Reusable analysis prompts)"
+    type: "New"
+    layer: ["UI"]
+    area: "AI"
+    priority: "P2"
+    risk: "Low"
+    readiness: "R0"
+    status: "Proposed"
+    target_release: "v6.2"
+    flag: "scout.insight_templates"
+    owner: "ai_team"
+    metrics:
+      - "Template usage rate >30% of AI interactions"
+      - "Template completion success >90%"
+    acceptance:
+      - "Template drawer with categories"
+      - "Pre-populated prompts for retail analysis"
+      - "Custom template creation"
+      - "Template sharing between users"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-004"
+    title: "Smart Alerts & Threshold Subscriptions"
+    type: "New"
+    layer: ["UI", "API/RPC", "Infra/CI"]
+    area: "Executive"
+    priority: "P1"
+    risk: "High"
+    readiness: "R2"
+    status: "Scoped"
+    target_release: "v6.0"
+    flag: "scout.alerts"
+    owner: "platform"
+    metrics:
+      - "Alert delivery success rate >99.5%"
+      - "False positive rate <5%"
+      - "User satisfaction with alerts >4.0/5"
+    acceptance:
+      - "Create threshold alerts on KPI cards"
+      - "Anomaly detection alerts"
+      - "Email and Slack notification delivery"
+      - "Alert management dashboard"
+      - "Snooze/disable alert functionality"
+    links:
+      prd: "docs/PRD/SCOUT_UI_v6.0.md#alerts"
+      rfc: "docs/RFC/alerts-system.md"
+      issues: []
+
+  - id: "SCOUT-BL-005"
+    title: "Export & Scheduled Reports Engine"
+    type: "New"
+    layer: ["UI", "API/RPC"]
+    area: "Reports"
+    priority: "P2"
+    risk: "Med"
+    readiness: "R1"
+    status: "Proposed"
+    target_release: "v6.2"
+    flag: "scout.exports"
+    owner: "platform"
+    metrics:
+      - "Export success rate >98%"
+      - "Export generation time <30s"
+      - "Scheduled report delivery >99%"
+    acceptance:
+      - "Export cards as PNG/PDF"
+      - "Export data as CSV/Excel"
+      - "Schedule recurring reports"
+      - "Email delivery of scheduled reports"
+      - "Export queue management"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-006"
+    title: "Advanced Geo Hexbin Visualization"
+    type: "Improvement"
+    layer: ["UI"]
+    area: "Geo"
+    priority: "P3"
+    risk: "Med"
+    readiness: "R1"
+    status: "Proposed"
+    target_release: "v6.3"
+    flag: "scout.geo_hexbin"
+    owner: "geo_team"
+    metrics:
+      - "Hexbin render performance <500ms"
+      - "User preference for hexbin vs choropleth"
+    acceptance:
+      - "Toggle between choropleth and hexbin modes"
+      - "Smooth zoom and pan interactions"
+      - "Density-based hexagon sizing"
+      - "Color scale customization"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-007"
+    title: "Cohorts & AB Testing Overlays"
+    type: "Experiment"
+    layer: ["UI", "API/RPC"]
+    area: "Analytics"
+    priority: "P3"
+    risk: "High"
+    readiness: "R0"
+    status: "Proposed"
+    target_release: "v7.0"
+    flag: "scout.experiments"
+    owner: "analytics"
+    metrics:
+      - "Statistical significance validation"
+      - "Cohort analysis accuracy"
+    acceptance:
+      - "Treatment/control ribbon overlays"
+      - "Confidence interval tooltips"
+      - "Cohort performance comparison"
+      - "A/B test result summaries"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-008"
+    title: "Design System Analytics Panel"
+    type: "Tech Debt"
+    layer: ["UI"]
+    area: "Reports"
+    priority: "P3"
+    risk: "Low"
+    readiness: "R0"
+    status: "Proposed"
+    target_release: "v6.3"
+    flag: "scout.design_analytics"
+    owner: "design_system"
+    metrics:
+      - "Component usage tracking accuracy"
+      - "Governance compliance reporting"
+    acceptance:
+      - "Component usage statistics"
+      - "Design token adoption rates"
+      - "Accessibility compliance tracking"
+      - "Style guide adherence metrics"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-009"
+    title: "Dark Mode & Advanced Theming"
+    type: "Improvement"
+    layer: ["UI"]
+    area: "Executive"
+    priority: "P2"
+    risk: "Med"
+    readiness: "R2"
+    status: "In-Review"
+    target_release: "v6.1"
+    flag: "scout.dark_mode"
+    owner: "design_system"
+    metrics:
+      - "Dark mode adoption rate"
+      - "Theme switching performance <100ms"
+    acceptance:
+      - "System preference detection"
+      - "Manual theme toggle"
+      - "Persistent theme selection"
+      - "Color contrast compliance"
+      - "Theme-aware component library"
+    links:
+      prd: ""
+      rfc: "docs/RFC/theming-system.md"
+      issues: []
+
+  - id: "SCOUT-BL-010"
+    title: "Localization & Regional Formatting"
+    type: "New"
+    layer: ["UI"]
+    area: "Executive"
+    priority: "P3"
+    risk: "Med"
+    readiness: "R0"
+    status: "Proposed"
+    target_release: "v6.4"
+    flag: "scout.i18n"
+    owner: "platform"
+    metrics:
+      - "Locale detection accuracy"
+      - "Currency formatting correctness"
+      - "Date/time formatting compliance"
+    acceptance:
+      - "PHP/USD currency formatting"
+      - "Date format localization"
+      - "Number format localization"
+      - "Timezone handling for PH market"
+      - "Language switching (en-PH, en-US)"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []

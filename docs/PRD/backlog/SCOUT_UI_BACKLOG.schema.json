@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["backlog_metadata","backlog_items"],
+  "properties": {
+    "backlog_metadata": {
+      "type": "object",
+      "required": ["version","last_updated","total_items"],
+      "properties": {
+        "version": {"type":"string"},
+        "last_updated": {"type":"string"},
+        "total_items": {"type":"integer"}
+      },
+      "additionalProperties": true
+    },
+    "backlog_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id","title","type","priority","readiness","status"],
+        "properties": {
+          "id": {"type":"string"},
+          "title": {"type":"string"},
+          "type": {"enum":["New","Improvement","Tech Debt","Experiment"]},
+          "layer": {
+            "type":"array",
+            "items":{"enum":["UI","API/RPC","DAL/Views","Data/ETL","Agents","Infra/CI"]},
+            "uniqueItems": true
+          },
+          "area": {"enum":["Executive","Analytics","Brands","Geo","Reports","AI"]},
+          "priority": {"enum":["P0","P1","P2","P3"]},
+          "risk": {"enum":["Low","Med","High"]},
+          "readiness": {"enum":["R0","R1","R2","R3"]},
+          "status": {"enum":["Proposed","Scoped","Planned","In-Dev","In-Review","Ready","Released","Deprecated"]},
+          "target_release": {"type":"string"},
+          "flag": {"type":"string"},
+          "owner": {"type":"string"},
+          "metrics": {"type":"array","items":{"type":"string"}},
+          "acceptance": {"type":"array","items":{"type":"string"}},
+          "links": {
+            "type":"object",
+            "properties": {
+              "prd":{"type":"string"},
+              "rfc":{"type":"string"},
+              "issues":{"type":["array","string"],"items":{"type":"string"}}
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

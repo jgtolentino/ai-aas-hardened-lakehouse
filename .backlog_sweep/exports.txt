@@ -1,0 +1,21 @@
+EXPORT: apps/pi-edge/src/hooks/useScoutData.ts:73:export function useDashboardMetrics(autoRefresh = 30000) {
+EXPORT: apps/pi-edge/src/hooks/useScoutData.ts:112:export function useUnifiedAnalytics(hours = 24, autoRefresh = 30000) {
+EXPORT: apps/pi-edge/src/hooks/useScoutData.ts:131:export function useScoutDashboard() {
+EXPORT: apps/pi-edge/src/services/scoutService.ts:42:export async function fetchDashboardMetrics(): Promise<DashboardMetrics[]> {
+EXPORT: apps/pi-edge/src/services/scoutService.ts:111:export async function fetchUnifiedAnalytics(hours: number = 24) {
+EXPORT: apps/scout-dashboard/src/app/dashboard/layout.tsx:11:export default function DashboardLayout({
+EXPORT: apps/scout-dashboard/src/app/dashboard/analytics/page.tsx:8:export default function AnalyticsPage() {
+EXPORT: apps/scout-dashboard/src/components/ui/data-table-with-export.tsx:27:export function DataTableWithExport<T extends Record<string, any>>({
+EXPORT: apps/scout-dashboard/src/components/charts/SegmentChart.tsx:12:export function SegmentChart() {
+EXPORT: apps/scout-dashboard/src/components/charts/FunnelChart.tsx:13:export function FunnelChart({}: FunnelChartProps) {
+EXPORT: apps/scout-dashboard/src/components/charts/BehaviorChart.tsx:18:export function BehaviorChart({ segment }: BehaviorChartProps) {
+EXPORT: apps/scout-dashboard/src/components/charts/GeographicChart.tsx:8:export function GeographicChart({ region, viewType }: GeographicChartProps) {
+EXPORT: apps/scout-dashboard/src/components/charts/AnalyticsChart.tsx:19:export function AnalyticsChart({ timeRange }: AnalyticsChartProps) {
+EXPORT: apps/scout-dashboard/src/components/charts/CityChart.tsx:18:export function CityChart({ region }: CityChartProps) {
+EXPORT: apps/scout-dashboard/src/components/charts/RevenueChart.tsx:20:export function RevenueChart() {
+EXPORT: apps/scout-dashboard/src/components/charts/DemographicsChart.tsx:17:export function DemographicsChart({ segment }: DemographicsChartProps) {
+EXPORT: apps/scout-dashboard/src/components/charts/SentimentChart.tsx:13:export function SentimentChart() {
+EXPORT: apps/scout-dashboard/src/components/charts/PerformanceChart.tsx:14:export function PerformanceChart() {
+EXPORT: apps/scout-dashboard/src/components/charts/RegionChart.tsx:18:export function RegionChart({ selectedRegion }: RegionChartProps) {
+EXPORT: apps/scout-dashboard/src/components/executive/RevenueTrendChart.tsx:22:export function RevenueTrendChart() {
+EXPORT: apps/scout-dashboard/src/components/executive/TopBrandsChart.tsx:22:export function TopBrandsChart() {

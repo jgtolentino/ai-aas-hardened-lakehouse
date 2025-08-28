@@ -1,0 +1,13 @@
+# Requires org/project URL + a repo secret ADD_TO_PROJECT_PAT with project write access
+name: Add issues to project
+on:
+  issues:
+    types: [opened]
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/orgs/ORG_NAME/projects/PROJECT_NUMBER
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}

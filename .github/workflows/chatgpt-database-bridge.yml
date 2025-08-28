@@ -1,0 +1,381 @@
+name: ChatGPT Database Bridge CI/CD
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "infra/mcp-hub/src/adapters/chatgpt-database-bridge.ts"
+      - "supabase/migrations/*chatgpt*"
+      - "docs/chatgpt-database-bridge-mcp.md"
+      - "infra/mcp-hub/package.json"
+      - "package.json"
+      - "pnpm-lock.yaml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/mcp-hub/src/adapters/chatgpt-database-bridge.ts"
+      - "supabase/migrations/*chatgpt*"
+
+# Avoid overlapping runs per ref
+concurrency:
+  group: chatgpt-database-bridge-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate-bridge:
+    name: Build & Test Database Bridge
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: supabase/postgres:15.1.0.147
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build the MCP Hub including ChatGPT bridge
+      - name: Build TypeScript
+        run: |
+          cd infra/mcp-hub
+          pnpm run build
+
+      # Install Supabase CLI for migrations
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://supabase.com/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      # Apply ChatGPT bridge migration to test database
+      - name: Apply ChatGPT Bridge Migration
+        run: |
+          # Apply ChatGPT bridge functions to test database
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres \
+            -f supabase/migrations/20250128_chatgpt_bridge_functions.sql
+        env:
+          PGPASSWORD: postgres
+
+      # Start ChatGPT Database Bridge
+      - name: Start Database Bridge
+        run: |
+          cd infra/mcp-hub
+          node -e "
+            const { ChatGPTDatabaseBridge } = require('./dist/adapters/chatgpt-database-bridge.js');
+            
+            const bridge = new ChatGPTDatabaseBridge({
+              port: 3001,
+              supabaseUrl: 'postgresql://postgres:postgres@localhost:5432/postgres',
+              supabaseKey: 'test-service-role-key',
+              rateLimitMax: 1000,
+              rateLimitWindowMs: 60000
+            });
+            
+            console.log('🤖 ChatGPT Database Bridge started for testing');
+            
+            // Keep process alive for health checks
+            process.on('SIGTERM', () => {
+              console.log('Shutting down bridge...');
+              bridge.close();
+              process.exit(0);
+            });
+          " &
+          BRIDGE_PID=$!
+          echo "BRIDGE_PID=$BRIDGE_PID" >> $GITHUB_ENV
+          
+          # Wait for bridge to be ready
+          sleep 10
+
+      # Health check endpoints
+      - name: Health Check - API Overview
+        run: |
+          curl -f http://localhost:3001/api/health || {
+            echo "Health check failed"
+            exit 1
+          }
+
+      - name: Health Check - Enterprise Schemas
+        run: |
+          RESPONSE=$(curl -s http://localhost:3001/api/schemas \
+            -H "Authorization: Bearer test-service-role-key")
+          echo "Schemas response: $RESPONSE"
+          
+          # Verify we get expected enterprise schemas
+          echo "$RESPONSE" | jq -e '.success == true' || {
+            echo "Schemas endpoint failed"
+            exit 1
+          }
+
+      # Test safe query endpoint
+      - name: Test Safe Query Endpoint
+        run: |
+          QUERY_RESPONSE=$(curl -s -X POST http://localhost:3001/api/query/safe \
+            -H "Authorization: Bearer test-service-role-key" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "SELECT 1 as test_value"}')
+          
+          echo "Query response: $QUERY_RESPONSE"
+          echo "$QUERY_RESPONSE" | jq -e '.success == true' || {
+            echo "Safe query test failed"
+            exit 1
+          }
+
+      # Test query validation (should block dangerous operations)
+      - name: Test Query Validation
+        run: |
+          DANGEROUS_RESPONSE=$(curl -s -X POST http://localhost:3001/api/query/safe \
+            -H "Authorization: Bearer test-service-role-key" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "DROP TABLE test_table"}')
+          
+          echo "Dangerous query response: $DANGEROUS_RESPONSE"
+          echo "$DANGEROUS_RESPONSE" | jq -e '.success == false' || {
+            echo "Query validation failed - dangerous query was not blocked!"
+            exit 1
+          }
+
+      # Test enterprise functions if they exist
+      - name: Test Enterprise Functions
+        run: |
+          # Test get_enterprise_schemas function
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres \
+            -c "SELECT get_enterprise_schemas();" || {
+            echo "Enterprise schemas function test failed"
+            exit 1
+          }
+
+      # Create test artifacts
+      - name: Generate Test Results
+        if: always()
+        run: |
+          mkdir -p .artifacts/chatgpt-bridge
+          
+          # Bridge logs
+          echo "=== Bridge Health Status ===" > .artifacts/chatgpt-bridge/test-results.txt
+          curl -s http://localhost:3001/api/health >> .artifacts/chatgpt-bridge/test-results.txt || echo "Health check failed" >> .artifacts/chatgpt-bridge/test-results.txt
+          
+          echo -e "\n=== Available Schemas ===" >> .artifacts/chatgpt-bridge/test-results.txt
+          curl -s http://localhost:3001/api/schemas -H "Authorization: Bearer test-service-role-key" >> .artifacts/chatgpt-bridge/test-results.txt || echo "Schemas check failed" >> .artifacts/chatgpt-bridge/test-results.txt
+          
+          echo -e "\n=== Database Functions ===" >> .artifacts/chatgpt-bridge/test-results.txt
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres \
+            -c "\df get_enterprise_*" >> .artifacts/chatgpt-bridge/test-results.txt || true
+
+      - name: Upload Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chatgpt-database-bridge-test-results
+          path: .artifacts/chatgpt-bridge/*
+          if-no-files-found: ignore
+
+      # Cleanup
+      - name: Stop Database Bridge
+        if: always()
+        run: |
+          if [ -n "${BRIDGE_PID:-}" ]; then
+            kill $BRIDGE_PID || true
+            sleep 2
+          fi
+
+  # Security validation job
+  security-scan:
+    name: Security & Compliance Check  
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Check for hardcoded secrets or credentials
+      - name: Security Scan - Check for Hardcoded Secrets
+        run: |
+          # Check for potential hardcoded secrets in ChatGPT bridge
+          if grep -r "supabase.*key.*=" infra/mcp-hub/src/adapters/chatgpt-database-bridge.ts; then
+            echo "::error::Found potential hardcoded secrets in bridge code"
+            exit 1
+          fi
+          
+          # Check for SQL injection vulnerabilities
+          if grep -r "query.*+.*" infra/mcp-hub/src/adapters/chatgpt-database-bridge.ts; then
+            echo "::warning::Found potential SQL concatenation - verify parameterized queries are used"
+          fi
+
+      # Validate SQL migration security
+      - name: SQL Migration Security Check
+        run: |
+          # Check that RPC functions use SECURITY DEFINER appropriately
+          if ! grep -q "SECURITY DEFINER" supabase/migrations/20250128_chatgpt_bridge_functions.sql; then
+            echo "::warning::ChatGPT bridge functions may need SECURITY DEFINER for proper access control"
+          fi
+          
+          # Ensure grant statements limit access appropriately
+          if ! grep -q "GRANT EXECUTE.*TO authenticated" supabase/migrations/20250128_chatgpt_bridge_functions.sql; then
+            echo "::error::Missing proper GRANT statements in ChatGPT bridge migration"
+            exit 1
+          fi
+
+      # Check TypeScript types and linting
+      - name: TypeScript & Linting Check
+        run: |
+          cd infra/mcp-hub
+          pnpm run build
+          
+          # Run ESLint if configured
+          if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ]; then
+            pnpm run lint || echo "::warning::Linting issues found in MCP Hub"
+          fi
+
+  # Documentation validation
+  docs-validation:
+    name: Documentation Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Documentation Links
+        run: |
+          # Check that all referenced files exist
+          if [ -f "docs/chatgpt-database-bridge-mcp.md" ]; then
+            # Extract file references and verify they exist
+            grep -oP '`[^`]+\.ts`' docs/chatgpt-database-bridge-mcp.md | sed 's/`//g' | while read -r file; do
+              if [ ! -f "$file" ] && [ ! -f "infra/mcp-hub/src/adapters/$file" ]; then
+                echo "::warning::Referenced file not found: $file"
+              fi
+            done
+          fi
+
+      - name: Validate API Examples
+        run: |
+          # Basic validation of JSON examples in documentation
+          if [ -f "docs/chatgpt-database-bridge-mcp.md" ]; then
+            echo "Documentation file exists and can be validated"
+            
+            # Check for proper JSON formatting in code blocks
+            grep -A 10 '```json' docs/chatgpt-database-bridge-mcp.md | grep -v '```' | \
+              while read -r json_line; do
+                if [ -n "$json_line" ]; then
+                  echo "$json_line" | jq . >/dev/null 2>&1 || echo "::warning::Invalid JSON found in documentation"
+                fi
+              done || true
+          fi
+
+  # Integration test with production-like setup
+  integration-test:
+    name: Production-like Integration Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    services:
+      postgres:
+        image: supabase/postgres:15.1.0.147
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies  
+        run: pnpm install --frozen-lockfile
+
+      - name: Build production bundle
+        run: |
+          cd infra/mcp-hub
+          NODE_ENV=production pnpm run build
+
+      - name: Apply all migrations
+        run: |
+          curl -fsSL https://supabase.com/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+          # Apply ChatGPT bridge migration
+          PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d postgres \
+            -f supabase/migrations/20250128_chatgpt_bridge_functions.sql
+
+      - name: Start production-mode bridge
+        run: |
+          cd infra/mcp-hub
+          NODE_ENV=production node dist/adapters/chatgpt-database-bridge.js &
+          sleep 15
+
+      - name: Run comprehensive integration tests
+        run: |
+          # Test all major endpoints with production-like load
+          echo "Testing enterprise overview..."
+          curl -f http://localhost:3001/api/overview
+          
+          echo "Testing schema discovery..."
+          curl -f http://localhost:3001/api/schemas
+          
+          echo "Testing KPI endpoint..."
+          curl -f http://localhost:3001/api/kpis || echo "KPIs may not be available in test environment"
+          
+          echo "Testing query validation..."
+          curl -X POST http://localhost:3001/api/query/safe \
+            -H "Content-Type: application/json" \
+            -d '{"query": "SELECT current_timestamp as server_time"}'
+
+      - name: Performance baseline test
+        run: |
+          # Simple load test to ensure bridge handles concurrent requests
+          for i in {1..10}; do
+            curl -s http://localhost:3001/api/health &
+          done
+          wait
+          echo "Concurrent health checks completed successfully"

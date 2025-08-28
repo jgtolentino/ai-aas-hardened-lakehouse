@@ -1,0 +1,190 @@
+HIT: apps/scout-dashboard/src/components/ai/FeatureFlagToggle.tsx:108:      console.error('Failed to toggle feature:', error);
+HIT: apps/scout-dashboard/src/hooks/useRecommendations.ts:393:  const FEATURE_FLAG_KEYS = {
+HIT: apps/scout-dashboard/src/hooks/useRecommendations.ts:409:      //   flag_keys: Object.values(FEATURE_FLAG_KEYS)
+HIT: apps/scout-dashboard/src/hooks/useRecommendations.ts:425:      const updatedFeatures = Object.entries(FEATURE_FLAG_KEYS).reduce((acc, [key, flagKey]) => {
+HIT: apps/scout-dashboard/src/hooks/useRecommendations.ts:447:      const flagKey = FEATURE_FLAG_KEYS[featureName];
+HIT: apps/scout-dashboard/src/hooks/useRecommendations.ts:476:      console.error('Error toggling feature flag:', err);
+HIT: apps/scout-dashboard/src/hooks/useRecommendations.ts:491:      Object.entries(FEATURE_FLAG_KEYS).forEach(([key, flagKey]) => {
+HIT: scripts/scaffold-slice.ts:74:    -- TODO: Add your specific metrics here
+HIT: scripts/scaffold-slice.ts:86:  -- TODO: Add your aggregations and calculations
+HIT: scripts/scaffold-slice.ts:114:COMMENT ON VIEW scout.gold_${snakeName} IS 'TODO: Add description of what this view provides';
+HIT: scripts/scaffold-slice.ts:133:  // TODO: Add your specific fields
+HIT: scripts/scaffold-slice.ts:146:  // TODO: Add additional filters as needed
+HIT: scripts/scaffold-slice.ts:219:  // TODO: Customize summary calculation
+HIT: scripts/scaffold-slice.ts:237:  // TODO: Customize transformation based on your chart needs
+HIT: scripts/scaffold-slice.ts:540:TODO: Describe what this view provides
+HIT: scripts/scaffold-slice.ts:544:- TODO: Add other source tables
+SCOUT: apps/pi-edge/supabase/functions/quality-sentinel/index.ts:5:type ConfRow = { run_date: string; actual_brand: string; predicted_brand: string; n: number };
+SCOUT: apps/pi-edge/supabase/functions/quality-sentinel/index.ts:46:    .filter(r => r.actual_brand !== r.predicted_brand && r.actual_brand !== 'UNK' && r.predicted_brand !== 'UNK')
+SCOUT: apps/pi-edge/supabase/functions/quality-sentinel/index.ts:94:    const lines = TOP_CONFUSIONS.map(r => `- ${r.actual_brand} → ${r.predicted_brand}: ${r.n} times`).join('\n');
+SCOUT: apps/pi-edge/supabase/functions/quality-sentinel/index.ts:170:      body: `${inc.body}\n\n---\n_Automated by Scout Edge Quality Sentinel_\n_Incident Key: ${inc.key}_`,
+SCOUT: apps/pi-edge/supabase/functions/scout-edge-ingest/index-with-transcripts.ts:33:  const { error: txErr } = await supabase.from("scout_gold_transactions").insert({
+SCOUT: apps/pi-edge/supabase/functions/scout-edge-ingest/index-with-transcripts.ts:76:  const { error: itErr } = await supabase.from("scout_gold_transaction_items").insert(items);
+SCOUT: apps/pi-edge/supabase/functions/scout-edge-ingest/index.ts:33:  const { error: txErr } = await supabase.from("scout_gold_transactions").insert({
+SCOUT: apps/pi-edge/supabase/functions/scout-edge-ingest/index.ts:74:  const { error: itErr } = await supabase.from("scout_gold_transaction_items").insert(items);
+SCOUT: apps/pi-edge/src/main.tsx:3:import ScoutDashboard from './components/ScoutDashboard'
+SCOUT: apps/pi-edge/src/main.tsx:21:    <ScoutDashboard />
+SCOUT: apps/pi-edge/src/components/ScoutDashboard.tsx:1:// Scout Analytics Dashboard - Main Component
+SCOUT: apps/pi-edge/src/components/ScoutDashboard.tsx:3:import { useScoutDashboard, usePipelineStatus, useEdgeDeviceStatus } from '../hooks/useScoutData';
+SCOUT: apps/pi-edge/src/components/ScoutDashboard.tsx:37:const ScoutDashboard: React.FC = () => {
+SCOUT: apps/pi-edge/src/components/ScoutDashboard.tsx:39:  const { metrics, devices, health, pipeline, loading, error, refresh } = useScoutDashboard();
+SCOUT: apps/pi-edge/src/components/ScoutDashboard.tsx:53:          <p className="text-gray-600">Loading Scout Analytics...</p>
+SCOUT: apps/pi-edge/src/components/ScoutDashboard.tsx:91:            <h1 className="text-3xl font-bold text-gray-900">Scout Analytics Dashboard</h1>
+SCOUT: apps/pi-edge/src/components/ScoutDashboard.tsx:220:          <p>Scout Analytics Dashboard - Real-time store intelligence powered by edge computing</p>
+SCOUT: apps/pi-edge/src/components/ScoutDashboard.tsx:228:export default ScoutDashboard;
+SCOUT: apps/pi-edge/src/hooks/useScoutData.ts:1:// Scout Analytics - Custom React Hooks for Data Fetching
+SCOUT: apps/pi-edge/src/hooks/useScoutData.ts:131:export function useScoutDashboard() {
+SCOUT: apps/pi-edge/src/lib/supabase.ts:1:// Scout Analytics - Supabase Client Configuration
+SCOUT: apps/pi-edge/src/lib/supabase.ts:30:  // Production values for Scout Analytics
+SCOUT: apps/pi-edge/src/services/scoutService.ts:1:// Scout Analytics - Data Service Layer
+SCOUT: apps/scout-ui/src/components/ChartCard/ChartCard.figma.tsx:4:// Production Figma file - Scout Dashboard Design System  
+SCOUT: apps/scout-ui/src/components/ChartCard/ChartCard.figma.tsx:5:// From: https://www.figma.com/file/xyz123scout/Scout-Analytics-Dashboard?node-id=102:134
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:7:// Scout-specific data interfaces
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:8:export interface ScoutMetric {
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:20:export interface ScoutCampaign {
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:33:export interface ScoutRegionalData {
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:41:export interface ScoutDashboardProps {
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:47:export const ScoutDashboard: React.FC<ScoutDashboardProps> = ({
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:52:  const [metrics, setMetrics] = useState<ScoutMetric[]>([]);
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:53:  const [campaigns, setCampaigns] = useState<ScoutCampaign[]>([]);
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:54:  const [regionalData, setRegionalData] = useState<ScoutRegionalData[]>([]);
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:65:  // Mock data for Scout Dashboard - replace with actual Supabase queries
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:67:    const mockMetrics: ScoutMetric[] = [
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:99:    const mockCampaigns: ScoutCampaign[] = [
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:149:    const mockRegionalData: ScoutRegionalData[] = [
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:222:      render: (value: string, row: ScoutCampaign) => (
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:287:          <h1 className="text-3xl font-bold text-gray-900">Scout Analytics Dashboard</h1>
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:401:              🤖 Scout AI Insights
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.tsx:433:export default ScoutDashboard;
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:2:import { ScoutDashboard } from "./ScoutDashboard";
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:4:// Scout Dashboard Code Connect Bridge
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:5:// Maps Scout Dashboard React component to Figma design system
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:9:export default connect(ScoutDashboard, figma.component(FILE_KEY, NODE_ID), {
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:152:        primary: "#3B82F6",    // Blue primary from Scout theme
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:190:export const ScoutDashboardFigmaConfig = {
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:191:  component: "ScoutDashboard",
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:201:      metrics: "SELECT * FROM scout_dash.dashboard_kpis WHERE active = true",
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:202:      campaigns: "SELECT * FROM scout_dash.campaigns WHERE status IN ('active', 'paused')",  
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:203:      regionalData: "SELECT * FROM scout_dash.regional_performance ORDER BY total_sales DESC",
+SCOUT: apps/scout-ui/src/components/ScoutDashboard/ScoutDashboard.figma.tsx:204:      revenueData: "SELECT * FROM scout_dash.revenue_trends WHERE date >= NOW() - INTERVAL '12 months'"
+SCOUT: apps/scout-ui/src/components/DesignAnalytics/DesignAnalyticsDashboard.tsx:233:        { value: 'scout-ui', label: 'Scout UI' },
+SCOUT: apps/scout-ui/src/components/FinancialDashboard/FinancialDashboard.tsx:98:              <h1 className="text-2xl font-bold">Scout Financial Dashboard</h1>
+SCOUT: apps/scout-ui/src/components/FinancialDashboard/FinancialDashboard.tsx:194:                <li>• Revenue is trending 12% above forecast for this period</li>
+SCOUT: apps/scout-ui/src/components/Kpi/KpiTile.figma.tsx:4:// Production Figma file - Scout Dashboard Design System
+SCOUT: apps/scout-ui/src/components/Kpi/KpiTile.figma.tsx:5:// From: https://www.figma.com/file/xyz123scout/Scout-Analytics-Dashboard?node-id=45:67
+SCOUT: apps/scout-ui/src/components/index.ts:1:// Scout UI Component Library
+SCOUT: apps/scout-ui/src/components/index.ts:23:// Scout Dashboard Components
+SCOUT: apps/scout-ui/src/components/index.ts:24:export { ScoutDashboard } from "./ScoutDashboard/ScoutDashboard";
+SCOUT: apps/scout-ui/src/components/index.ts:25:export type { ScoutDashboardProps, ScoutMetric, ScoutCampaign, ScoutRegionalData } from "./ScoutDashboard/ScoutDashboard";
+SCOUT: apps/scout-ui/src/components/index.ts:37:  ScoutDashboardProps,
+SCOUT: apps/scout-ui/src/components/index.ts:38:  ScoutMetric,
+SCOUT: apps/scout-ui/src/components/index.ts:39:  ScoutCampaign,
+SCOUT: apps/scout-ui/src/components/index.ts:40:  ScoutRegionalData,
+SCOUT: apps/scout-ui/src/components/FilterPanel/FilterPanel.figma.tsx:4:// Production Figma file - Scout Dashboard Design System
+SCOUT: apps/scout-ui/src/components/FilterPanel/FilterPanel.figma.tsx:5:// From: https://www.figma.com/file/xyz123scout/Scout-Analytics-Dashboard?node-id=156:189
+SCOUT: apps/scout-ui/src/components/DataTable/DataTable.figma.tsx:4:// Production Figma file - Scout Dashboard Design System
+SCOUT: apps/scout-ui/src/components/DataTable/DataTable.figma.tsx:5:// From: https://www.figma.com/file/xyz123scout/Scout-Analytics-Dashboard?node-id=78:91
+SCOUT: apps/scout-ui/src/examples/DesignAnalyticsDemo.tsx:8: * Dashboard component into a Scout UI application.
+SCOUT: apps/scout-ui/src/examples/DesignAnalyticsDemo.tsx:24:                Scout Design Analytics
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:2:import { ScoutDashboard } from '../components';
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:5: * Scout Dashboard Demo
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:7: * Complete implementation of the TBWA Scout Analytics Dashboard
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:8: * integrating financial template patterns with Scout-specific requirements.
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:18: * import { ScoutDashboardDemo } from '@/examples/ScoutDashboardDemo';
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:20: * <ScoutDashboardDemo />
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:22:export const ScoutDashboardDemo: React.FC = () => {
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:39:                  <h1 className="text-xl font-bold text-gray-900">Scout Analytics</h1>
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:167:          {/* Scout Dashboard Component */}
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:169:            <ScoutDashboard
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:241:                <li>• Built with Scout UI Component Library</li>
+SCOUT: apps/scout-ui/src/examples/ScoutDashboardDemo.tsx:260:export default ScoutDashboardDemo;
+SCOUT: apps/scout-dashboard/src/app/auth/page.tsx:41:          <h2 className="text-3xl font-bold text-gray-900">Scout Dashboard</h2>
+SCOUT: apps/scout-dashboard/src/app/layout.tsx:8:  title: "Scout Dashboard",
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:24:      predicted: null,
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:36:    const predicted = baseValue + seasonal + (Math.random() - 0.5) * 100000;
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:41:      predicted: predicted,
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:43:      type: 'predicted'
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:69:    description: 'Demand forecast shows 15% increase in fresh products. Recommend inventory increase in Metro Manila stores.',
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:123:    forecast30Day: Math.random() * 25 - 5, // -5% to +20%
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:124:    forecast90Day: Math.random() * 30 - 10, // -10% to +20%
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:190:  const [predictiveData, setPredictiveData] = useState(generatePredictiveAnalytics());
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:216:      subtitle="30-day predictive analytics with confidence intervals"
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:242:          data={predictiveData.map(d => ({
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:245:            Predicted: d.predicted,
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:372:      subtitle="Category performance predictions with confidence levels"
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:388:            {trendForecasts.map(forecast => (
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:389:              <tr key={forecast.category} className="border-b hover:bg-gray-50">
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:391:                  {forecast.category}
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:395:                    forecast.currentTrend > 0 ? 'text-green-600' : 'text-red-600'
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:397:                    {forecast.currentTrend > 0 ? '+' : ''}{forecast.currentTrend.toFixed(1)}%
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:402:                    forecast.forecast30Day > 0 ? 'text-green-600' : 'text-red-600'
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:404:                    {forecast.forecast30Day > 0 ? '+' : ''}{forecast.forecast30Day.toFixed(1)}%
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:409:                    forecast.forecast90Day > 0 ? 'text-green-600' : 'text-red-600'
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:411:                    {forecast.forecast90Day > 0 ? '+' : ''}{forecast.forecast90Day.toFixed(1)}%
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:419:                          forecast.confidence > 0.8 ? 'bg-green-500' : 
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:420:                          forecast.confidence > 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:422:                        style={{ width: `${forecast.confidence * 100}%` }}
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:426:                      {(forecast.confidence * 100).toFixed(0)}%
+SCOUT: apps/scout-dashboard/src/components/tabs/AITab.tsx:432:                    {forecast.factors.map(factor => (
+SCOUT: apps/scout-dashboard/src/components/ui/export-button.tsx:194:        subtitle: 'Generated from Scout Dashboard',
+SCOUT: apps/scout-dashboard/src/components/layout/Sidebar.tsx:81:            alt="Scout Dashboard"
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:23:// Color palette for Scout Dashboard
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:24:const SCOUT_COLORS = {
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:36:  SCOUT_COLORS.primary,
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:37:  SCOUT_COLORS.secondary,
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:38:  SCOUT_COLORS.accent,
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:39:  SCOUT_COLORS.danger,
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:40:  SCOUT_COLORS.info,
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:41:  SCOUT_COLORS.warning,
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:42:  SCOUT_COLORS.neutral,
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:43:  SCOUT_COLORS.success
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:135:            stroke={SCOUT_COLORS.primary}
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:137:            dot={{ fill: SCOUT_COLORS.primary, strokeWidth: 2, r: 4 }}
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:145:              stroke={SCOUT_COLORS.neutral}
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:148:              dot={{ fill: SCOUT_COLORS.neutral, strokeWidth: 2, r: 3 }}
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:208:            <Bar dataKey="value" fill={SCOUT_COLORS.primary} radius={[4, 4, 0, 0]} />
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:264:            fill={SCOUT_COLORS.secondary}
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:331:            fill={SCOUT_COLORS.primary}
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:367:            stroke={SCOUT_COLORS.accent}
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:368:            fill={SCOUT_COLORS.accent}
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:409:          <Bar yAxisId="left" dataKey={primaryMetric} fill={SCOUT_COLORS.primary} name={primaryAxisLabel} />
+SCOUT: apps/scout-dashboard/src/components/charts/ChartWrappers.tsx:410:          <Line yAxisId="right" type="monotone" dataKey={secondaryMetric} stroke={SCOUT_COLORS.secondary} strokeWidth={2} name={secondaryAxisLabel} />
+SCOUT: apps/scout-dashboard/src/components/scout/KpiCard/KpiCard.stories.tsx:5:  title: 'Scout/KpiCard',
+SCOUT: apps/scout-dashboard/src/components/ai/RecommendationPanel.stories.tsx:12:        component: 'AI-powered recommendation panel that displays actionable insights, optimizations, alerts, and opportunities for the Scout Dashboard.'
+SCOUT: apps/scout-dashboard/src/components/ai/RecommendationPanel.stories.tsx:242:        story: 'When feature flag is disabled, the component renders nothing. Useful for A/B testing or gradual rollouts.'
+SCOUT: apps/scout-dashboard/src/components/ai/index.ts:3: * Export all AI-related components for the Scout Dashboard
+SCOUT: apps/scout-dashboard/src/components/ai/ExplanationTooltip.tsx:230:              <p>• AI model: ScoutAnalytics v2.1</p>
+SCOUT: apps/scout-dashboard/src/components/geographic/GeographicMap.tsx:196:        <div>Scout Geographic Intelligence</div>
+SCOUT: apps/scout-dashboard/src/hooks/useRecommendations.ts:132:const CACHE_KEY = 'scout_ai_recommendations';
+SCOUT: apps/scout-dashboard/src/lib/exports/pngExporter.ts:164:        text: 'Scout Analytics',
+SCOUT: apps/scout-dashboard/src/lib/exports/pngExporter.ts:183:        text: 'TBWA Scout Dashboard',
+SCOUT: apps/scout-dashboard/src/lib/exports/pdfExporter.ts:134:        this.addHeader(pdf, options.headerText || 'Scout Dashboard Report', margin);
+SCOUT: apps/scout-dashboard/src/lib/exports/pdfExporter.ts:278:      author: 'TBWA Scout Dashboard',
+SCOUT: apps/scout-dashboard/src/lib/exports/pdfExporter.ts:316:        headerText: 'TBWA Scout Dashboard - AI Recommendations',
+SCOUT: apps/scout-dashboard/src/lib/exports/pdfExporter.ts:319:          text: 'SCOUT ANALYTICS',
+SCOUT: apps/scout-dashboard/src/lib/exports/pdfExporter.ts:344:      author: 'TBWA Scout Dashboard',
+SCOUT: apps/scout-dashboard/src/lib/exports/pdfExporter.ts:369:        headerText: 'TBWA Scout Dashboard - KPI Report',
+SCOUT: apps/scout-dashboard/src/lib/exports/pdfExporter.ts:370:        footerText: 'Generated by Scout Analytics',
+SCOUT: apps/scout-dashboard/src/lib/exports/pdfExporter.ts:372:          text: 'SCOUT DASHBOARD',
+SCOUT: apps/scout-dashboard/src/lib/exports/index.ts:2: * Export utilities for Scout Dashboard
+SCOUT: apps/scout-dashboard/src/lib/exports/index.ts:98:        text: 'TBWA Scout Dashboard',
+SCOUT: apps/scout-dashboard/src/lib/exports/index.ts:110:        text: 'TBWA Scout Dashboard',
+SCOUT: apps/scout-dashboard/src/lib/exports/index.ts:129:        text: 'TBWA Scout Dashboard',
+SCOUT: apps/scout-dashboard/src/lib/exports/index.ts:141:        text: 'TBWA Scout Dashboard',
+SCOUT: apps/scout-dashboard/src/lib/exports/index.ts:155:        text: 'Scout Analytics',
+SCOUT: apps/scout-dashboard/src/lib/exports/batchExportQueue.ts:79:      storageKey: config.storageKey || 'scout_export_queue'
+SCOUT: apps/scout-dashboard/src/lib/exports/batchExportQueue.ts:520:        subtitle: 'Generated from Scout Dashboard',
+SCOUT: apps/scout-dashboard/src/ScoutDashboard.tsx:17:export interface ScoutDashboardProps {
+SCOUT: apps/scout-dashboard/src/ScoutDashboard.tsx:23:export const ScoutDashboard: React.FC<ScoutDashboardProps> = ({
+SCOUT: apps/scout-dashboard/src/ScoutDashboard.tsx:209:export default ScoutDashboard;
+SCOUT: apps/scout-dashboard/src/services/ai-integration.ts:6:  type: 'trend_analysis' | 'anomaly_detection' | 'recommendation' | 'prediction' | 'optimization';
+SCOUT: apps/scout-dashboard/src/services/ai-integration.ts:32:  analysisType: 'realtime' | 'historical' | 'predictive';
+SCOUT: apps/scout-dashboard/src/services/ai-integration.ts:230:            type: 'prediction',
+SCOUT: packages/shared-types/parquet-client.ts:5: * from the Scout Analytics platform.
+SCOUT: packages/shared-types/parquet-client.ts:255:    ML_PREDICTIONS: 'ml_predictions',
+SCOUT: packages/shared-types/superset-client.ts:189:  // Scout Analytics specific dashboard IDs
+SCOUT: packages/shared-types/superset-client.ts:190:  SCOUT_OVERVIEW: 'scout-overview',
+SCOUT: packages/shared-types/superset-client.ts:193:  ML_PREDICTIONS: 'ml-predictions',
+SCOUT: packages/contracts/src/index.ts:1:// Scout Analytics Data Contracts
+SCOUT: packages/services/src/datasetClient.ts:2: * Scout Dataset Client
+SCOUT: packages/services/src/datasetClient.ts:4: * Production-grade client for accessing Scout datasets from Supabase Storage

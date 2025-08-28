@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: sec audit rls mcp-check dev-next dev-vite deploy-next story preflight hub hub-dev hub-openapi hub-tunnel sb-push sb-diff
+.PHONY: sec audit rls mcp-check dev-next dev-vite deploy-next story preflight hub hub-dev hub-openapi hub-tunnel sb-push sb-diff sweep validate seed precommit
 
 preflight: sec audit rls
 
@@ -45,3 +45,13 @@ deploy-next:
 
 story:
 	pnpm --filter ./apps/scout-ui storybook
+
+sweep: ; ./.backlog_sweep/sweep_command.sh
+validate:
+	python3 -m pip install -q check-jsonschema yamllint || true
+	yamllint docs/PRD/backlog/SCOUT_UI_BACKLOG.yml
+	check-jsonschema --schemafile docs/PRD/backlog/SCOUT_UI_BACKLOG.schema.json docs/PRD/backlog/SCOUT_UI_BACKLOG.yml
+seed: ; ./.backlog_sweep/seed_issues_from_backlog.py
+precommit:
+	python3 -m pip install -q pre-commit
+	pre-commit install

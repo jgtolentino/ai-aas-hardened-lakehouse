@@ -1,0 +1,84 @@
+name: docs / verify
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-verify.yml'
+      - 'tools/docs/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+          
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: 20
+          cache: 'pnpm'
+          
+      - run: pnpm i --frozen-lockfile
+      
+      - name: Markdown lint
+        run: |
+          pnpm add -D markdownlint-cli2
+          npx markdownlint-cli2 "docs/**/*.md"
+      
+      - name: Link check (external + internal)
+        run: |
+          pnpm add -D markdown-link-check
+          npx markdown-link-check -q -c .mlc.config.json $(find docs -name "*.md")
+      
+      - name: ToC guard (refuse un-updated headings)
+        run: node tools/docs/ensure-toc.js docs/scout/PRD.md
+      
+      - name: Generate docs
+        run: pnpm docs:gen
+      
+      - name: Ensure generated docs committed
+        run: pnpm docs:check
+      
+      - name: Validate ICD against contracts
+        run: pnpm contracts:validate
+
+  ownership:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check doc ownership
+        run: |
+          # Ensure all docs have owners in CODEOWNERS
+          for file in $(find docs -name "*.md"); do
+            if ! grep -q "$file" .github/CODEOWNERS; then
+              echo "❌ No owner for $file"
+              exit 1
+            fi
+          done
+          echo "✅ All docs have owners"
+
+  accessibility:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'ui')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check accessibility docs
+        run: |
+          if [ ! -f "docs/scout/ACCESSIBILITY.md" ]; then
+            echo "❌ Missing ACCESSIBILITY.md"
+            exit 1
+          fi
+          
+          # Check for required sections
+          grep -q "## WCAG Compliance" docs/scout/ACCESSIBILITY.md || exit 1
+          grep -q "## Keyboard Navigation" docs/scout/ACCESSIBILITY.md || exit 1
+          grep -q "## ARIA Labels" docs/scout/ACCESSIBILITY.md || exit 1
+          grep -q "## Focus Management" docs/scout/ACCESSIBILITY.md || exit 1
+          
+          echo "✅ Accessibility docs complete"

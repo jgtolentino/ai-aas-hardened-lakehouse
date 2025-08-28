@@ -1,0 +1,12 @@
+repos:
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        files: ^docs/PRD/backlog/SCOUT_UI_BACKLOG\.yml$
+  - repo: https://github.com/sirosen/check-jsonschema
+    rev: 0.28.4
+    hooks:
+      - id: check-jsonschema
+        files: ^docs/PRD/backlog/SCOUT_UI_BACKLOG\.yml$
+        args: ["--schemafile", "docs/PRD/backlog/SCOUT_UI_BACKLOG.schema.json"]
