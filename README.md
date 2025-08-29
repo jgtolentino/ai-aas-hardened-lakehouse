@@ -148,12 +148,24 @@ The build process automatically runs:
 
 ## 📚 Documentation
 
-### Key Documents
-- `docs/runbooks/mcp-suite.md` - Operational procedures
-- `mcp/README.md` - MCP server documentation
-- `mcp/_meta/clients.jsonc` - Canonical MCP configuration
+### 📖 Documentation Index
 
-### API References
+#### 🚀 Getting Started & Operations
+- **[Team Onboarding Quick Start](docs/TEAM_ONBOARDING_QUICK_START.md)** - Complete team setup guide with MCP configuration
+- **[CI/CD Secrets Playbook](docs/CICD_SECRETS_PLAYBOOK.md)** - Comprehensive security and deployment guide
+
+#### 🎯 Product Requirements & Specifications  
+- **[PRD: Scout UI v6.0](docs/prd/PRD-SCOUT-UI-v6.0.md)** - Complete product specification for Scout Analytics Dashboard
+
+#### 🎨 Design Integration
+- **[Finebank Integration Guide](apps/scout-dashboard/FINEBANK_INTEGRATION.md)** - Figma Code Connect setup with Finebank Financial UI Kit
+
+#### 🛠️ Technical Documentation
+- **[MCP Suite Runbook](docs/runbooks/mcp-suite.md)** - Operational procedures for MCP servers
+- **[MCP Server Documentation](mcp/README.md)** - MCP server implementation details
+- **[MCP Client Configuration](mcp/_meta/clients.jsonc)** - Canonical MCP configuration
+
+### 🌐 API References
 - [Figma Dev Mode](https://help.figma.com/hc/en-us/articles/32132100833559)
 - [Supabase API](https://supabase.com/docs)
 - [Mapbox API](https://docs.mapbox.com/)
