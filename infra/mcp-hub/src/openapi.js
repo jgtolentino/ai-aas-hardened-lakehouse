@@ -16,7 +16,7 @@ export default {
                 type: "object",
                 required: ["server", "tool", "args"],
                 properties: {
-                  server: { type: "string", enum: ["supabase","mapbox","figma","github","sync"] },
+                  server: { type: "string", enum: ["supabase","mapbox","figma","github","sync","figma-proxy"] },
                   tool:   { type: "string",  description: "Adapter tool name" },
                   args:   { type: "object", additionalProperties: true }
                 }

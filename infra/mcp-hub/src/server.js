@@ -10,6 +10,7 @@ import { handleMapbox } from "./adapters/mapbox.js";
 import { handleFigmaMCP } from "./adapters/mcp-figma-router.js";
 import { handleGitHubMCP } from "./adapters/mcp-github-router.js";
 import { handleSyncMCP } from "./adapters/mcp-sync-router.js";
+import { handleFigmaProxy } from "./adapters/figma-proxy.js";
 import { upsertDesigns, searchDesigns } from "./adapters/design-index.js";
 
 const app = express();
@@ -67,7 +68,7 @@ app.post("/mcp/design/search", requireApiKey, async (req, res) => {
 });
 
 const RunSchema = z.object({
-  server: z.enum(["supabase","mapbox","figma","github","sync"]),
+  server: z.enum(["supabase","mapbox","figma","github","sync","figma-proxy"]),
   tool: z.string().min(1),
   args: z.record(z.any()).default({})
 });
@@ -81,6 +82,7 @@ app.post("/mcp/run", requireApiKey, async (req, res) => {
     else if (server === "figma") out = await handleFigmaMCP(tool, args);
     else if (server === "github") out = await handleGitHubMCP(tool, args);
     else if (server === "sync") out = await handleSyncMCP(tool, args);
+    else if (server === "figma-proxy") out = await handleFigmaProxy(tool, args);
     else out = { error: "unsupported server" };
 
     if (out?.error) return res.status(400).json(out);

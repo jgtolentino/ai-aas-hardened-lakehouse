@@ -1,0 +1,73 @@
+{
+  "dashboard": "Scout v6.0",
+  "grid": { "cols": 12, "gutter": 16, "outer": 24 },
+  "globals": {
+    "filters": ["dateRange","region","barangay","category","brand","channel"],
+    "dateRange": { "default": ["last_28d"] },
+    "region": { "default": ["ALL"] }
+  },
+  "modules": [
+    {
+      "id": "kpi-trends",
+      "title": "Overview",
+      "rows": [
+        { "cards": [
+          { "type": "kpi", "metric": "revenue", "span": 3 },
+          { "type": "kpi", "metric": "transactions", "span": 3 },
+          { "type": "kpi", "metric": "basket_size", "span": 3 },
+          { "type": "kpi", "metric": "unique_shoppers", "span": 3 }
+        ]},
+        { "cards": [
+          { "type": "timeseries", "title": "Revenue Trend", "span": 8,
+            "query": { "rpc": "scout_get_revenue_trend", "params": ["dateRange","region","category","brand"] },
+            "aiOverlay": true
+          },
+          { "type": "heatmap", "title": "Hour x Weekday", "span": 4,
+            "query": { "rpc": "scout_get_hour_weekday", "params": ["dateRange","region"] },
+            "aiOverlay": true
+          }
+        ]}
+      ]
+    },
+    { "id": "mix", "title": "Product Mix", "rows": [
+      { "cards": [
+        { "type": "pareto", "title": "Top SKUs", "span": 6,
+          "query": { "rpc": "scout_get_pareto_skus", "params": ["dateRange","region","category"] }, "aiOverlay": true
+        },
+        { "type": "sankey", "title": "Substitution Flows", "span": 6,
+          "query": { "rpc": "scout_get_substitution", "params": ["dateRange","region","category","windowDays"] }, "aiOverlay": true
+        }
+      ]}
+    ]},
+    { "id": "competitive", "title": "Competitive", "rows": [
+      { "cards": [
+        { "type": "stackedbar", "title": "Category Share Over Time", "span": 7,
+          "query": { "rpc": "scout_get_share_time", "params": ["dateRange","region","category","brandSet"] }, "aiOverlay": true
+        },
+        { "type": "matrix", "title": "Positioning (Price × Share)", "span": 5,
+          "query": { "rpc": "scout_get_positioning", "params": ["dateRange","region","category","brandSet"] }, "aiOverlay": true
+        }
+      ]}
+    ]},
+    { "id": "geography", "title": "Geography", "rows": [
+      { "cards": [
+        { "type": "choropleth", "title": "Revenue by Region", "span": 12,
+          "query": { "rpc": "scout_geo_summary", "params": ["dateRange","region","metric"] }, "aiOverlay": true
+        }
+      ]}
+    ]},
+    { "id": "consumers", "title": "Consumers", "rows": [
+      { "cards": [
+        { "type": "funnel", "title": "Request → Purchase", "span": 6,
+          "query": { "rpc": "scout_request_to_purchase", "params": ["dateRange","region","category"] }, "aiOverlay": true
+        },
+        { "type": "demographic", "title": "Age × Gender Mix", "span": 6,
+          "query": { "rpc": "scout_demographic_mix", "params": ["dateRange","region"] }, "aiOverlay": true
+        }
+      ]}
+    ]},
+    { "id": "ai-chat", "title": "AI Chat", "rows": [
+      { "cards": [ { "type": "chat", "title": "Ask Scout", "span": 12, "aiOverlay": false } ] }
+    ]}
+  ]
+}
