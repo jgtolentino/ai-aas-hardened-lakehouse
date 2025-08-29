@@ -1,0 +1,20 @@
+EDGE_FUNC: ai-generate-insight
+  ai-generate-insight: 91:    const { data: documents, error } = await supabase.rpc('match_documents', {
+  ai-generate-insight: 218:Deno.serve(async (req) => {
+EDGE_FUNC: export-platinum
+  export-platinum: 9:serve(async (req) => {
+EDGE_FUNC: ingest-bronze
+  ingest-bronze: 19:serve(async (req) => {
+  ingest-bronze: 108:    const { error: rpcError } = await supabase.rpc('scout_platinum.compute_store_features')
+EDGE_FUNC: process-documents
+  process-documents: 132:  const { data, error } = await supabase.rpc('upsert_document', {
+  process-documents: 349:Deno.serve(async (req) => {
+EDGE_FUNC: semantic-calc
+  semantic-calc: 9:Deno.serve(async (req: Request) => {
+  semantic-calc: 45:    const { data, error } = await supabaseClient.rpc('semantic_calculate', {
+EDGE_FUNC: semantic-proxy
+  semantic-proxy: 10:Deno.serve(async (req: Request) => {
+  semantic-proxy: 53:    const { data, error } = await supabaseClient.rpc('semantic_query', {
+EDGE_FUNC: semantic-suggest
+  semantic-suggest: 4:Deno.serve(async (req: Request) => {
+  semantic-suggest: 40:    const { data, error } = await supabaseClient.rpc('semantic_suggest', {

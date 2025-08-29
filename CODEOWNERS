@@ -3,22 +3,60 @@
 # Default owners for everything
 * @jgtolentino
 
+# Frontend applications
+/apps/scout-dashboard/ @D-Chan @A-Lopez
+/apps/scout-ui/ @D-Chan
+/apps/pi-edge/ @A-Lopez
+
+# Backend services
+/packages/contracts/ @J-Rivera @K-Smith
+/packages/services/ @J-Rivera
+/infra/mcp-hub/ @jgtolentino @K-Smith
+
 # Lakehouse core
-/platform/lakehouse/ @jgtolentino
-/platform/scout/migrations/ @jgtolentino
+/platform/lakehouse/ @jgtolentino @M-Santos
+/platform/scout/migrations/ @M-Santos
+/platform/scout/ @jgtolentino @J-Rivera
 
 # Superset assets
-/platform/superset/ @jgtolentino
-
-# Scout functions and Bruno tests
-/platform/scout/ @jgtolentino
+/platform/superset/ @jgtolentino @M-Santos
 
 # Security / policies
-/platform/security/ @jgtolentino
+/platform/security/ @jgtolentino @J-Rivera
+/security/ @jgtolentino @J-Rivera
+/.gitleaks.toml @jgtolentino
+/.trivyignore @jgtolentino
 
 # CI/CD and GitHub Actions
-/.github/ @jgtolentino
+/.github/ @jgtolentino @K-Smith
+/.github/workflows/docs-verify.yml @jgtolentino @D-Chan
 
-# Documentation
-/docs/ @jgtolentino
+# Documentation ownership
+/docs/** @jgtolentino @T-Bautista
+/docs/scout/** @D-Chan @J-Rivera @M-Santos
+/docs/scout/PRD.md @jgtolentino @D-Chan @J-Rivera
+/docs/scout/ICD.md @J-Rivera @D-Chan
+/docs/scout/WIREFRAMES.md @D-Chan
+/docs/scout/ACCESSIBILITY.md @D-Chan @L-Wong
+/docs/claude/** @jgtolentino
+/docs/platform/** @jgtolentino @K-Smith
 /*.md @jgtolentino
+
+# Testing
+/tests/ @L-Wong
+/e2e/ @L-Wong
+/**/*.test.ts @L-Wong
+/**/*.test.tsx @L-Wong
+
+# Tooling
+/tools/ @K-Smith @J-Rivera
+/tools/docs/ @jgtolentino @D-Chan
+/tools/contracts/ @J-Rivera
+/scripts/ @K-Smith
+
+# Configuration files
+/.env.example @jgtolentino
+/turbo.json @K-Smith
+/pnpm-workspace.yaml @K-Smith
+/package.json @jgtolentino @K-Smith
+/Makefile @K-Smith

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/json",
+  "version": "2025-08-28",
+  "agents": [
+    {
+      "id": "superclaude",
+      "label": "agent/superclaude",
+      "owner": "InsightPulseAI",
+      "capabilities": ["routing", "mcp-orchestration", "figma-sync", "vercel-deploy"]
+    },
+    {
+      "id": "bruno",
+      "label": "agent/bruno",
+      "owner": "InsightPulseAI",
+      "capabilities": ["secure-exec", "secrets-proxy", "git-ops"]
+    },
+    {
+      "id": "claude-desktop",
+      "label": "agent/claude-desktop",
+      "owner": "InsightPulseAI",
+      "capabilities": ["local-mcp", "figma-dev-mode", "code-connect"]
+    }
+  ]
+}

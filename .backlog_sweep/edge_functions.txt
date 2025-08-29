@@ -1,0 +1,7 @@
+ai-generate-insight
+export-platinum
+ingest-bronze
+process-documents
+semantic-calc
+semantic-proxy
+semantic-suggest

@@ -1,0 +1,28 @@
+{
+  "name": "rag-smoke-tests",
+  "version": "1.0.0",
+  "description": "Smoke tests for RAG pipeline functionality",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "smoke-test": "bash ./smoke-test-runner.sh",
+    "install-browsers": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.3.1",
+    "typescript": "^5.3.0"
+  },
+  "keywords": [
+    "rag",
+    "vector-database",
+    "playwright",
+    "smoke-tests",
+    "supabase"
+  ],
+  "author": "TBWA Enterprise Data Platform",
+  "license": "MIT"
+}

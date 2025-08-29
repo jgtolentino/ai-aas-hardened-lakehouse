@@ -1,0 +1,242 @@
+{
+  "title": "Scout Analytics Dashboard",
+  "brand": "InsightPulseAI",
+  "version": "1.0.0",
+  "source": "superset",
+  "grid": {
+    "type": "12-col",
+    "gutter": 16,
+    "margin": 24
+  },
+  "pages": [
+    {
+      "name": "Main",
+      "filters": [],
+      "tiles": [
+        {
+          "id": "chart_101",
+          "type": "line",
+          "w": 6,
+          "h": 4,
+          "x": 0,
+          "y": 0,
+          "title": "Revenue Trend",
+          "dataRef": {
+            "source": "superset",
+            "dataset": "datasource_1",
+            "query": "SELECT date, revenue FROM transactions GROUP BY date",
+            "fields": [
+              {
+                "name": "date",
+                "type": "dimension",
+                "dataType": "date"
+              },
+              {
+                "name": "revenue",
+                "type": "measure",
+                "dataType": "number",
+                "aggregation": "sum"
+              }
+            ]
+          },
+          "config": {
+            "xField": "Date",
+            "yField": "Revenue",
+            "series": "date",
+            "showLegend": true,
+            "showAxes": true
+          }
+        },
+        {
+          "id": "chart_102",
+          "type": "bar",
+          "w": 6,
+          "h": 4,
+          "x": 6,
+          "y": 0,
+          "title": "Campaign Performance",
+          "dataRef": {
+            "source": "superset",
+            "dataset": "datasource_2",
+            "query": "SELECT campaign_name, campaign_score FROM campaigns GROUP BY campaign_name",
+            "fields": [
+              {
+                "name": "campaign_name",
+                "type": "dimension",
+                "dataType": "string"
+              },
+              {
+                "name": "campaign_score",
+                "type": "measure",
+                "dataType": "number",
+                "aggregation": "avg"
+              }
+            ]
+          },
+          "config": {
+            "xField": "Campaign",
+            "yField": "Score",
+            "series": "campaign_name",
+            "showLegend": false,
+            "showAxes": true
+          }
+        },
+        {
+          "id": "chart_103",
+          "type": "metric",
+          "w": 4,
+          "h": 3,
+          "x": 0,
+          "y": 4,
+          "title": "Customer Satisfaction",
+          "dataRef": {
+            "source": "superset",
+            "dataset": "datasource_3",
+            "query": "SELECT satisfaction_score FROM customer_feedback",
+            "fields": [
+              {
+                "name": "satisfaction_score",
+                "type": "measure",
+                "dataType": "number",
+                "aggregation": "avg"
+              }
+            ]
+          },
+          "config": {
+            "metric": "satisfaction_score",
+            "format": "number",
+            "compare": [
+              "WoW"
+            ]
+          }
+        },
+        {
+          "id": "chart_104",
+          "type": "choropleth",
+          "w": 8,
+          "h": 3,
+          "x": 4,
+          "y": 4,
+          "title": "Regional Performance",
+          "dataRef": {
+            "source": "superset",
+            "dataset": "datasource_4",
+            "query": "SELECT country, total_sales FROM regional_sales GROUP BY country",
+            "fields": [
+              {
+                "name": "country",
+                "type": "dimension",
+                "dataType": "string"
+              },
+              {
+                "name": "total_sales",
+                "type": "measure",
+                "dataType": "number",
+                "aggregation": "sum"
+              }
+            ]
+          },
+          "config": {
+            "geoField": "country",
+            "valueField": "total_sales",
+            "mapType": "world"
+          }
+        }
+      ]
+    }
+  ],
+  "datasources": [
+    {
+      "id": "datasource_1",
+      "type": "sql",
+      "dialect": "postgres",
+      "connection": "default",
+      "tables": [
+        {
+          "name": "unknown_table",
+          "columns": []
+        }
+      ]
+    },
+    {
+      "id": "datasource_2",
+      "type": "sql",
+      "dialect": "postgres",
+      "connection": "default",
+      "tables": [
+        {
+          "name": "unknown_table",
+          "columns": []
+        }
+      ]
+    },
+    {
+      "id": "datasource_3",
+      "type": "sql",
+      "dialect": "postgres",
+      "connection": "default",
+      "tables": [
+        {
+          "name": "unknown_table",
+          "columns": []
+        }
+      ]
+    },
+    {
+      "id": "datasource_4",
+      "type": "sql",
+      "dialect": "postgres",
+      "connection": "default",
+      "tables": [
+        {
+          "name": "unknown_table",
+          "columns": []
+        }
+      ]
+    }
+  ],
+  "theme": {
+    "colors": {
+      "primary": "#3B82F6",
+      "secondary": "#6B7280",
+      "accent": "#8B5CF6",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "background": "#FFFFFF",
+      "surface": "#F9FAFB",
+      "text": "#111827",
+      "textSecondary": "#6B7280"
+    },
+    "typography": {
+      "fontFamily": "Inter, system-ui, sans-serif",
+      "heading": {
+        "fontSize": "1.5rem",
+        "fontWeight": "600",
+        "lineHeight": "1.25"
+      },
+      "body": {
+        "fontSize": "0.875rem",
+        "fontWeight": "400",
+        "lineHeight": "1.5"
+      },
+      "caption": {
+        "fontSize": "0.75rem",
+        "fontWeight": "400",
+        "lineHeight": "1.4"
+      }
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "borderRadius": {
+      "sm": 4,
+      "md": 8,
+      "lg": 16
+    }
+  }
+}

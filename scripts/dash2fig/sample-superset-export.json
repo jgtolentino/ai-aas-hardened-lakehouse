@@ -1,0 +1,40 @@
+{
+  "dashboard_title": "Scout Analytics Dashboard",
+  "slug": "scout-analytics",
+  "position_json": "{\"CHART-1\": {\"type\": \"CHART\", \"meta\": {\"chartId\": 101, \"sliceName\": \"Revenue Trend\", \"width\": 6, \"height\": 4}, \"x\": 0, \"y\": 0, \"w\": 6, \"h\": 4}, \"CHART-2\": {\"type\": \"CHART\", \"meta\": {\"chartId\": 102, \"sliceName\": \"Campaign Performance\", \"width\": 6, \"height\": 4}, \"x\": 6, \"y\": 0, \"w\": 6, \"h\": 4}, \"CHART-3\": {\"type\": \"CHART\", \"meta\": {\"chartId\": 103, \"sliceName\": \"Customer Satisfaction\", \"width\": 4, \"height\": 3}, \"x\": 0, \"y\": 4, \"w\": 4, \"h\": 3}, \"CHART-4\": {\"type\": \"CHART\", \"meta\": {\"chartId\": 104, \"sliceName\": \"Regional Performance\", \"width\": 8, \"height\": 3}, \"x\": 4, \"y\": 4, \"w\": 8, \"h\": 3}}",
+  "json_metadata": "{\"refresh_frequency\": 30, \"color_scheme\": \"d3Category10\", \"show_native_filters\": true}",
+  "slices": [
+    {
+      "id": 101,
+      "slice_name": "Revenue Trend",
+      "viz_type": "line",
+      "params": "{\"metric\": \"revenue\", \"groupby\": [\"date\"], \"x_axis_label\": \"Date\", \"y_axis_label\": \"Revenue\", \"show_legend\": true}",
+      "query_context": "{\"queries\": [{\"columns\": [{\"column_name\": \"date\", \"type_generic\": \"date\"}], \"metrics\": [{\"label\": \"revenue\", \"aggregate\": \"sum\", \"column\": \"amount\"}], \"datasource\": {\"table_name\": \"transactions\"}}]}",
+      "datasource_id": 1
+    },
+    {
+      "id": 102,
+      "slice_name": "Campaign Performance",
+      "viz_type": "bar",
+      "params": "{\"metric\": \"campaign_score\", \"groupby\": [\"campaign_name\"], \"x_axis_label\": \"Campaign\", \"y_axis_label\": \"Score\", \"show_legend\": false}",
+      "query_context": "{\"queries\": [{\"columns\": [{\"column_name\": \"campaign_name\", \"type_generic\": \"string\"}], \"metrics\": [{\"label\": \"campaign_score\", \"aggregate\": \"avg\", \"column\": \"score\"}], \"datasource\": {\"table_name\": \"campaigns\"}}]}",
+      "datasource_id": 2
+    },
+    {
+      "id": 103,
+      "slice_name": "Customer Satisfaction",
+      "viz_type": "big_number_total",
+      "params": "{\"metric\": \"satisfaction_score\", \"y_axis_format\": \"PERCENT\", \"compare_lag\": 7}",
+      "query_context": "{\"queries\": [{\"metrics\": [{\"label\": \"satisfaction_score\", \"aggregate\": \"avg\", \"column\": \"rating\"}], \"datasource\": {\"table_name\": \"customer_feedback\"}}]}",
+      "datasource_id": 3
+    },
+    {
+      "id": 104,
+      "slice_name": "Regional Performance",
+      "viz_type": "world_map",
+      "params": "{\"entity\": \"country\", \"metric\": \"total_sales\"}",
+      "query_context": "{\"queries\": [{\"columns\": [{\"column_name\": \"country\", \"type_generic\": \"string\"}], \"metrics\": [{\"label\": \"total_sales\", \"aggregate\": \"sum\", \"column\": \"sales_amount\"}], \"datasource\": {\"table_name\": \"regional_sales\"}}]}",
+      "datasource_id": 4
+    }
+  ]
+}

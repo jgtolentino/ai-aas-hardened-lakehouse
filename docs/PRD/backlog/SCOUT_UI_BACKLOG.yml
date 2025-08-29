@@ -5,9 +5,9 @@
 # Source of Truth: This file is the canonical backlog registry
 
 backlog_metadata:
-  version: "1.0.1"
+  version: "1.0.2"
   last_updated: "2025-08-29"
-  total_items: 10
+  total_items: 17
 
 backlog_items:
   - id: "SCOUT-BL-001"
@@ -262,6 +262,198 @@ backlog_items:
       - "Number format localization"
       - "Timezone handling for PH market"
       - "Language switching (en-PH, en-US)"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  # Edge Function Integration Features
+  - id: "SCOUT-BL-011"
+    title: "AI-Powered Insights Panel (ai-generate-insight)"
+    type: "New"
+    layer: ["UI", "API/RPC"]
+    area: "AI"
+    priority: "P1"
+    risk: "Med"
+    readiness: "R3"
+    status: "Ready"
+    target_release: "v6.1"
+    flag: "scout.ai_insights"
+    owner: "ai_team"
+    metrics:
+      - "AI insight generation success rate >95%"
+      - "Insight confidence score accuracy >85%"
+      - "User action on AI recommendations >40%"
+    acceptance:
+      - "AI insights panel with RAG-powered recommendations"
+      - "Confidence score visualization"
+      - "Action items with business priority indicators"
+      - "Source attribution for insights"
+      - "Real-time insight generation <3s"
+    links:
+      prd: "docs/PRD/SCOUT_UI_v6.0.md#ai-insights"
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-012"
+    title: "Natural Language Query Interface (semantic-calc)"
+    type: "New"
+    layer: ["UI", "API/RPC"]
+    area: "Analytics"
+    priority: "P1"
+    risk: "High"
+    readiness: "R3"
+    status: "Ready"
+    target_release: "v6.1"
+    flag: "scout.nl_query"
+    owner: "ai_team"
+    metrics:
+      - "Natural language query success rate >80%"
+      - "Query response time <2s"
+      - "User adoption of NL vs filters >30%"
+    acceptance:
+      - "Natural language input field with suggestions"
+      - "Query interpretation preview"
+      - "Semantic calculation execution"
+      - "Results visualization with SQL explanation"
+      - "Query refinement suggestions"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-013"
+    title: "Smart Search with Semantic Suggestions (semantic-suggest)"
+    type: "New"
+    layer: ["UI", "API/RPC"]
+    area: "Analytics"
+    priority: "P1"
+    risk: "Low"
+    readiness: "R3"
+    status: "Ready"
+    target_release: "v6.1"
+    flag: "scout.smart_search"
+    owner: "platform"
+    metrics:
+      - "Search suggestion relevance >85%"
+      - "Search completion rate >60%"
+      - "Search result click-through >40%"
+    acceptance:
+      - "Smart search bar with contextual suggestions"
+      - "Real-time semantic search results"
+      - "Search history and favorites"
+      - "Filter suggestions based on current view"
+      - "Search result preview tooltips"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-014"
+    title: "Advanced Semantic Query Builder (semantic-proxy)"
+    type: "New"
+    layer: ["UI", "API/RPC"]
+    area: "Analytics"
+    priority: "P2"
+    risk: "Med"
+    readiness: "R3"
+    status: "Ready"
+    target_release: "v6.2"
+    flag: "scout.semantic_queries"
+    owner: "platform"
+    metrics:
+      - "Query builder usage vs manual filters >50%"
+      - "Semantic query success rate >90%"
+      - "Advanced user retention with builder >70%"
+    acceptance:
+      - "Visual query builder with objects/metrics/filters"
+      - "Semantic relationship mapping"
+      - "Query preview with estimated results"
+      - "Save and share semantic queries"
+      - "Query optimization suggestions"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-015"
+    title: "Enhanced Data Export Center (export-platinum)"
+    type: "Improvement"
+    layer: ["UI", "API/RPC"]
+    area: "Reports"
+    priority: "P2"
+    risk: "Low"
+    readiness: "R3"
+    status: "Ready"
+    target_release: "v6.1"
+    flag: "scout.platinum_export"
+    owner: "platform"
+    metrics:
+      - "Export success rate >99%"
+      - "Export generation time <10s"
+      - "Export format adoption (CSV/JSON/GenieView)"
+    acceptance:
+      - "Multi-format export (CSV, JSON, GenieView)"
+      - "Daily transactions and store rankings export"
+      - "ML features export for data science teams"
+      - "GenieView natural language summaries"
+      - "Export scheduling and automation"
+    links:
+      prd: "docs/PRD/SCOUT_UI_v6.0.md#exports"
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-016"
+    title: "File Upload & Data Ingestion UI (ingest-bronze)"
+    type: "New"
+    layer: ["UI", "API/RPC", "Data/ETL"]
+    area: "Analytics"
+    priority: "P2"
+    risk: "Med"
+    readiness: "R3"
+    status: "Ready"
+    target_release: "v6.2"
+    flag: "scout.data_ingestion"
+    owner: "data_team"
+    metrics:
+      - "File upload success rate >98%"
+      - "Data ingestion processing time <30s"
+      - "User adoption of file upload vs API >40%"
+    acceptance:
+      - "Drag-and-drop file upload widget"
+      - "CSV/JSON file format validation"
+      - "Ingestion progress tracking"
+      - "Data preview before processing"
+      - "Device ID extraction and validation"
+      - "Bronze layer processing status"
+    links:
+      prd: ""
+      rfc: ""
+      issues: []
+
+  - id: "SCOUT-BL-017"
+    title: "Knowledge Base & Document Management (process-documents)"
+    type: "New"
+    layer: ["UI", "API/RPC"]
+    area: "AI"
+    priority: "P2"
+    risk: "Med"
+    readiness: "R3"
+    status: "Ready"
+    target_release: "v6.3"
+    flag: "scout.knowledge_base"
+    owner: "ai_team"
+    metrics:
+      - "Document processing success rate >95%"
+      - "Knowledge base search accuracy >85%"
+      - "Document upload adoption by teams >60%"
+    acceptance:
+      - "Document upload for HTML/Markdown/text files"
+      - "Automatic content chunking and embedding"
+      - "Knowledge base search and retrieval"
+      - "Document metadata and tagging"
+      - "AI-powered document insights"
+      - "Content deduplication and versioning"
     links:
       prd: ""
       rfc: ""

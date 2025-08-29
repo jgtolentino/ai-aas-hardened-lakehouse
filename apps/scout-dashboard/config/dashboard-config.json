@@ -1,0 +1,264 @@
+{
+  "dashboard": {
+    "title": "Scout Analytics Dashboard v6.0",
+    "subtitle": "Retail Intelligence Platform",
+    "version": "6.0",
+    "mode": "retail_analytics",
+    "personas": ["regional_manager", "financial_analyst", "trade_analyst", "store_ops_lead", "brand_lead"],
+    "defaultPersona": "regional_manager"
+  },
+  "layout": {
+    "type": "tabbed_interface",
+    "gridSystem": "12_column",
+    "breakpoints": {
+      "mobile": { "max": 768, "columns": 4 },
+      "tablet": { "min": 769, "max": 1024, "columns": 8 },
+      "desktop": { "min": 1025, "columns": 12 }
+    },
+    "spacing": {
+      "grid_gap": 24,
+      "content_padding": 32,
+      "card_padding": 24
+    }
+  },
+  "tabs": [
+    {
+      "id": "overview",
+      "title": "Overview",
+      "icon": "📊",
+      "description": "High-level retail performance metrics",
+      "components": ["kpi_grid", "revenue_trend", "top_performers", "alerts_panel"],
+      "personas": ["regional_manager", "financial_analyst", "trade_analyst"],
+      "priority": 1
+    },
+    {
+      "id": "mix",
+      "title": "Mix",
+      "icon": "🛒",
+      "description": "Product mix analysis and category performance",
+      "components": ["category_breakdown", "product_performance", "mix_trends", "inventory_levels"],
+      "personas": ["trade_analyst", "brand_lead"],
+      "priority": 2
+    },
+    {
+      "id": "competitive",
+      "title": "Competitive",
+      "icon": "⚔️",
+      "description": "Market position and competitive intelligence",
+      "components": ["market_share", "competitive_pricing", "brand_positioning", "trend_comparison"],
+      "personas": ["brand_lead", "regional_manager"],
+      "priority": 3
+    },
+    {
+      "id": "geography",
+      "title": "Geography",
+      "icon": "🗺️",
+      "description": "Geographic performance and regional insights",
+      "components": ["geographic_map", "regional_performance", "store_locator", "territory_analysis"],
+      "personas": ["regional_manager", "store_ops_lead"],
+      "priority": 4
+    },
+    {
+      "id": "consumers",
+      "title": "Consumers",
+      "icon": "👥",
+      "description": "Consumer behavior and demographic analysis",
+      "components": ["demographic_breakdown", "purchase_patterns", "loyalty_metrics", "consumer_journey"],
+      "personas": ["brand_lead", "trade_analyst"],
+      "priority": 5
+    },
+    {
+      "id": "ai",
+      "title": "AI",
+      "icon": "🤖",
+      "description": "AI-powered insights and recommendations",
+      "components": ["ai_insights", "predictive_analytics", "recommendations", "trend_forecasting"],
+      "personas": ["all"],
+      "priority": 6,
+      "mcpIntegration": true
+    }
+  ],
+  "filters": {
+    "global": [
+      {
+        "id": "date_range",
+        "type": "date_range",
+        "label": "Date Range",
+        "default": "last_30_days",
+        "options": [
+          { "value": "last_7_days", "label": "Last 7 Days" },
+          { "value": "last_30_days", "label": "Last 30 Days" },
+          { "value": "last_90_days", "label": "Last 90 Days" },
+          { "value": "ytd", "label": "Year to Date" },
+          { "value": "custom", "label": "Custom Range" }
+        ]
+      },
+      {
+        "id": "region",
+        "type": "multi_select",
+        "label": "Region",
+        "default": "all",
+        "options": [
+          { "value": "all", "label": "All Regions" },
+          { "value": "metro_manila", "label": "Metro Manila" },
+          { "value": "cebu", "label": "Cebu" },
+          { "value": "davao", "label": "Davao" },
+          { "value": "iloilo", "label": "Iloilo" },
+          { "value": "cagayan_de_oro", "label": "Cagayan de Oro" }
+        ]
+      },
+      {
+        "id": "store_format",
+        "type": "multi_select",
+        "label": "Store Format",
+        "default": "all",
+        "options": [
+          { "value": "all", "label": "All Formats" },
+          { "value": "hypermarket", "label": "Hypermarket" },
+          { "value": "supermarket", "label": "Supermarket" },
+          { "value": "convenience", "label": "Convenience" },
+          { "value": "specialty", "label": "Specialty" }
+        ]
+      },
+      {
+        "id": "category",
+        "type": "multi_select",
+        "label": "Category",
+        "default": "all",
+        "options": [
+          { "value": "all", "label": "All Categories" },
+          { "value": "fmcg", "label": "FMCG" },
+          { "value": "fresh", "label": "Fresh Products" },
+          { "value": "electronics", "label": "Electronics" },
+          { "value": "apparel", "label": "Apparel" },
+          { "value": "home_garden", "label": "Home & Garden" }
+        ]
+      }
+    ],
+    "contextual": {
+      "overview": ["persona_view", "comparison_period"],
+      "mix": ["category_level", "brand_filter"],
+      "competitive": ["competitor_set", "price_segment"],
+      "geography": ["map_level", "store_type"],
+      "consumers": ["demographic_segment", "behavior_type"],
+      "ai": ["insight_type", "confidence_level"]
+    }
+  },
+  "kpis": {
+    "revenue": {
+      "label": "Total Revenue",
+      "format": "currency",
+      "currency": "PHP",
+      "target": 50000000,
+      "benchmarks": {
+        "industry": 45000000,
+        "internal": 48000000
+      }
+    },
+    "transactions": {
+      "label": "Total Transactions",
+      "format": "number",
+      "target": 125000,
+      "benchmarks": {
+        "industry": 120000,
+        "internal": 122000
+      }
+    },
+    "avg_basket_size": {
+      "label": "Average Basket Size",
+      "format": "currency",
+      "currency": "PHP",
+      "target": 400,
+      "benchmarks": {
+        "industry": 350,
+        "internal": 380
+      }
+    },
+    "market_share": {
+      "label": "Market Share",
+      "format": "percentage",
+      "target": 15.5,
+      "benchmarks": {
+        "industry": 12.0,
+        "internal": 14.8
+      }
+    },
+    "store_count": {
+      "label": "Active Stores",
+      "format": "number",
+      "target": 250,
+      "benchmarks": {
+        "industry": 200,
+        "internal": 245
+      }
+    },
+    "customer_satisfaction": {
+      "label": "Customer Satisfaction",
+      "format": "percentage",
+      "target": 85,
+      "benchmarks": {
+        "industry": 80,
+        "internal": 83
+      }
+    }
+  },
+  "ai_integration": {
+    "mode": "mcp_dev_mode",
+    "token_free": true,
+    "claude_desktop_routing": true,
+    "capabilities": [
+      "trend_analysis",
+      "predictive_forecasting",
+      "anomaly_detection",
+      "recommendation_engine",
+      "natural_language_queries"
+    ],
+    "update_frequency": "real_time",
+    "confidence_thresholds": {
+      "high": 0.85,
+      "medium": 0.70,
+      "low": 0.50
+    }
+  },
+  "performance": {
+    "targets": {
+      "ttfb_p95": "1.0s",
+      "fcp": "1.5s",
+      "lcp": "2.5s",
+      "cls": 0.1,
+      "fid": "100ms"
+    },
+    "monitoring": {
+      "real_user_monitoring": true,
+      "synthetic_monitoring": true,
+      "error_tracking": true,
+      "performance_budgets": true
+    }
+  },
+  "accessibility": {
+    "standard": "WCAG_2_1_AA",
+    "features": [
+      "keyboard_navigation",
+      "screen_reader_support",
+      "high_contrast_mode",
+      "focus_indicators",
+      "alternative_text",
+      "semantic_markup"
+    ]
+  },
+  "data_sources": {
+    "primary": {
+      "supabase": {
+        "project_ref": "cxzllzyxwpyptfretryc",
+        "schemas": ["scout", "analytics", "retail"],
+        "real_time": true
+      }
+    },
+    "external": {
+      "pos_systems": ["sap_retail", "oracle_retail"],
+      "market_data": ["nielsen", "kantar"],
+      "weather_api": "openweather",
+      "census_data": "psa_philippines"
+    }
+  }
+}

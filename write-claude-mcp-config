@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CFG_DIR="$HOME/Library/Application Support/Claude/mcp"
+CFG_FILE="$CFG_DIR/settings.json"
+mkdir -p "$CFG_DIR"
+
+# Use env var references so tokens are not written in plaintext.
+cat > "$CFG_FILE" <<'JSON'
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "/usr/local/bin/node",
+      "args": ["/Users/tbwa/ai-aas-hardened-lakehouse/tools/mcp/supabase-mcp.js"],
+      "env": {
+        "SUPABASE_URL": "${env:MCP_SUPABASE_URL}",
+        "SUPABASE_KEY": "${env:MCP_SUPABASE_KEY}"
+      }
+    },
+    "github": {
+      "command": "/usr/local/bin/node",
+      "args": ["/Users/tbwa/ai-aas-hardened-lakehouse/tools/mcp/github-mcp.js"],
+      "env": {
+        "GITHUB_TOKEN": "${env:GITHUB_TOKEN}",
+        "GITHUB_APP_ID": "${env:GITHUB_APP_ID}",
+        "GITHUB_INSTALLATION_ID": "${env:GITHUB_INSTALLATION_ID}",
+        "GITHUB_PRIVATE_KEY_PEM": "${env:GITHUB_PRIVATE_KEY_PEM}"
+      }
+    }
+  }
+}
+JSON
+
+echo "Claude MCP settings written: $CFG_FILE"
+echo "Restart Claude Desktop to pick up env references."

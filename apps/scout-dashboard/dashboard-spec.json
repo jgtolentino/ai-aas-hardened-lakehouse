@@ -1,0 +1,234 @@
+{
+  "dashboard": {
+    "name": "Scout Analytics Dashboard",
+    "version": "5.3.0",
+    "description": "Enterprise analytics platform for TBWA with role-based access and real-time insights",
+    "metadata": {
+      "created": "2024-01-18",
+      "technology": "Next.js 15 + Supabase + TailwindCSS",
+      "authentication": "Supabase Auth",
+      "charts": "Recharts"
+    }
+  },
+  "pages": [
+    {
+      "id": "executive",
+      "path": "/dashboard",
+      "name": "Executive Dashboard",
+      "description": "High-level KPIs and business metrics overview",
+      "role_access": ["Executive", "Manager", "Analyst"],
+      "components": [
+        {
+          "type": "kpi_grid",
+          "data_source": "scout.kpi_summary",
+          "refresh_interval": 30000,
+          "items": [
+            {"title": "Total Revenue", "format": "currency", "change_indicator": true},
+            {"title": "Active Campaigns", "format": "number", "change_indicator": true},
+            {"title": "Conversion Rate", "format": "percentage", "change_indicator": true},
+            {"title": "Customer Satisfaction", "format": "rating", "change_indicator": true}
+          ]
+        },
+        {
+          "type": "chart_grid",
+          "layout": "2x1",
+          "charts": [
+            {"type": "line", "title": "Revenue Trends", "data_source": "scout.revenue_monthly"},
+            {"type": "bar", "title": "Performance Metrics", "data_source": "scout.campaign_performance"}
+          ]
+        },
+        {
+          "type": "data_table",
+          "title": "Top Performing Campaigns",
+          "data_source": "scout.top_campaigns",
+          "pagination": true,
+          "export": true
+        }
+      ]
+    },
+    {
+      "id": "analytics",
+      "path": "/dashboard/analytics",
+      "name": "Analytics Deep Dive",
+      "description": "Detailed campaign performance and user behavior analysis",
+      "role_access": ["Manager", "Analyst"],
+      "components": [
+        {
+          "type": "time_series_chart",
+          "title": "Traffic & Engagement",
+          "data_source": "scout.analytics_traffic",
+          "time_range_selector": true,
+          "metrics": ["sessions", "pageviews", "bounce_rate"]
+        },
+        {
+          "type": "funnel_chart",
+          "title": "Conversion Funnel",
+          "data_source": "scout.conversion_funnel",
+          "stages": ["Awareness", "Interest", "Consideration", "Intent", "Purchase"]
+        },
+        {
+          "type": "segment_analysis",
+          "title": "Audience Segments",
+          "data_source": "scout.audience_segments",
+          "chart_type": "pie"
+        }
+      ]
+    },
+    {
+      "id": "consumer",
+      "path": "/dashboard/consumer",
+      "name": "Consumer Insights",
+      "description": "Demographics, behavior patterns, and customer preferences",
+      "role_access": ["Manager", "Analyst"],
+      "components": [
+        {
+          "type": "demographics_chart",
+          "title": "Demographics Breakdown",
+          "data_source": "scout.demographics",
+          "segment_filter": true,
+          "chart_type": "grouped_bar"
+        },
+        {
+          "type": "behavior_radar",
+          "title": "Consumer Behavior Patterns",
+          "data_source": "scout.behavior_patterns",
+          "metrics": ["social_media", "email_engagement", "mobile_usage", "online_shopping", "brand_loyalty", "price_sensitivity"]
+        },
+        {
+          "type": "sentiment_analysis",
+          "title": "Brand Sentiment",
+          "data_source": "scout.brand_sentiment",
+          "chart_type": "donut"
+        }
+      ]
+    },
+    {
+      "id": "geographic",
+      "path": "/dashboard/geographic",
+      "name": "Geographic Analytics",
+      "description": "Regional performance and location-based insights",
+      "role_access": ["Manager", "Analyst"],
+      "components": [
+        {
+          "type": "interactive_map",
+          "title": "Philippines Coverage Map",
+          "data_source": "scout.geographic_performance",
+          "map_type": ["heatmap", "density", "performance"],
+          "region_filter": true,
+          "zoom_levels": ["country", "region", "province", "city"]
+        },
+        {
+          "type": "regional_performance",
+          "title": "Regional Statistics",
+          "data_source": "scout.regional_stats",
+          "metrics": ["revenue", "campaigns", "conversion_rate", "market_share", "growth"]
+        },
+        {
+          "type": "city_ranking",
+          "title": "Top Cities",
+          "data_source": "scout.city_performance",
+          "chart_type": "horizontal_bar"
+        }
+      ]
+    },
+    {
+      "id": "reports",
+      "path": "/dashboard/reports",
+      "name": "Reports & Analytics",
+      "description": "Custom report generation and scheduled analytics",
+      "role_access": ["Executive", "Manager", "Analyst"],
+      "components": [
+        {
+          "type": "report_generator",
+          "title": "Generate Custom Report",
+          "report_types": ["executive-summary", "campaign-performance", "consumer-insights", "geographic-analysis", "financial-report", "competitive-analysis"],
+          "date_ranges": ["7d", "30d", "90d", "1y", "custom"],
+          "export_formats": ["PDF", "CSV", "Excel", "PowerPoint"]
+        },
+        {
+          "type": "scheduled_reports",
+          "title": "Scheduled Reports",
+          "data_source": "scout.scheduled_reports",
+          "actions": ["view", "edit", "delete", "pause", "resume"]
+        },
+        {
+          "type": "quick_stats",
+          "title": "Report Statistics",
+          "metrics": [
+            {"name": "Reports Generated", "value": 248, "icon": "chart"},
+            {"name": "Active Schedules", "value": 12, "icon": "clock"},
+            {"name": "Custom Templates", "value": 8, "icon": "template"},
+            {"name": "Export Formats", "value": 5, "icon": "download"}
+          ]
+        }
+      ]
+    }
+  ],
+  "authentication": {
+    "provider": "supabase",
+    "redirect_authenticated": "/dashboard",
+    "redirect_unauthenticated": "/auth",
+    "session_timeout": 3600,
+    "role_based_access": true,
+    "roles": ["Executive", "Manager", "Analyst"],
+    "permissions": {
+      "Executive": ["read", "write", "export", "admin"],
+      "Manager": ["read", "write", "export"],
+      "Analyst": ["read", "export"]
+    }
+  },
+  "data_sources": {
+    "supabase": {
+      "project_ref": "cxzllzyxwpyptfretryc",
+      "tables": {
+        "scout.kpi_summary": "Real-time KPI aggregations",
+        "scout.revenue_monthly": "Monthly revenue trends",
+        "scout.campaign_performance": "Campaign metrics and ROI",
+        "scout.top_campaigns": "Ranked campaign performance",
+        "scout.analytics_traffic": "Website/app traffic data",
+        "scout.conversion_funnel": "User journey conversion stages",
+        "scout.audience_segments": "User demographic segments",
+        "scout.demographics": "Detailed demographic breakdowns",
+        "scout.behavior_patterns": "Consumer behavior metrics",
+        "scout.brand_sentiment": "Brand sentiment analysis",
+        "scout.geographic_performance": "Location-based performance",
+        "scout.regional_stats": "Regional aggregated statistics",
+        "scout.city_performance": "City-level performance metrics",
+        "scout.scheduled_reports": "Automated report configurations"
+      },
+      "real_time_subscriptions": ["kpi_summary", "campaign_performance"],
+      "row_level_security": true
+    }
+  },
+  "ui_framework": {
+    "frontend": "Next.js 15 (App Router)",
+    "styling": "TailwindCSS 3.4",
+    "components": "Custom + Headless UI",
+    "charts": "Recharts",
+    "icons": "Heroicons",
+    "fonts": "Inter",
+    "responsive": true,
+    "dark_mode": false,
+    "accessibility": "WCAG 2.1 AA"
+  },
+  "performance": {
+    "target_fcp": "< 1.5s",
+    "target_lcp": "< 2.5s",
+    "target_fid": "< 100ms",
+    "target_cls": "< 0.1",
+    "caching_strategy": "Next.js ISR + Supabase realtime",
+    "image_optimization": "Next.js Image",
+    "bundle_analysis": true
+  },
+  "deployment": {
+    "platform": "Vercel",
+    "environment_variables": [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "NEXT_PUBLIC_MAPBOX_TOKEN"
+    ],
+    "build_command": "pnpm build",
+    "dev_command": "pnpm dev",
+    "monorepo_integration": true
+  }
+}

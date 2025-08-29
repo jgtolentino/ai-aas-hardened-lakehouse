@@ -6,6 +6,9 @@
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview",
-    "storybook": "storybook dev -p 6006"
+    "storybook": "storybook dev -p 6006",
+    "figma:connect:parse": "figma connect parse",
+    "figma:connect:validate": "figma connect parse --dry-run",
+    "figma:connect:publish": "figma connect publish"
   }
 }

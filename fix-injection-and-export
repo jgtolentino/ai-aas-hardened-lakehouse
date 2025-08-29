@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="/Users/tbwa/ai-aas-hardened-lakehouse"
+cd "$ROOT"
+
+echo "== Pull from Bruno into current shell =="
+pull () { v="$(:bruno env:get "$1" 2>/dev/null || true)"; [[ -n "$v" ]] && export "$1=$v" || true; }
+
+for k in GITHUB_TOKEN GITHUB_APP_ID GITHUB_INSTALLATION_ID GITHUB_PRIVATE_KEY_PEM \
+         SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY \
+         MCP_SUPABASE_URL MCP_SUPABASE_KEY; do
+  pull "$k"
+done
+
+echo "== Write local dev .env files (no secrets committed) =="
+# Frontend must NEVER see service role; only anon/public + toggles.
+mkdir -p apps/scout-dashboard
+cat > apps/scout-dashboard/.env.local <<EOF
+NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL:-}
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
+# Feature flags (adjust as needed)
+NEXT_PUBLIC_ENABLE_PBI=0
+NEXT_PUBLIC_ENABLE_TABLEAU=0
+NEXT_PUBLIC_ENABLE_SUPERSET=0
+EOF
+echo "wrote apps/scout-dashboard/.env.local"
+
+# Server-only .env for local tooling (never commit)
+cat > .env <<EOF
+SUPABASE_URL=${SUPABASE_URL:-}
+SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
+SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+
+# GitHub auth (PAT or App)
+GITHUB_TOKEN=${GITHUB_TOKEN:-}
+GITHUB_APP_ID=${GITHUB_APP_ID:-}
+GITHUB_INSTALLATION_ID=${GITHUB_INSTALLATION_ID:-}
+GITHUB_PRIVATE_KEY_PEM=${GITHUB_PRIVATE_KEY_PEM:-}
+
+# MCP backends
+MCP_SUPABASE_URL=${MCP_SUPABASE_URL:-}
+MCP_SUPABASE_KEY=${MCP_SUPABASE_KEY:-}
+EOF
+chmod 600 .env
+echo "hardened .env (0600)"
+
+echo "== Done. Proceed to live API verification =="

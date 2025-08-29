@@ -1,0 +1,32 @@
+{
+  "name": "dash2fig-extractor",
+  "version": "1.0.0",
+  "description": "Figma design-to-code extractor for Scout Dashboard",
+  "main": "figma-extract.js",
+  "scripts": {
+    "extract": "node figma-extract.js",
+    "extract:dev": "FIGMA_FILE_ID=scout-dashboard-dev node figma-extract.js",
+    "extract:prod": "FIGMA_FILE_ID=scout-dashboard-prod node figma-extract.js",
+    "clean": "rm -rf ../../apps/scout-dashboard/src/components/generated/*",
+    "setup": "npm install && mkdir -p ../../apps/scout-dashboard/src/components/generated ../../apps/scout-dashboard/src/styles/generated"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "fs-extra": "^11.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "figma",
+    "design-to-code",
+    "react",
+    "scout-dashboard",
+    "design-tokens"
+  ],
+  "author": "TBWA Enterprise Platform Team",
+  "license": "MIT"
+}

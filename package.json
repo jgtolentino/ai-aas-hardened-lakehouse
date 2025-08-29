@@ -9,7 +9,24 @@
     "docs:generate": "bash scripts/generate_docs.sh",
     "docs:serve": "cd docs-site && npm start",
     "docs:build": "cd docs-site && npm run build",
+    "docs:gen": "tsx tools/docs/generate-plans.ts",
+    "docs:check": "git diff --exit-code docs/claude/planning.md docs/claude/tasks.md || (echo 'Docs changed; commit required' && exit 1)",
+    "docs:toc": "node tools/docs/ensure-toc.js",
+    "docs:lint": "markdownlint-cli2 'docs/**/*.md'",
+    "docs:links": "find docs -name '*.md' -exec markdown-link-check -q {} \\;",
+    "contracts:validate": "tsx tools/contracts/check-icd.ts validate",
+    "contracts:generate": "tsx tools/contracts/check-icd.ts generate",
+    "contracts:diff": "git diff HEAD main -- packages/contracts/src",
+    "icd:validate": "npm run contracts:validate",
+    "icd:types": "npm run contracts:generate",
+    "icd:docs": "npx @redocly/cli build-docs docs/scout/ICD.md",
+    "test:icd": "npm run contracts:validate",
+    "test:contracts": "npm run contracts:validate",
+    "test:a11y": "node tools/docs/check-accessibility.js",
     "test:connection": "tsx apps/web/src/test-connection.ts",
+    "figma:connect:parse": "npx @figma/code-connect connect parse --exit-on-unreadable-files",
+    "figma:connect:validate": "npm run figma:connect:parse",
+    "figma:connect:publish": "npx @figma/code-connect connect publish --dry-run",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
@@ -20,9 +37,10 @@
     "dash:preview": "npm --workspace platform/scout/blueprint-dashboard run preview"
   },
   "devDependencies": {
+    "@figma/code-connect": "1.3.4",
+    "@types/node": "^20.0.0",
     "tsx": "^4.7.0",
-    "turbo": "^1.11.0",
-    "@types/node": "^20.0.0"
+    "turbo": "^1.11.0"
   },
   "workspaces": [
     "apps/*",

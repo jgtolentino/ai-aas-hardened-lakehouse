@@ -1,49 +1,61 @@
-# Planning — Scout Analytics Blueprint → Production
+# Scout Dashboard v5.2 — 4-Week Execution Plan
 
-## Current State
-- `/Users/tbwa/scout-analytics-blueprint-doc` contains:
-  - **SCOUT_DASHBOARD_VISUALIZATION_BLUEPRINT.md** (30+ charts, 5 pages, AI overlays)
-  - **VISUAL_LAYOUT_GRID.md** (grid rules, responsive design)
-  - **chart-type-suggestions.yaml** (rules for chart selection)
-  - **TSX stubs** (DonutChart.tsx, HeatmapChart.tsx, registry)
+**Generated**: 2025-01-26  
+**Source**: docs/scout/PRD.md (ICD v1.4)  
+**Status**: Auto-generated from claude-exec block  
 
-- ai-aas-hardened-lakehouse repo already has:
-  - Supabase integration
-  - Medallion schema (v5.2, gold/platinum)
-  - CI/CD pipelines
-  - MCP Hub adapters for automation
+## Goals
+1. Integrate Executive Overview KPIs with gold views
+2. Wire Geo Choropleth with Mapbox + RLS
+3. Implement AI recommendations panel
+4. Add export functionality for all charts
 
-## Gap Analysis
-- ✅ Data layer exists and is production-secure
-- ✅ CI/CD + security gates working
-- ❌ Frontend integration incomplete: blueprint TSX files not wired into dashboard pages
-- ❌ AI overlays defined in blueprint but not linked to Supabase RPCs
-- ❌ Layout/grid spec not imported into React routing
-- ❌ No end-to-end smoke test of dashboard pages in Vercel
+## Constraints
+- Lighthouse performance score > 90
+- WCAG 2.1 AA compliance required
+- Mobile-first responsive design
+- Zero-downtime deployment
 
-## Roadmap
-1. **Blueprint Review**
-   - Parse PRD + blueprint docs
-   - Extract chart → metric → RPC mappings
-2. **Component Integration**
-   - Wire DonutChart, HeatmapChart, Chart Registry into app routes
-   - Add missing components from blueprint
-3. **Supabase RPC Layer**
-   - Confirm each chart's data source has a matching RPC
-   - Generate if missing
-4. **Layout Application**
-   - Apply VISUAL_LAYOUT_GRID rules to dashboard pages
-   - Validate responsive behavior
-5. **AI Insight Integration**
-   - Attach AI overlay hooks (`useAIInsights`) to key charts
-   - Ensure toggle between raw data vs AI annotation
-6. **Production Deployment**
-   - Deploy to Vercel preview
-   - Run security + gitleaks + CI/CD checks
-   - Validate supabase-diff produces no drift
+## Week 1: Foundation & ICD Alignment
+- [ ] Review and approve ICD v1.4
+- [ ] Set up component scaffolding per PRD wireframes
+- [ ] Initialize data hooks with mock responses
+- [ ] Configure CI/CD pipelines
+- [ ] Establish test fixtures
 
-## Timeline
-- Week 1: PRD → gap doc + component mapping
-- Week 2: Integrate charts + Supabase RPCs
-- Week 3: Apply grid/layout, AI overlays
-- Week 4: Full QA, deploy preview → merge to main
+## Week 2: Core Features Implementation
+- [ ] Integrate Executive Overview KPIs with gold views
+- [ ] Wire Geo Choropleth with Mapbox + RLS
+- [ ] Unit tests for implemented features
+- [ ] Integration with staging API
+
+## Week 3: Extended Features & Polish
+- [ ] Implement AI recommendations panel
+- [ ] Add export functionality for all charts
+- [ ] Accessibility audit and fixes
+- [ ] Performance optimization
+- [ ] E2E test coverage
+
+## Week 4: Hardening & Release
+- [ ] Performance testing against SLOs
+- [ ] Security scan and remediation
+- [ ] Documentation updates
+- [ ] Deployment to production
+- [ ] Post-launch monitoring setup
+
+## Risk Mitigation
+| Risk | Mitigation | Owner |
+|------|------------|-------|
+| API drift | ICD validation in CI | Backend |
+| Performance regression | Lighthouse CI budget | Frontend |
+| Data inconsistency | Contract tests | Data |
+| Accessibility gaps | Automated axe checks | UI/UX |
+
+## Success Criteria
+- ✅ Lighthouse performance score > 90
+- ✅ WCAG 2.1 AA compliance required
+- ✅ Mobile-first responsive design
+- ✅ Zero-downtime deployment
+- ✅ All ICD endpoints implemented and tested
+- ✅ Zero critical/high security findings
+- ✅ Documentation complete and reviewed

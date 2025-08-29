@@ -1,58 +1,77 @@
-# 🚀 Figma → GitHub Sync Implementation Guide
+# 🚀 Figma → GitHub Sync Implementation Guide (MCP Architecture)
 
-Complete step-by-step guide to implement the Figma to GitHub sync system via MCP Hub.
+Complete guide for implementing Figma to GitHub sync via MCP Hub with Claude Desktop MCPs handling authentication.
+
+## Architecture Overview
+
+The MCP Hub now operates as a **routing layer** that forwards requests to Claude Desktop MCPs:
+- **Figma MCP**: Runs in Figma Desktop (Dev Mode), uses your Figma session auth
+- **GitHub MCP**: Runs in Claude Desktop, uses your configured GitHub auth
+- **MCP Hub**: Routes requests between services, no tokens needed for Figma/GitHub
 
 ## Prerequisites
 
 - Node.js 18+ installed
-- Access to Figma files you want to sync
-- GitHub repository where you want to commit design files
-- MCP Hub running (existing Supabase + Mapbox setup)
+- Figma Desktop with Dev Mode MCP Server enabled
+- Claude Desktop with GitHub MCP configured
+- Access to target GitHub repository
+- MCP Hub with Supabase configured (if using analytics)
 
 ---
 
-## Step 1: Generate Required Tokens
+## Step 1: Set Up Claude Desktop MCPs
 
-### 1.1 Generate Figma Personal Access Token
+### 1.1 Configure Figma Dev Mode MCP
 
-1. **Go to Figma Account Settings**
-   - Visit: https://www.figma.com/developers/api#access-tokens
-   - Or: Figma → Profile → Settings → Account → Personal access tokens
+1. **Open Figma Desktop**
+2. **Enable Dev Mode MCP Server**
+   - Go to Figma → Preferences → Advanced
+   - Enable "Dev Mode MCP Server"
+   - Restart Figma if prompted
 
-2. **Create New Token**
-   - Click "Create a new personal access token"
-   - Name: `MCP Hub Integration`
-   - Description: `Token for automated design sync to GitHub`
-   - Click "Create token"
+3. **Verify in Claude Desktop**
+   - Open Claude Desktop
+   - Check that Figma MCP appears in connected servers
+   - You should see tools like `get_code`, `get_image`, etc.
 
-3. **Copy Token**
-   - ⚠️ **Important**: Copy the token immediately - it won't be shown again
-   - Format: `figd_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`
-   - Save securely (we'll add to .env file)
+### 1.2 Configure GitHub MCP in Claude Desktop
 
-### 1.2 Generate GitHub Personal Access Token
+1. **Edit Claude Desktop Config**
+   ```bash
+   # Location varies by OS:
+   # macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
+   # Windows: %APPDATA%\Claude\claude_desktop_config.json
+   # Linux: ~/.config/Claude/claude_desktop_config.json
+   ```
 
-1. **Go to GitHub Settings**
+2. **Add GitHub MCP Configuration**
+   ```json
+   {
+     "mcpServers": {
+       "github": {
+         "command": "npx",
+         "args": ["-y", "@modelcontextprotocol/server-github"],
+         "env": {
+           "GITHUB_PERSONAL_ACCESS_TOKEN": "your-github-pat-here"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Generate GitHub PAT** (if not already done)
    - Visit: https://github.com/settings/tokens
-   - Or: GitHub → Profile → Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Create token with `repo` scope
+   - Add to Claude Desktop config above
 
-2. **Generate New Token**
-   - Click "Generate new token" → "Generate new token (classic)"
-   - Note: `MCP Hub Figma Sync`
-   - Expiration: `90 days` (or custom)
-   - **Required Scopes**:
-     - ✅ `repo` (Full control of private repositories)
-     - ✅ `workflow` (Update GitHub Action workflows) - optional but recommended
-
-3. **Copy Token**
-   - Format: `ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`
-   - Save securely
+4. **Restart Claude Desktop**
+   - Verify GitHub MCP appears in connected servers
 
 ---
 
-## Step 2: Configure Environment Variables
+## Step 2: Configure MCP Hub Environment
 
-### 2.1 Update MCP Hub Environment File
+### 2.1 Update Environment File
 
 ```bash
 cd /Users/tbwa/ai-aas-hardened-lakehouse/infra/mcp-hub
@@ -62,62 +81,38 @@ cp .env.example .env
 ### 2.2 Edit .env File
 
 ```bash
-# Existing configuration
+# MCP Hub Configuration
 PORT=8787
-HUB_API_KEY=your-secure-32-char-api-key
+HUB_API_KEY=your-secure-32-char-api-key  # Generate a secure key
 
-# Existing adapters
-SUPABASE_URL=your-supabase-url
-SUPABASE_SERVICE_ROLE=your-supabase-service-role-key
-MAPBOX_TOKEN=your-mapbox-token
+# Supabase (for analytics/data operations)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PROJECT_REF=your-project-ref
+SUPABASE_SERVICE_ROLE=your-service-role-key  # Use read-only if possible
 
-# NEW: Figma Integration
-FIGMA_TOKEN=figd_your_figma_personal_access_token
-FIGMA_FILE_KEY=your_default_figma_file_key_optional
+# Mapbox (if using geographic features)
+MAPBOX_TOKEN=your-mapbox-token-if-needed
 
-# NEW: GitHub Integration  
-GITHUB_TOKEN=ghp_your_github_personal_access_token
-GITHUB_REPO=your-username/your-repo-name
+# GitHub Repository Target
+GITHUB_REPO=jgtolentino/ai-aas-hardened-lakehouse
+
+# NO TOKENS NEEDED for Figma or GitHub - handled by Claude Desktop MCPs!
 ```
-
-### 2.3 Find Your Figma File Key (Optional Default)
-
-1. Open your Figma file in browser
-2. Copy the file key from URL:
-   ```
-   https://www.figma.com/file/ABC123DEF456/Your-File-Name
-                              ^^^^^^^^^^^^
-                              This is your file key
-   ```
-3. Add to `FIGMA_FILE_KEY=ABC123DEF456` (optional - you can pass per-request)
 
 ---
 
-## Step 3: Install Dependencies and Build
+## Step 3: Install and Build MCP Hub
 
-### 3.1 Install Node Dependencies
+### 3.1 Install Dependencies
 
 ```bash
 cd /Users/tbwa/ai-aas-hardened-lakehouse/infra/mcp-hub
 npm install
 ```
 
-### 3.2 Verify New Adapters Are Included
+### 3.2 Start MCP Hub
 
 ```bash
-# Check if new adapter files exist
-ls -la src/adapters/
-# Should show: figma.js, github.js, figma-github-sync.js
-```
-
----
-
-## Step 4: Test the Implementation
-
-### 4.1 Start MCP Hub Locally
-
-```bash
-cd /Users/tbwa/ai-aas-hardened-lakehouse/infra/mcp-hub
 npm start
 ```
 
@@ -126,203 +121,145 @@ Expected output:
 [mcp-hub] listening on :8787
 ```
 
-### 4.2 Test Health Check
+### 3.3 Verify Setup
 
 ```bash
+# Health check
 curl http://localhost:8787/health
 # Expected: {"ok":true}
-```
 
-### 4.3 Test OpenAPI Schema
-
-```bash
+# Check available servers
 curl http://localhost:8787/openapi.json | jq '.paths."/mcp/run".post.requestBody.content."application/json".schema.properties.server.enum'
 # Expected: ["supabase","mapbox","figma","github","sync"]
 ```
 
-### 4.4 Run End-to-End Test
+---
+
+## Step 4: Test the Integration
+
+### 4.1 Test via Claude Desktop
+
+In Claude Desktop, you can now use commands like:
+
+```
+Use the Figma MCP to get the current selection's data, then commit it to GitHub via the MCP Hub.
+```
+
+Claude will:
+1. Use local Figma MCP to get selection data
+2. Route through MCP Hub to commit to GitHub
+3. No tokens needed in the Hub!
+
+### 4.2 Test Direct Hub Calls
 
 ```bash
-# Set your tokens
+# Set your API key
 export HUB_API_KEY="your-hub-api-key"
 
-# Test with your Figma file
-./test-figma-github-sync.sh YOUR_FIGMA_FILE_KEY http://localhost:8787
-```
+# Test routing to Figma MCP (requires Figma Desktop running)
+curl -H "X-API-Key: $HUB_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "server": "figma",
+       "tool": "get_code",
+       "args": {}
+     }' \
+     http://localhost:8787/mcp/run
 
-Expected successful output:
-```
-🚀 Testing Figma → GitHub sync workflow
-📋 Step 1: Exporting Figma file JSON...
-✅ Successfully exported: Your File Name (modified: 2024-01-15T10:30:00.000Z)
-💾 Step 2: Committing to GitHub...
-✅ Successfully committed to branch: chore/figma-sync
-📁 File path: design/figma/your_file_name.json
-🎉 End-to-end test completed!
+# Test routing to GitHub MCP (requires Claude Desktop with GitHub MCP)
+curl -H "X-API-Key: $HUB_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "server": "github",
+       "tool": "search_repositories",
+       "args": {"query": "mcp"}
+     }' \
+     http://localhost:8787/mcp/run
 ```
 
 ---
 
-## Step 5: Deploy to Production
+## Step 5: Production Deployment
 
-### 5.1 Choose Deployment Method
+### 5.1 Deploy to Vercel/Render/Railway
 
-**Option A: Vercel (Recommended)**
 ```bash
-# Install Vercel CLI
+# Example with Vercel
 npm i -g vercel
-
-# Deploy from mcp-hub directory
 cd /Users/tbwa/ai-aas-hardened-lakehouse/infra/mcp-hub
 vercel --prod
-
-# Set environment variables in Vercel dashboard
 ```
 
-**Option B: Railway**
-```bash
-# Install Railway CLI
-npm i -g @railway/cli
+### 5.2 Set Production Environment Variables
 
-# Deploy
-railway login
-railway link
-railway up
-```
+In your hosting platform, set only these variables:
+- `HUB_API_KEY` (secure 32+ character key)
+- `SUPABASE_URL` (if using)
+- `SUPABASE_PROJECT_REF` (if using)
+- `SUPABASE_SERVICE_ROLE` (if using)
+- `MAPBOX_TOKEN` (if using geographic features)
+- `GITHUB_REPO` (your target repository)
 
-**Option C: Render/Heroku**
-- Push code to Git repository
-- Connect to hosting platform
-- Set environment variables in dashboard
-
-### 5.2 Update Environment Variables in Production
-
-Set these in your hosting platform dashboard:
-- `HUB_API_KEY`
-- `FIGMA_TOKEN`
-- `GITHUB_TOKEN`
-- `GITHUB_REPO`
-- `FIGMA_FILE_KEY` (optional)
+**DO NOT** set `FIGMA_TOKEN` or `GITHUB_TOKEN` - these are handled by Claude Desktop MCPs!
 
 ---
 
-## Step 6: Create Usage Templates
+## Step 6: Usage Patterns
 
-### 6.1 Claude Desktop Selection Sync Template
+### 6.1 Figma Selection → GitHub Commit
 
-Save this prompt for easy access:
-
-```
-# Figma Selection → GitHub PR via MCP Hub
-
-GOAL: Export current Figma selection and commit to GitHub via MCP Hub
-
-STEPS:
-1. Use local Figma MCP to export my current selection as JSON
-2. POST to MCP Hub: server="github", tool="repo.commitFile"
-   - path: "design/figma/selection.json"  
-   - content: <exported JSON>
-   - message: "chore(figma): sync selection from Figma Dev Mode"
-   - branch: "chore/figma-sync"
-3. Return commit status and PR link
-
-CONFIG:
-- Hub URL: https://your-mcp-hub-domain.com
-- Never log tokens or request bodies
-- If selection > 1.5MB, split into multiple files
+```javascript
+// This happens automatically via MCP routing
+// 1. Claude Desktop Figma MCP gets selection
+// 2. MCP Hub routes commit request to GitHub MCP
+// 3. GitHub MCP (with its own auth) commits the file
 ```
 
-### 6.2 Custom GPT Action Configuration
+### 6.2 Custom GPT Integration
+
+Configure your Custom GPT to call the MCP Hub:
 
 ```json
 {
-  "name": "Sync Figma to GitHub",
-  "description": "Export Figma designs and sync to GitHub repository",
-  "openapi": {
-    "openapi": "3.0.0",
-    "info": {
-      "title": "Figma GitHub Sync",
-      "version": "1.0.0"
-    },
-    "servers": [
-      {
-        "url": "https://your-mcp-hub-domain.com"
-      }
-    ],
-    "paths": {
-      "/mcp/run": {
-        "post": {
-          "operationId": "syncFigmaToGitHub",
-          "summary": "Sync Figma file to GitHub",
-          "security": [
-            {
+  "name": "Design Sync Assistant",
+  "actions": [{
+    "openapi": {
+      "servers": [{
+        "url": "https://your-mcp-hub.vercel.app"
+      }],
+      "paths": {
+        "/mcp/run": {
+          "post": {
+            "security": [{
               "ApiKeyAuth": []
-            }
-          ],
-          "requestBody": {
-            "required": true,
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "server": {
-                      "type": "string",
-                      "enum": ["sync"]
-                    },
-                    "tool": {
-                      "type": "string",
-                      "enum": ["sync.figmaFileToRepo"]
-                    },
-                    "args": {
-                      "type": "object",
-                      "properties": {
-                        "fileKey": {
-                          "type": "string",
-                          "description": "Figma file key from URL"
-                        },
-                        "commitPath": {
-                          "type": "string",
-                          "description": "Path in repo (optional)"
-                        },
-                        "message": {
-                          "type": "string",
-                          "description": "Commit message (optional)"
-                        }
-                      },
-                      "required": ["fileKey"]
-                    }
-                  },
-                  "required": ["server", "tool", "args"]
-                }
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Success",
+            }],
+            "requestBody": {
               "content": {
                 "application/json": {
                   "schema": {
-                    "type": "object"
+                    "properties": {
+                      "server": {"enum": ["sync"]},
+                      "tool": {"type": "string"},
+                      "args": {"type": "object"}
+                    }
                   }
                 }
               }
             }
           }
         }
-      }
-    },
-    "components": {
-      "securitySchemes": {
-        "ApiKeyAuth": {
-          "type": "apiKey",
-          "in": "header",
-          "name": "X-API-Key"
+      },
+      "components": {
+        "securitySchemes": {
+          "ApiKeyAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-API-Key"
+          }
         }
       }
     }
-  },
+  }],
   "auth": {
     "type": "api_key",
     "api_key": "your-hub-api-key"
@@ -332,132 +269,62 @@ CONFIG:
 
 ---
 
-## Step 7: Usage Examples
+## Step 7: Troubleshooting
 
-### 7.1 One-Command Sync (cURL)
+### Common Issues
 
-```bash
-curl -H "X-API-Key: $HUB_API_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "server": "sync",
-       "tool": "sync.figmaFileToRepo",
-       "args": {
-         "fileKey": "ABC123DEF456"
-       }
-     }' \
-     https://your-mcp-hub-domain.com/mcp/run
-```
+**"Figma MCP not connected"**
+- Ensure Figma Desktop is running with Dev Mode MCP enabled
+- Check Claude Desktop shows Figma in connected servers
+- Restart both applications if needed
 
-### 7.2 Custom Path and Message
+**"GitHub MCP not responding"**
+- Verify GitHub MCP is configured in Claude Desktop
+- Check that GitHub PAT is valid and has `repo` scope
+- Restart Claude Desktop
 
-```bash
-curl -H "X-API-Key: $HUB_API_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "server": "sync", 
-       "tool": "sync.figmaFileToRepo",
-       "args": {
-         "fileKey": "ABC123DEF456",
-         "commitPath": "docs/designs/homepage-v2.json",
-         "message": "feat(design): update homepage layout v2"
-       }
-     }' \
-     https://your-mcp-hub-domain.com/mcp/run
-```
+**"MCP Hub routing failed"**
+- Check MCP Hub is running (`npm start`)
+- Verify `HUB_API_KEY` is set correctly
+- Check logs for specific routing errors
 
-### 7.3 Separate Steps (Export → Commit)
-
-```bash
-# Step 1: Export Figma file
-curl -H "X-API-Key: $HUB_API_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "server": "figma",
-       "tool": "file.exportJSON", 
-       "args": {"fileKey": "ABC123DEF456"}
-     }' \
-     https://your-mcp-hub-domain.com/mcp/run > figma-export.json
-
-# Step 2: Commit to GitHub  
-curl -H "X-API-Key: $HUB_API_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "server": "github",
-       "tool": "repo.commitFile",
-       "args": {
-         "path": "design/figma/export.json",
-         "content": "'$(jq -c .data figma-export.json)'", 
-         "message": "chore(figma): sync design updates"
-       }
-     }' \
-     https://your-mcp-hub-domain.com/mcp/run
-```
+**"Authentication error" (should not happen)**
+- This architecture eliminates token errors for Figma/GitHub
+- If you see auth errors, check you're using the updated MCP Hub
+- Ensure you're NOT passing FIGMA_TOKEN or GITHUB_TOKEN to the Hub
 
 ---
 
-## Step 8: Troubleshooting
+## Step 8: Security Best Practices
 
-### Common Issues and Solutions
+### 8.1 Token Security
+- **GitHub PAT**: Only stored in Claude Desktop config (local)
+- **Figma Auth**: Uses your Figma Desktop session (no token needed)
+- **Hub API Key**: Use strong 32+ character key, rotate regularly
+- **Supabase**: Use read-only service role when possible
 
-**Error: `FIGMA_TOKEN not configured`**
-- Check `.env` file has correct token
-- Verify token format: `figd_XXXXXXXXX...`
-- Ensure no extra spaces/quotes
+### 8.2 Network Security
+- MCP Hub should use HTTPS in production
+- Set CORS policies appropriately
+- Implement rate limiting for API endpoints
+- Monitor for unusual activity patterns
 
-**Error: `GITHUB_TOKEN not configured`**  
-- Check `.env` file has correct token
-- Verify token format: `ghp_XXXXXXXXX...`
-- Ensure token has `repo` scope
-
-**Error: `figma 403`**
-- Token may be invalid or expired
-- File may be private and token lacks access
-- Regenerate Figma token if needed
-
-**Error: `github 404`**
-- Repository name incorrect in `GITHUB_REPO`
-- Token lacks access to repository
-- Repository may be private and token lacks permissions
-
-**Error: `fileKey required`**
-- Pass `fileKey` in request args
-- Or set `FIGMA_FILE_KEY` in environment
-
----
-
-## Step 9: Monitoring and Maintenance
-
-### 9.1 Set Up Logging
-
-Monitor your MCP Hub logs for:
-- API rate limits (Figma: ~50/min, GitHub: ~5000/hour)
-- Authentication failures
-- Large payload warnings
-- Successful syncs
-
-### 9.2 Token Rotation
-
-- **GitHub tokens**: Set 90-day expiration, rotate regularly
-- **Figma tokens**: No expiration by default, but rotate if compromised
-- Update environment variables in production when rotating
-
-### 9.3 Repository Maintenance
-
-- Review PRs created by automated sync
-- Clean up old `chore/figma-sync` branches periodically
-- Monitor repository size if syncing large files frequently
+### 8.3 Repository Security
+- Use branch protection rules for main/master
+- Require PR reviews for design sync branches
+- Set up CODEOWNERS for design directories
+- Regular audit of committed design files
 
 ---
 
 ## ✅ Implementation Complete!
 
-You now have a fully functional Figma → GitHub sync system with:
+Your Figma → GitHub sync system is now configured with:
 
-- ✅ **Local selection sync** (Claude Desktop + Figma MCP)
-- ✅ **Automated file sync** (MCP Hub + API)
-- ✅ **Custom GPT integration** (One-click sync)
-- ✅ **Production deployment** (Scalable and secure)
-- ✅ **Comprehensive monitoring** (Error handling and logging)
+- ✅ **Zero Token Management** in MCP Hub (handled by Claude Desktop)
+- ✅ **Secure MCP Routing** (stdio protocol, no exposed credentials)
+- ✅ **Local Authentication** (Figma session + GitHub PAT in Claude)
+- ✅ **Production Ready** (scalable and maintainable)
+- ✅ **Enhanced Security** (tokens never leave local environment)
 
-Your design-to-code workflow is now fully automated! 🎉
+The new architecture is more secure, easier to maintain, and eliminates token-related errors! 🎉

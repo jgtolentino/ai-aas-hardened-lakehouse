@@ -1,36 +1,35 @@
-# 🚀 Quick Start: Figma → GitHub Sync
+# 🚀 Quick Start: Figma → GitHub Sync (MCP Routing)
+
+## Prerequisites
+- Claude Desktop with Figma MCP and GitHub MCP configured
+- MCP Hub running locally
+- No API tokens needed (managed by Claude Desktop)
 
 ## 1-Minute Setup
 
 ```bash
 cd /Users/tbwa/ai-aas-hardened-lakehouse/infra/mcp-hub
-./setup-figma-github-sync.sh
+cp .env.example .env
+# Only set: HUB_API_KEY and GITHUB_REPO (no tokens needed)
+npm install
+npm start
 ```
 
-This interactive script will:
-- ✅ Check prerequisites (Node.js 18+)
-- ✅ Guide you through token generation
-- ✅ Configure environment variables
-- ✅ Install dependencies
-- ✅ Test the integration
+## Key Advantages of MCP Routing
 
-## Manual Setup (if needed)
+- **No duplicate token management**: Uses Claude Desktop's existing MCPs
+- **Selection-aware**: Works with current Figma selection in Dev Mode
+- **Secure**: Routes via stdio protocol (no exposed tokens)
+- **Simplified**: Only need to identify target repository
 
-### 1. Get Tokens
-- **Figma**: https://www.figma.com/developers/api#access-tokens
-- **GitHub**: https://github.com/settings/tokens (need `repo` scope)
+## Environment Configuration
 
-### 2. Configure Environment
 ```bash
-# Copy example and edit
-cp .env.example .env
-nano .env
-
-# Add your tokens:
-FIGMA_TOKEN=figd_your_token
-GITHUB_TOKEN=ghp_your_token  
-GITHUB_REPO=username/repo-name
+# .env file - minimal configuration
 HUB_API_KEY=your_32_char_key
+GITHUB_REPO=username/repo-name
+
+# That's it! No FIGMA_TOKEN or GITHUB_TOKEN needed
 ```
 
 ### 3. Install & Start
@@ -61,24 +60,25 @@ Import `custom-gpt-config.json` into ChatGPT
 ```
 infra/mcp-hub/
 ├── src/adapters/
-│   ├── figma.js              # Figma API integration
-│   ├── github.js             # GitHub API integration  
-│   └── figma-github-sync.js  # Combined workflow
-├── setup-figma-github-sync.sh # Interactive setup
-├── test-figma-github-sync.sh  # End-to-end test
-├── IMPLEMENTATION_GUIDE.md    # Detailed guide
-└── claude-desktop-prompts.md  # Ready-to-use prompts
+│   ├── mcp-figma-router.js      # Routes to Claude Desktop Figma MCP
+│   ├── mcp-github-router.js     # Routes to Claude Desktop GitHub MCP  
+│   ├── mcp-sync-router.js       # Orchestrates Figma → GitHub workflows
+│   ├── supabase.js              # Direct Supabase adapter
+│   └── mapbox.js                # Direct Mapbox adapter
+├── IMPLEMENTATION_GUIDE.md      # Detailed guide
+└── claude-desktop-prompts.md    # Ready-to-use prompts
 ```
 
-## Available Tools
+## Available Tools (MCP Routing)
 
-| Server | Tool | Description |
-|--------|------|-------------|
-| `figma` | `file.exportJSON` | Export complete Figma file |
-| `figma` | `nodes.get` | Get specific nodes by ID |
-| `figma` | `images.export` | Export frames as images |
-| `github` | `repo.commitFile` | Commit file to repository |
-| `sync` | `sync.figmaFileToRepo` | One-command Figma → GitHub |
+| Server | Tool | Description | Routes To |
+|--------|------|-------------|-----------|
+| `figma` | `file.exportJSON` | Export complete Figma file | Claude Desktop Figma MCP |
+| `figma` | `nodes.get` | Get current selection | Claude Desktop Figma MCP |
+| `figma` | `images.export` | Export frames as images | Claude Desktop Figma MCP |
+| `github` | `repo.commitFile` | Commit file to repository | Claude Desktop GitHub MCP |
+| `sync` | `sync.figmaFileToRepo` | One-command Figma → GitHub | Both MCPs |
+| `sync` | `sync.figmaSelectionToRepo` | Export selection and commit | Both MCPs |
 
 ## Deployment Options
 
@@ -114,17 +114,17 @@ curl http://localhost:8787/health
 
 | Error | Solution |
 |-------|----------|
-| `FIGMA_TOKEN not configured` | Add token to .env file |
-| `figma 403` | Check token validity and file access |
-| `github 404` | Verify repo name and token permissions |
-| `fileKey required` | Pass fileKey in request or set FIGMA_FILE_KEY |
+| `MCP Figma routing failed` | Ensure Claude Desktop Figma MCP is running |
+| `GitHub MCP server exited` | Verify Claude Desktop GitHub MCP is configured |
+| `Figma selection export failed` | Select frames in Figma Dev Mode first |
+| `MCP call timeout` | Check if Claude Desktop MCPs are responding |
 
 ## Security Checklist
 
-- ✅ Tokens stored as environment variables
-- ✅ .env file in .gitignore  
+- ✅ No duplicate tokens stored (uses Claude Desktop MCPs)
+- ✅ .env file only contains HUB_API_KEY and GITHUB_REPO  
 - ✅ Hub API key is 32+ characters
-- ✅ GitHub token has minimal required scopes
+- ✅ MCP routing uses secure stdio protocol
 - ✅ Production uses platform environment variables
 
 ## Support

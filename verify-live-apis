@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source ./.env 2>/dev/null || true
+
+fail=0
+ok() { echo "OK  - $1"; }
+ko() { echo "FAIL- $1"; fail=1; }
+
+echo "== Verify GitHub auth =="
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  code=$(curl -sS -o /tmp/gh_me.json -w "%{http_code}" \
+    -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/user)
+  [[ "$code" == "200" ]] && ok "GitHub PAT valid (user: $(jq -r .login /tmp/gh_me.json))" || ko "GitHub PAT invalid ($code)"
+elif [[ -n "${GITHUB_APP_ID:-}" && -n "${GITHUB_INSTALLATION_ID:-}" && -n "${GITHUB_PRIVATE_KEY_PEM:-}" ]]; then
+  ko "GitHub App flow not auto-tested here; prefer a dedicated script to mint installation token via JWT."
+else
+  ko "No GitHub auth configured."
+fi
+
+echo "== Verify Supabase anon (public) =="
+if [[ -n "${SUPABASE_URL:-}" && -n "${SUPABASE_ANON_KEY:-}" ]]; then
+  code=$(curl -sS -o /tmp/sb_anon.json -w "%{http_code}" \
+    -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/")
+  [[ "$code" == "200" || "$code" == "404" ]] && ok "Supabase reachable (anon key accepted, code:$code)" || ko "Supabase anon failed ($code)"
+else
+  ko "Supabase anon not configured."
+fi
+
+echo "== Verify Supabase service role (server) =="
+if [[ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
+  code=$(curl -sS -o /tmp/sb_srv.json -w "%{http_code}" \
+    -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" "$SUPABASE_URL/rest/v1/")
+  [[ "$code" == "200" || "$code" == "404" ]] && ok "Supabase service role accepted (code:$code)" || ko "Supabase service role failed ($code)"
+else
+  ko "No service role available."
+fi
+
+echo "== Verify MCP Supabase key =="
+if [[ -n "${MCP_SUPABASE_KEY:-}" ]]; then
+  code=$(curl -sS -o /tmp/sb_mcp.json -w "%{http_code}" \
+    -H "apikey: $MCP_SUPABASE_KEY" "$MCP_SUPABASE_URL/rest/v1/")
+  [[ "$code" == "200" || "$code" == "404" ]] && ok "MCP Supabase key accepted (code:$code)" || ko "MCP Supabase key rejected ($code)"
+else
+  ko "MCP_SUPABASE_KEY missing."
+fi
+
+[[ $fail -eq 0 ]] && echo "✅ All checks passed" || { echo "❌ Some checks failed"; exit 1; }

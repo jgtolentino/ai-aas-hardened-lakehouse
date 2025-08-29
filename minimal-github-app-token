@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Mint a GitHub App installation token using env vars (no plaintext persisted).
+set -euo pipefail
+
+req() { command -v "$1" >/dev/null || { echo "Missing $1"; exit 1; }; }
+req openssl; req jq; req curl
+
+now=$(date +%s)
+header='{"alg":"RS256","typ":"JWT"}'
+payload=$(jq -n --arg i "${GITHUB_APP_ID:?}" --arg iat "$((now-60))" --arg exp "$((now+540))" \
+  '{ iat: ($iat|tonumber), exp: ($exp|tonumber), iss: ($i|tonumber) }')
+
+b64() { printf '%s' "$1" | openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+jwt_header=$(b64 "$header")
+jwt_payload=$(b64 "$payload")
+sig=$(printf '%s.%s' "$jwt_header" "$jwt_payload" \
+  | openssl dgst -sha256 -sign <(printf '%s' "$GITHUB_PRIVATE_KEY_PEM") -binary \
+  | openssl base64 -A | tr '+/' '-_' | tr -d '=')
+jwt="$jwt_header.$jwt_payload.$sig"
+
+# Get installation token
+inst="${GITHUB_INSTALLATION_ID:?}"
+resp=$(curl -sS -X POST \
+  -H "Authorization: Bearer $jwt" -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/app/installations/$inst/access_tokens")
+token=$(jq -r .token <<<"$resp")
+[[ "$token" == "null" || -z "$token" ]] && { echo "Failed to mint installation token"; echo "$resp"; exit 1; }
+echo "installation_token=$token"

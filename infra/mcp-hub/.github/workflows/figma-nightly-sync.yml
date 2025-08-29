@@ -1,0 +1,102 @@
+name: Nightly Figma File Sync
+
+on:
+  schedule:
+    # Run every night at 2 AM UTC (adjust timezone as needed)
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual triggering
+    inputs:
+      fileKey:
+        description: 'Figma File Key (optional - uses default if not provided)'
+        required: false
+        type: string
+      commitPath:
+        description: 'Commit path in repo'
+        required: false
+        default: 'design/figma/nightly-export.json'
+        type: string
+
+jobs:
+  sync-figma-to-repo:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Sync Figma file to repository
+        run: |
+          # Set file key (use input or default from secrets)
+          FILE_KEY="${{ github.event.inputs.fileKey || secrets.FIGMA_DEFAULT_FILE_KEY }}"
+          COMMIT_PATH="${{ github.event.inputs.commitPath || 'design/figma/nightly-export.json' }}"
+          
+          # Validate required secrets
+          if [ -z "${{ secrets.MCP_HUB_URL }}" ]; then
+            echo "Error: MCP_HUB_URL secret not configured"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.MCP_HUB_API_KEY }}" ]; then
+            echo "Error: MCP_HUB_API_KEY secret not configured"
+            exit 1
+          fi
+          
+          if [ -z "$FILE_KEY" ]; then
+            echo "Error: No Figma file key provided (set FIGMA_DEFAULT_FILE_KEY secret or provide fileKey input)"
+            exit 1
+          fi
+          
+          echo "🚀 Starting Figma → GitHub sync"
+          echo "File Key: ${FILE_KEY:0:20}..."
+          echo "Commit Path: $COMMIT_PATH"
+          echo "Hub URL: ${{ secrets.MCP_HUB_URL }}"
+          
+          # Call MCP Hub sync endpoint
+          RESPONSE=$(curl -s -f \
+            -H "X-API-Key: ${{ secrets.MCP_HUB_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"server\": \"sync\",
+              \"tool\": \"sync.figmaFileToRepo\",
+              \"args\": {
+                \"fileKey\": \"$FILE_KEY\",
+                \"commitPath\": \"$COMMIT_PATH\",
+                \"message\": \"chore(figma): nightly file sync $(date -u +'%Y-%m-%d %H:%M:%S UTC')\"
+              }
+            }" \
+            "${{ secrets.MCP_HUB_URL }}/mcp/run")
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Figma sync completed successfully"
+            echo "Response: $RESPONSE"
+            
+            # Parse response for branch info
+            BRANCH=$(echo "$RESPONSE" | grep -o '"branch":"[^"]*"' | cut -d'"' -f4)
+            if [ -n "$BRANCH" ]; then
+              echo "📋 Created/updated branch: $BRANCH"
+              echo "🔗 Check for PR at: https://github.com/${{ github.repository }}/pulls"
+            fi
+          else
+            echo "❌ Figma sync failed"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+          
+      - name: Create summary
+        if: always()
+        run: |
+          echo "## 🎨 Figma Nightly Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit Path**: ${{ github.event.inputs.commitPath || 'design/figma/nightly-export.json' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Workflow**: ${{ github.workflow }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ **Status**: Sync completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status**: Sync failed - check logs" >> $GITHUB_STEP_SUMMARY
+          fi

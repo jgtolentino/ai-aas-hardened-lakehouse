@@ -47,13 +47,36 @@ grep -r -n --include="*.ts" --include="*.tsx" --exclude-dir="node_modules" \
   apps/ packages/ 2>/dev/null \
   | sed 's/^/EXPORT: /' > .backlog_sweep/exports.txt || echo "EXPORT: No relevant exports found" > .backlog_sweep/exports.txt
 
-# 6) Display results
+# 6) Edge function discovery
+echo "⚡ Discovering edge functions..."
+if [ -d "supabase/functions" ]; then
+  find supabase/functions -name "index.ts" -exec dirname {} \; \
+    | sed 's|supabase/functions/||' \
+    | sort > .backlog_sweep/edge_functions.txt
+  
+  # Analyze edge function capabilities
+  echo "🔧 Analyzing edge function capabilities..." 
+  for func in $(cat .backlog_sweep/edge_functions.txt); do
+    func_path="supabase/functions/$func/index.ts"
+    if [ -f "$func_path" ]; then
+      # Extract key info: serve handler, RPC calls, API endpoints
+      echo "EDGE_FUNC: $func" >> .backlog_sweep/edge_analysis.txt
+      grep -n -E 'serve\(|Deno\.serve|\.rpc\(' "$func_path" | head -n 3 | sed "s/^/  $func: /" >> .backlog_sweep/edge_analysis.txt || true
+    fi
+  done
+else
+  echo "EDGE_FUNC: No supabase/functions directory found" > .backlog_sweep/edge_functions.txt
+  echo "EDGE_ANALYSIS: Supabase functions not available" > .backlog_sweep/edge_analysis.txt
+fi
+
+# 7) Display results
 echo ""
 echo "📋 RESULTS SUMMARY"
 echo "=================="
 echo "📦 Component candidates: $(wc -l < .backlog_sweep/component_candidates.txt | tr -d ' ')"
 echo "🏷️  Annotation hits: $(wc -l < .backlog_sweep/raw_hits.txt | tr -d ' ')"
 echo "📤 Component exports: $(wc -l < .backlog_sweep/exports.txt | tr -d ' ')"
+echo "⚡ Edge functions found: $(wc -l < .backlog_sweep/edge_functions.txt | tr -d ' ')"
 
 echo ""
 echo "🏆 TOP PATHS (by hit count):"
@@ -68,9 +91,16 @@ echo "🏷️  SAMPLE ANNOTATION HITS:"
 head -n 10 .backlog_sweep/raw_hits.txt
 
 echo ""
+echo "⚡ EDGE FUNCTIONS DISCOVERED:"
+cat .backlog_sweep/edge_functions.txt
+
+echo ""
 echo "✅ Sweep complete! Artifacts saved in .backlog_sweep/"
 echo "📋 Next steps:"
 echo "   1. Review candidates in .backlog_sweep/component_candidates.txt"
 echo "   2. Check hits in .backlog_sweep/raw_hits.txt"
-echo "   3. Update docs/PRD/backlog/SCOUT_UI_BACKLOG.yml with new items"
-echo "   4. Run: yq '.backlog_items[] | .id + \": \" + .title' docs/PRD/backlog/SCOUT_UI_BACKLOG.yml"
+echo "   3. Review edge functions in .backlog_sweep/edge_functions.txt"
+echo "   4. Check edge function analysis in .backlog_sweep/edge_analysis.txt"
+echo "   5. Update docs/PRD/backlog/SCOUT_UI_BACKLOG.yml with new items"
+echo "   6. Run: yq '.backlog_items[] | .id + \": \" + .title' docs/PRD/backlog/SCOUT_UI_BACKLOG.yml"
+echo "   7. See .backlog_sweep/edge-function-integration-map.md for UI integration details"

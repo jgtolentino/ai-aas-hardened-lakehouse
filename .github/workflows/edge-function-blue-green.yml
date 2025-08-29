@@ -1,0 +1,402 @@
+name: Edge Function Blue-Green Deployment
+
+on:
+  push:
+    branches: [main, staging]
+    paths: ['supabase/functions/**']
+  workflow_dispatch:
+    inputs:
+      function_name:
+        description: 'Function to deploy'
+        required: true
+        type: string
+      deployment_type:
+        description: 'Deployment type'
+        required: true
+        type: choice
+        default: 'blue-green'
+        options:
+          - 'blue-green'
+          - 'canary'
+          - 'direct'
+      traffic_percentage:
+        description: 'Traffic percentage for canary (0-100)'
+        required: false
+        default: '10'
+        type: string
+
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      functions: ${{ steps.changes.outputs.functions }}
+      matrix: ${{ steps.changes.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Detect changed functions
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual dispatch - deploy specific function
+            FUNCTIONS='["${{ github.event.inputs.function_name }}"]'
+            echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
+            echo "matrix={\"function\": $FUNCTIONS}" >> $GITHUB_OUTPUT
+          else
+            # Automatic detection
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep "supabase/functions/" || true)
+            if [ -z "$CHANGED_FILES" ]; then
+              echo "functions=[]" >> $GITHUB_OUTPUT
+              echo "matrix={\"function\": []}" >> $GITHUB_OUTPUT
+            else
+              FUNCTIONS=$(echo "$CHANGED_FILES" | cut -d'/' -f3 | sort | uniq | jq -R -s -c 'split("\n")[:-1]')
+              echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
+              echo "matrix={\"function\": $FUNCTIONS}" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  blue-green-deploy:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.functions != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+      fail-fast: false
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install Supabase CLI
+        run: |
+          npm install -g supabase@latest
+          supabase --version
+      
+      - name: Setup Python for monitoring
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Python dependencies
+        run: |
+          pip install asyncpg psutil requests jinja2
+      
+      - name: Login to Supabase
+        run: |
+          supabase login --token $SUPABASE_ACCESS_TOKEN
+      
+      - name: Link to Supabase project
+        run: |
+          supabase link --project-ref $SUPABASE_PROJECT_REF
+      
+      - name: Pre-deployment health check
+        id: health-check
+        run: |
+          echo "🏥 Running pre-deployment health checks..."
+          
+          # Check if function exists and is healthy
+          FUNCTION_NAME="${{ matrix.function }}"
+          
+          # Test current function if it exists
+          HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/$FUNCTION_NAME" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "health check", "context": {}}' || echo "000")
+          
+          echo "current_health=$HEALTH_STATUS" >> $GITHUB_OUTPUT
+          
+          if [ "$HEALTH_STATUS" = "200" ] || [ "$HEALTH_STATUS" = "404" ]; then
+            echo "✅ Pre-deployment health check passed"
+            echo "health_ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Pre-deployment health check failed: $HEALTH_STATUS"
+            echo "health_ok=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create deployment record
+        run: |
+          python3 << 'EOF'
+          import asyncio
+          import asyncpg
+          import os
+          import json
+          from datetime import datetime
+
+          async def create_deployment_record():
+              try:
+                  db_url = f"postgresql://postgres:{os.getenv('SUPABASE_DB_PASSWORD')}@db.{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co:5432/postgres"
+                  conn = await asyncpg.connect(db_url)
+                  
+                  deployment_id = await conn.fetchval("""
+                      INSERT INTO mlops.deployments (
+                          function_name, 
+                          version, 
+                          deployment_type,
+                          status,
+                          metadata
+                      ) VALUES ($1, $2, $3, $4, $5)
+                      RETURNING id
+                  """, 
+                  "${{ matrix.function }}", 
+                  "${{ github.sha }}", 
+                  "${{ github.event.inputs.deployment_type || 'blue-green' }}",
+                  "deploying",
+                  json.dumps({
+                      "commit": "${{ github.sha }}",
+                      "branch": "${{ github.ref_name }}",
+                      "actor": "${{ github.actor }}",
+                      "pre_health": "${{ steps.health-check.outputs.current_health }}"
+                  }))
+                  
+                  print(f"DEPLOYMENT_ID={deployment_id}")
+                  with open(os.getenv('GITHUB_ENV'), 'a') as f:
+                      f.write(f"DEPLOYMENT_ID={deployment_id}\n")
+                  
+                  await conn.close()
+                  
+              except Exception as e:
+                  print(f"Error creating deployment record: {e}")
+                  exit(1)
+
+          asyncio.run(create_deployment_record())
+          EOF
+      
+      - name: Deploy to Blue environment (staging slot)
+        if: steps.health-check.outputs.health_ok == 'true'
+        run: |
+          echo "🔵 Deploying to Blue environment..."
+          FUNCTION_NAME="${{ matrix.function }}"
+          
+          # Deploy function with blue suffix for testing
+          cd supabase/functions/$FUNCTION_NAME
+          
+          # Create blue version with modified name for testing
+          cp index.ts index.blue.ts
+          
+          # Deploy blue version (we'll use versioned deployment)
+          supabase functions deploy ${FUNCTION_NAME}-blue --no-verify-jwt || {
+            echo "❌ Blue deployment failed"
+            exit 1
+          }
+          
+          echo "✅ Blue environment deployed successfully"
+      
+      - name: Run Blue environment tests
+        if: steps.health-check.outputs.health_ok == 'true'
+        id: blue-tests
+        run: |
+          echo "🧪 Testing Blue environment..."
+          FUNCTION_NAME="${{ matrix.function }}"
+          
+          # Wait for deployment to be ready
+          sleep 10
+          
+          # Test blue environment
+          BLUE_RESPONSE=$(curl -s -w "%{http_code}" \
+            "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/${FUNCTION_NAME}-blue" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "deployment test", "context": {"test": true}}' \
+            -o /tmp/blue_response.json)
+          
+          echo "Blue response code: $BLUE_RESPONSE"
+          
+          if [ "${BLUE_RESPONSE: -3}" = "200" ]; then
+            echo "✅ Blue environment tests passed"
+            echo "blue_tests_ok=true" >> $GITHUB_OUTPUT
+            
+            # Check response quality
+            if grep -q "insight" /tmp/blue_response.json; then
+              echo "✅ Blue response quality check passed"
+              echo "blue_quality_ok=true" >> $GITHUB_OUTPUT
+            else
+              echo "⚠️ Blue response quality check failed"
+              echo "blue_quality_ok=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "❌ Blue environment tests failed: $BLUE_RESPONSE"
+            echo "blue_tests_ok=false" >> $GITHUB_OUTPUT
+            echo "blue_quality_ok=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Switch to Green environment (production)
+        if: steps.blue-tests.outputs.blue_tests_ok == 'true' && steps.blue-tests.outputs.blue_quality_ok == 'true'
+        run: |
+          echo "🟢 Switching to Green environment (production)..."
+          FUNCTION_NAME="${{ matrix.function }}"
+          
+          # Deploy to production
+          cd supabase/functions/$FUNCTION_NAME
+          supabase functions deploy $FUNCTION_NAME --no-verify-jwt || {
+            echo "❌ Green deployment failed"
+            exit 1
+          }
+          
+          echo "✅ Green environment deployed successfully"
+      
+      - name: Run Green environment validation
+        if: steps.blue-tests.outputs.blue_tests_ok == 'true'
+        id: green-validation
+        run: |
+          echo "✅ Validating Green environment..."
+          FUNCTION_NAME="${{ matrix.function }}"
+          
+          # Wait for deployment
+          sleep 10
+          
+          # Test production environment
+          GREEN_RESPONSE=$(curl -s -w "%{http_code}" \
+            "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/$FUNCTION_NAME" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "production validation", "context": {"validation": true}}' \
+            -o /tmp/green_response.json)
+          
+          if [ "${GREEN_RESPONSE: -3}" = "200" ]; then
+            echo "✅ Green environment validation passed"
+            echo "green_ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Green environment validation failed: $GREEN_RESPONSE"
+            echo "green_ok=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Cleanup Blue environment
+        if: steps.green-validation.outputs.green_ok == 'true'
+        run: |
+          echo "🧹 Cleaning up Blue environment..."
+          FUNCTION_NAME="${{ matrix.function }}"
+          
+          # Remove blue deployment
+          curl -X DELETE \
+            "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/functions/${FUNCTION_NAME}-blue" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" || {
+            echo "⚠️ Blue cleanup failed (non-critical)"
+          }
+          
+          echo "✅ Blue environment cleaned up"
+      
+      - name: Update deployment record - Success
+        if: steps.green-validation.outputs.green_ok == 'true'
+        run: |
+          python3 << 'EOF'
+          import asyncio
+          import asyncpg
+          import os
+          import json
+
+          async def update_deployment_success():
+              try:
+                  db_url = f"postgresql://postgres:{os.getenv('SUPABASE_DB_PASSWORD')}@db.{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co:5432/postgres"
+                  conn = await asyncpg.connect(db_url)
+                  
+                  await conn.execute("""
+                      UPDATE mlops.deployments 
+                      SET status = 'completed',
+                          completed_at = NOW(),
+                          metadata = metadata || $2
+                      WHERE id = $1
+                  """, 
+                  os.getenv('DEPLOYMENT_ID'),
+                  json.dumps({
+                      "deployment_success": True,
+                      "green_validation": "${{ steps.green-validation.outputs.green_ok }}",
+                      "blue_tests": "${{ steps.blue-tests.outputs.blue_tests_ok }}"
+                  }))
+                  
+                  await conn.close()
+                  print("✅ Deployment record updated - SUCCESS")
+                  
+              except Exception as e:
+                  print(f"Error updating deployment record: {e}")
+
+          asyncio.run(update_deployment_success())
+          EOF
+      
+      - name: Update deployment record - Failure
+        if: failure()
+        run: |
+          python3 << 'EOF'
+          import asyncio
+          import asyncpg
+          import os
+          import json
+
+          async def update_deployment_failure():
+              try:
+                  db_url = f"postgresql://postgres:{os.getenv('SUPABASE_DB_PASSWORD')}@db.{os.getenv('SUPABASE_PROJECT_REF')}.supabase.co:5432/postgres"
+                  conn = await asyncpg.connect(db_url)
+                  
+                  await conn.execute("""
+                      UPDATE mlops.deployments 
+                      SET status = 'failed',
+                          completed_at = NOW(),
+                          metadata = metadata || $2
+                      WHERE id = $1
+                  """, 
+                  os.getenv('DEPLOYMENT_ID'),
+                  json.dumps({
+                      "deployment_success": False,
+                      "failure_reason": "Blue-green deployment failed",
+                      "green_validation": "${{ steps.green-validation.outputs.green_ok }}",
+                      "blue_tests": "${{ steps.blue-tests.outputs.blue_tests_ok }}"
+                  }))
+                  
+                  await conn.close()
+                  print("❌ Deployment record updated - FAILURE")
+                  
+              except Exception as e:
+                  print(f"Error updating deployment record: {e}")
+
+          asyncio.run(update_deployment_failure())
+          EOF
+      
+      - name: Rollback on failure
+        if: failure() && steps.health-check.outputs.current_health == '200'
+        run: |
+          echo "🔄 Rolling back to previous version..."
+          # In a real scenario, you would restore the previous version
+          # This is a simplified rollback notification
+          curl -X POST "https://api.github.com/repos/${{ github.repository }}/issues" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "title": "⚠️ Edge Function Deployment Failed - Manual Rollback Required",
+              "body": "Deployment of `${{ matrix.function }}` failed.\n\n**Details:**\n- Commit: `${{ github.sha }}`\n- Branch: `${{ github.ref_name }}`\n- Actor: `${{ github.actor }}`\n\n**Action Required:** Manual verification and potential rollback needed.",
+              "labels": ["deployment-failure", "urgent"]
+            }' || echo "Failed to create issue"
+
+  deployment-summary:
+    needs: [detect-changes, blue-green-deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Edge Function Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Actor:** \`${{ github.actor }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Functions Detected:** ${{ needs.detect-changes.outputs.functions }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.blue-green-deploy.result }}" = "success" ]; then
+            echo "✅ **Status:** Deployment completed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Deployment failed or was cancelled" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Deployment completed at $(date -u)_" >> $GITHUB_STEP_SUMMARY

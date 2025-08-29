@@ -1,12 +1,12 @@
 {
-  "name": "Figma GitHub Sync Bot",
-  "description": "Export Figma designs and automatically sync them to GitHub repositories",
-  "instructions": "You are a specialized bot that helps sync Figma design files to GitHub repositories. You can export entire Figma files, specific nodes, or images and commit them to GitHub automatically. Always ask for the Figma file key if not provided. Handle errors gracefully and provide clear status updates.",
+  "name": "Figma GitHub Sync Bot (MCP Routing)",
+  "description": "Export Figma designs via Claude Desktop MCP and sync them to GitHub repositories through secure MCP routing",
+  "instructions": "You are a specialized bot that helps sync Figma design files to GitHub repositories using Model Context Protocol (MCP) routing. You route through Claude Desktop's existing Figma and GitHub MCPs, so no API tokens are needed. You work best when users have active Figma Dev Mode selections. You can export entire files, current selections, or specific nodes and commit them automatically. Handle MCP routing errors gracefully and provide clear status updates.",
   "conversation_starters": [
-    "Sync my Figma file to GitHub",
-    "Export specific frames from Figma", 
-    "Set up automated design sync",
-    "Check the status of my last sync"
+    "Sync my current Figma selection to GitHub",
+    "Export my Figma file to GitHub",
+    "Set up automated design sync workflow",
+    "Explain MCP routing approach"
   ],
   "capabilities": {
     "web_browsing": false,
@@ -15,8 +15,42 @@
   },
   "actions": [
     {
+      "name": "syncFigmaSelectionToGitHub",
+      "description": "Export current Figma selection (Dev Mode) and sync to GitHub via MCP routing",
+      "method": "POST",
+      "url": "https://your-mcp-hub-domain.com/mcp/run",
+      "headers": {
+        "X-API-Key": "{{api_key}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "server": "sync",
+        "tool": "sync.figmaSelectionToRepo",
+        "args": {
+          "commitPath": "{{commitPath}}",
+          "message": "{{message}}"
+        }
+      },
+      "parameters": [
+        {
+          "name": "commitPath",
+          "type": "string",
+          "description": "Path in the repository where to save the selection",
+          "required": false,
+          "default": "design/figma/selection.json"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "description": "Git commit message",
+          "required": false,
+          "default": "chore(figma): sync selection from Dev Mode"
+        }
+      ]
+    },
+    {
       "name": "syncFigmaFileToGitHub",
-      "description": "Export a complete Figma file and sync it to GitHub",
+      "description": "Export a complete Figma file and sync it to GitHub via MCP routing",
       "method": "POST",
       "url": "https://your-mcp-hub-domain.com/mcp/run",
       "headers": {
@@ -36,7 +70,7 @@
         {
           "name": "fileKey",
           "type": "string",
-          "description": "The Figma file key from the URL",
+          "description": "The Figma file key from the URL (when not using current selection)",
           "required": true
         },
         {
@@ -51,7 +85,7 @@
           "type": "string", 
           "description": "Git commit message",
           "required": false,
-          "default": "chore(figma): sync design updates"
+          "default": "chore(figma): sync complete file via MCP"
         }
       ]
     },
@@ -244,8 +278,8 @@
                   "properties": {
                     "server": {
                       "type": "string",
-                      "enum": ["figma", "github", "sync"],
-                      "description": "MCP server to use"
+                      "enum": ["figma", "github", "sync", "supabase", "mapbox"],
+                      "description": "MCP server to route to (figma/github route to Claude Desktop MCPs)"
                     },
                     "tool": {
                       "type": "string", 

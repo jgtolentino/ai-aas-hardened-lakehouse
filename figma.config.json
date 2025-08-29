@@ -1,0 +1,6 @@
+{
+  "codeConnect": {
+    "include": ["apps/scout-ui/src/**/*.figma.tsx"],
+    "parser": "react"
+  }
+}
