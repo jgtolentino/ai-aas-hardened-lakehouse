@@ -1,13 +1,27 @@
 import type { Config } from 'tailwindcss'
-const config: Config = {
-  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+
+export default {
+  content: [
+    './src/**/*.{ts,tsx}',
+    '../../apps/scout-ui/src/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+  ],
   theme: {
     extend: {
+      borderRadius: {
+        sk: 'var(--radius)',
+      },
       colors: {
-        brand: { 600: "#0057ff" }
-      }
-    }
+        bg: 'var(--bg)',
+        panel: 'var(--panel)',
+        text: 'var(--text)',
+        muted: 'var(--muted)',
+        accent: 'var(--accent)',
+        danger: 'var(--danger)',
+        warn: 'var(--warn)',
+        info: 'var(--info)',
+      },
+    },
   },
-  plugins: []
-}
-export default config
+  plugins: [],
+} satisfies Config

@@ -1,0 +1,12 @@
+{
+  "codeConnect": {
+    "parser": "react",
+    "include": ["src/components/**/*.{tsx,ts}"],
+    "exclude": ["src/components/**/*.{test,spec,stories}.{tsx,ts}"],
+    "importMappings": {
+      "@/": "./src/"
+    }
+  },
+  "documentId": "Rjh4xxbrZr8otmfpPqiVPC",
+  "outputDir": "./figma"
+}

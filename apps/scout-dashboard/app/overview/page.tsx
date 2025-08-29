@@ -1,77 +1,21 @@
-'use client';
-
-import { useFilterStore } from '@/store/useFilters';
-import { KpiCard } from '@/components/cards/KpiCard';
-import { TimeseriesChart } from '@/components/charts/TimeseriesChart';
-import { HeatmapChart } from '@/components/charts/HeatmapChart';
-import { useScoutKpis, useRevenueTrend, useHourWeekday } from '@/data/hooks';
+'use client'
+import { Grid } from 'apps/scout-ui/src/components/Layout/Grid'
+import { KpiTile } from 'apps/scout-ui/src/components/Kpi/KpiTile'
+import { Timeseries } from 'apps/scout-ui/src/components/Chart/Timeseries'
 
 export default function OverviewPage() {
-  const filters = useFilterStore((state) => state.filters);
-  
-  const { data: kpis, isLoading: kpisLoading } = useScoutKpis(filters);
-  const { data: trend, isLoading: trendLoading } = useRevenueTrend(filters);
-  const { data: heatmap, isLoading: heatmapLoading } = useHourWeekday(filters);
-
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Overview - Transaction Trends</h1>
-      
-      {/* KPI Row */}
-      <div className="grid grid-cols-12 gap-4 mb-6">
-        <div className="col-span-3">
-          <KpiCard
-            title="Revenue"
-            value={kpis?.revenue}
-            loading={kpisLoading}
-            metric="revenue"
-          />
-        </div>
-        <div className="col-span-3">
-          <KpiCard
-            title="Transactions"
-            value={kpis?.transactions}
-            loading={kpisLoading}
-            metric="transactions"
-          />
-        </div>
-        <div className="col-span-3">
-          <KpiCard
-            title="Basket Size"
-            value={kpis?.basket_size}
-            loading={kpisLoading}
-            metric="basket_size"
-          />
-        </div>
-        <div className="col-span-3">
-          <KpiCard
-            title="Unique Shoppers"
-            value={kpis?.unique_shoppers}
-            loading={kpisLoading}
-            metric="unique_shoppers"
-          />
-        </div>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-8">
-          <TimeseriesChart
-            title="Revenue Trend"
-            data={trend}
-            loading={trendLoading}
-            aiOverlay={true}
-          />
-        </div>
-        <div className="col-span-4">
-          <HeatmapChart
-            title="Hour × Weekday"
-            data={heatmap}
-            loading={heatmapLoading}
-            aiOverlay={true}
-          />
-        </div>
-      </div>
+    <div className="p-6">
+      <Grid cols={12} className="mb-4">
+        <div className="col-span-3"><KpiTile label="Revenue" value="₱ 12.4M" /></div>
+        <div className="col-span-3"><KpiTile label="Transactions" value="482k" /></div>
+        <div className="col-span-3"><KpiTile label="Basket" value="₱ 257" /></div>
+        <div className="col-span-3"><KpiTile label="Shoppers" value="72k" /></div>
+      </Grid>
+      <Grid cols={12}>
+        <div className="col-span-8"><Timeseries data={[{x:'W1',y:10},{x:'W2',y:14},{x:'W3',y:12},{x:'W4',y:18}]} /></div>
+        <div className="col-span-4"><div className="rounded-sk bg-panel p-4 h-72 border border-white/10">Hour × Weekday (stub)</div></div>
+      </Grid>
     </div>
-  );
+  )
 }

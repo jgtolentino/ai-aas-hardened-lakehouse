@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "figma:setup": "./scripts/setup-figma-code-connect.sh",
+    "figma:parse": "figma connect parse",
+    "figma:validate": "figma connect validate",
+    "figma:publish": "figma connect publish",
+    "figma:publish:dry": "figma connect publish --dry-run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.3",
@@ -21,6 +26,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@figma/code-connect": "1.3.4",
     "@types/node": "^20.14.10",
     "@types/react": "^18.2.70",
     "@types/react-dom": "^18.2.23",

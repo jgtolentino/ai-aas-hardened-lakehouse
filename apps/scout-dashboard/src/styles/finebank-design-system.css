@@ -1,0 +1,323 @@
+/**
+ * Finebank Design System Integration
+ * Financial Dashboard UI styling inspired by Finebank Figma design
+ * https://www.figma.com/design/Rjh4xxbrZr8otmfpPqiVPC/Finebank---Financial-Management-Dashboard-UI-Kits--Community-
+ */
+
+:root {
+  /* Finebank Color Palette */
+  --finebank-primary: #0066cc;
+  --finebank-primary-light: #3385d9;
+  --finebank-primary-dark: #004d99;
+  
+  --finebank-secondary: #00b894;
+  --finebank-secondary-light: #33c9a9;
+  --finebank-secondary-dark: #008a6f;
+  
+  --finebank-accent: #fd79a8;
+  --finebank-accent-light: #fda4c4;
+  --finebank-accent-dark: #fb5585;
+  
+  --finebank-warning: #fdcb6e;
+  --finebank-warning-light: #fee8a5;
+  --finebank-warning-dark: #f39c12;
+  
+  --finebank-danger: #e84393;
+  --finebank-danger-light: #f082ac;
+  --finebank-danger-dark: #d63384;
+  
+  --finebank-success: #00b894;
+  --finebank-success-light: #33c9a9;
+  --finebank-success-dark: #00a085;
+  
+  /* Neutrals */
+  --finebank-gray-50: #f8fafc;
+  --finebank-gray-100: #f1f5f9;
+  --finebank-gray-200: #e2e8f0;
+  --finebank-gray-300: #cbd5e1;
+  --finebank-gray-400: #94a3b8;
+  --finebank-gray-500: #64748b;
+  --finebank-gray-600: #475569;
+  --finebank-gray-700: #334155;
+  --finebank-gray-800: #1e293b;
+  --finebank-gray-900: #0f172a;
+  
+  /* Financial specific colors */
+  --finebank-profit: var(--finebank-success);
+  --finebank-loss: var(--finebank-danger);
+  --finebank-neutral: var(--finebank-gray-500);
+  
+  /* Typography */
+  --finebank-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --finebank-font-size-xs: 0.75rem;
+  --finebank-font-size-sm: 0.875rem;
+  --finebank-font-size-base: 1rem;
+  --finebank-font-size-lg: 1.125rem;
+  --finebank-font-size-xl: 1.25rem;
+  --finebank-font-size-2xl: 1.5rem;
+  --finebank-font-size-3xl: 1.875rem;
+  
+  /* Spacing */
+  --finebank-spacing-xs: 0.25rem;
+  --finebank-spacing-sm: 0.5rem;
+  --finebank-spacing-md: 1rem;
+  --finebank-spacing-lg: 1.5rem;
+  --finebank-spacing-xl: 2rem;
+  --finebank-spacing-2xl: 3rem;
+  
+  /* Shadows */
+  --finebank-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --finebank-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --finebank-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --finebank-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Border radius */
+  --finebank-radius-sm: 0.25rem;
+  --finebank-radius-md: 0.375rem;
+  --finebank-radius-lg: 0.5rem;
+  --finebank-radius-xl: 0.75rem;
+  --finebank-radius-2xl: 1rem;
+}
+
+/* Component Styles */
+
+/* KPI Cards - Finebank Style */
+.finebank-kpi-card {
+  background: white;
+  border: 1px solid var(--finebank-gray-200);
+  border-radius: var(--finebank-radius-lg);
+  padding: var(--finebank-spacing-lg);
+  box-shadow: var(--finebank-shadow-sm);
+  transition: all 0.2s ease-in-out;
+}
+
+.finebank-kpi-card:hover {
+  border-color: var(--finebank-primary-light);
+  box-shadow: var(--finebank-shadow-md);
+}
+
+.finebank-kpi-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--finebank-spacing-md);
+}
+
+.finebank-kpi-card__title {
+  font-size: var(--finebank-font-size-sm);
+  font-weight: 500;
+  color: var(--finebank-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.finebank-kpi-card__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--finebank-primary);
+}
+
+.finebank-kpi-card__value {
+  font-size: var(--finebank-font-size-2xl);
+  font-weight: 700;
+  color: var(--finebank-gray-900);
+  margin-bottom: var(--finebank-spacing-sm);
+}
+
+.finebank-kpi-card__trend {
+  display: flex;
+  align-items: center;
+  gap: var(--finebank-spacing-xs);
+}
+
+.finebank-kpi-card__trend--positive {
+  color: var(--finebank-profit);
+}
+
+.finebank-kpi-card__trend--negative {
+  color: var(--finebank-loss);
+}
+
+.finebank-kpi-card__trend--neutral {
+  color: var(--finebank-neutral);
+}
+
+/* Charts - Finebank Style */
+.finebank-chart-container {
+  background: white;
+  border: 1px solid var(--finebank-gray-200);
+  border-radius: var(--finebank-radius-lg);
+  padding: var(--finebank-spacing-lg);
+  box-shadow: var(--finebank-shadow-sm);
+}
+
+.finebank-chart__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--finebank-spacing-lg);
+  padding-bottom: var(--finebank-spacing-md);
+  border-bottom: 1px solid var(--finebank-gray-200);
+}
+
+.finebank-chart__title {
+  font-size: var(--finebank-font-size-lg);
+  font-weight: 600;
+  color: var(--finebank-gray-900);
+}
+
+.finebank-chart__controls {
+  display: flex;
+  gap: var(--finebank-spacing-sm);
+}
+
+/* Navigation - Finebank Style */
+.finebank-nav {
+  background: white;
+  border: 1px solid var(--finebank-gray-200);
+  border-radius: var(--finebank-radius-lg);
+  padding: var(--finebank-spacing-sm);
+  box-shadow: var(--finebank-shadow-sm);
+}
+
+.finebank-nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--finebank-spacing-sm);
+  padding: var(--finebank-spacing-sm) var(--finebank-spacing-md);
+  border-radius: var(--finebank-radius-md);
+  font-size: var(--finebank-font-size-sm);
+  font-weight: 500;
+  color: var(--finebank-gray-600);
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.finebank-nav__item:hover {
+  background: var(--finebank-gray-100);
+  color: var(--finebank-primary);
+}
+
+.finebank-nav__item--active {
+  background: var(--finebank-primary);
+  color: white;
+}
+
+.finebank-nav__item--active:hover {
+  background: var(--finebank-primary-dark);
+}
+
+/* AI Recommendations - Finebank Style */
+.finebank-recommendation {
+  background: white;
+  border: 1px solid var(--finebank-gray-200);
+  border-radius: var(--finebank-radius-lg);
+  padding: var(--finebank-spacing-md);
+  margin-bottom: var(--finebank-spacing-md);
+  box-shadow: var(--finebank-shadow-sm);
+}
+
+.finebank-recommendation--high-priority {
+  border-left: 4px solid var(--finebank-danger);
+}
+
+.finebank-recommendation--medium-priority {
+  border-left: 4px solid var(--finebank-warning);
+}
+
+.finebank-recommendation--low-priority {
+  border-left: 4px solid var(--finebank-primary);
+}
+
+.finebank-recommendation__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--finebank-spacing-sm);
+}
+
+.finebank-recommendation__title {
+  font-size: var(--finebank-font-size-base);
+  font-weight: 600;
+  color: var(--finebank-gray-900);
+}
+
+.finebank-recommendation__confidence {
+  font-size: var(--finebank-font-size-xs);
+  padding: 2px 6px;
+  border-radius: var(--finebank-radius-sm);
+  background: var(--finebank-gray-100);
+  color: var(--finebank-gray-600);
+}
+
+.finebank-recommendation__description {
+  font-size: var(--finebank-font-size-sm);
+  color: var(--finebank-gray-600);
+  line-height: 1.5;
+  margin-bottom: var(--finebank-spacing-md);
+}
+
+.finebank-recommendation__actions {
+  display: flex;
+  gap: var(--finebank-spacing-sm);
+}
+
+/* Button Styles */
+.finebank-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--finebank-spacing-xs);
+  padding: var(--finebank-spacing-sm) var(--finebank-spacing-md);
+  border-radius: var(--finebank-radius-md);
+  font-size: var(--finebank-font-size-sm);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid transparent;
+}
+
+.finebank-button--primary {
+  background: var(--finebank-primary);
+  color: white;
+}
+
+.finebank-button--primary:hover {
+  background: var(--finebank-primary-dark);
+}
+
+.finebank-button--secondary {
+  background: transparent;
+  color: var(--finebank-primary);
+  border-color: var(--finebank-primary);
+}
+
+.finebank-button--secondary:hover {
+  background: var(--finebank-primary);
+  color: white;
+}
+
+/* Utility Classes */
+.finebank-text-profit {
+  color: var(--finebank-profit);
+}
+
+.finebank-text-loss {
+  color: var(--finebank-loss);
+}
+
+.finebank-text-neutral {
+  color: var(--finebank-neutral);
+}
+
+.finebank-bg-profit {
+  background-color: var(--finebank-profit);
+}
+
+.finebank-bg-loss {
+  background-color: var(--finebank-loss);
+}
+
+.finebank-bg-neutral {
+  background-color: var(--finebank-neutral);
+}

@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "../../../apps/scout-ui/src/styles/tokens.css";
+html, body { background: var(--bg); color: var(--text); }
