@@ -1,10 +1,62 @@
 {
+  "$schema": "https://turbo.build/schema.json",
   "pipeline": {
-    "build": { "dependsOn": ["^build"], "outputs": ["dist/**"] },
-    "dev":   { "cache": false },
-    "test":  { "dependsOn": ["build"] },
-    "lint":  { "outputs": [] },
-    "typecheck": { "outputs": [] },
-    "contracts:gen": { "outputs": ["packages/types/**"] }
-  }
+    "build": {
+      "dependsOn": ["^build", "contracts:gen"],
+      "outputs": ["dist/**", ".next/**", "build/**"],
+      "env": ["NODE_ENV", "NEXT_PUBLIC_*", "SUPABASE_*"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["contracts:gen"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
+    "test:e2e": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "lint": {
+      "outputs": [],
+      "dependsOn": ["contracts:gen"]
+    },
+    "typecheck": {
+      "outputs": [],
+      "dependsOn": ["contracts:gen"]
+    },
+    "contracts:gen": {
+      "outputs": ["packages/types/**", "**/*.types.ts"],
+      "inputs": ["supabase/migrations/**/*.sql", "db/schema/**/*.dbml"]
+    },
+    "figma:parse": {
+      "outputs": [],
+      "cache": false
+    },
+    "figma:publish": {
+      "dependsOn": ["figma:parse"],
+      "cache": false
+    },
+    "db:push": {
+      "cache": false
+    },
+    "db:reset": {
+      "cache": false
+    },
+    "mcp:start": {
+      "cache": false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false
+    }
+  },
+  "globalDependencies": [
+    "pnpm-workspace.yaml",
+    "turbo.json",
+    ".env",
+    "supabase/config.toml"
+  ]
 }

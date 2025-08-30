@@ -1,87 +1,57 @@
-import React from 'react';
-import { Skeleton } from '../Skeleton';
+import React from 'react'
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 export interface KpiCardProps {
-  title: string;
-  value?: number | string;
-  loading?: boolean;
-  error?: string;
-  trend?: {
-    value: number;
-    direction: 'up' | 'down' | 'neutral';
-  };
-  metric?: string;
-  className?: string;
+  title: string
+  value: string | number
+  change?: number
+  changeLabel?: string
+  icon?: React.ReactNode
+  className?: string
 }
 
-export const KpiCard: React.FC<KpiCardProps> = ({
-  title,
-  value,
-  loading,
-  error,
-  trend,
-  metric,
-  className = '',
-}) => {
-  if (loading) {
-    return (
-      <div className={`bg-white rounded-lg p-4 shadow-sm ${className}`}>
-        <Skeleton className="h-4 w-24 mb-2" />
-        <Skeleton className="h-8 w-32" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={`bg-white rounded-lg p-4 shadow-sm border border-red-200 ${className}`}>
-        <p className="text-sm text-gray-600">{title}</p>
-        <p className="text-sm text-red-600 mt-1">Error loading data</p>
-      </div>
-    );
-  }
-
-  const formatValue = (val: number | string | undefined) => {
-    if (val === undefined) return '--';
-    if (typeof val === 'number') {
-      if (metric === 'revenue') {
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'PHP',
-          minimumFractionDigits: 0,
-        }).format(val);
-      }
-      return new Intl.NumberFormat('en-US').format(val);
-    }
-    return val;
-  };
-
+export function KpiCard({ 
+  title, 
+  value, 
+  change, 
+  changeLabel, 
+  icon, 
+  className = '' 
+}: KpiCardProps) {
   const getTrendIcon = () => {
-    if (!trend) return null;
-    if (trend.direction === 'up') {
-      return (
-        <span className="text-green-600">↑ {Math.abs(trend.value)}%</span>
-      );
-    }
-    if (trend.direction === 'down') {
-      return (
-        <span className="text-red-600">↓ {Math.abs(trend.value)}%</span>
-      );
-    }
-    return <span className="text-gray-500">→ 0%</span>;
-  };
+    if (!change) return <Minus className="w-4 h-4 text-muted" />
+    if (change > 0) return <TrendingUp className="w-4 h-4 text-green-400" />
+    return <TrendingDown className="w-4 h-4 text-red-400" />
+  }
+
+  const getTrendColor = () => {
+    if (!change) return 'text-muted'
+    return change > 0 ? 'text-green-400' : 'text-red-400'
+  }
 
   return (
-    <div className={`bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${className}`}>
-      <p className="text-sm text-gray-600 mb-1">{title}</p>
-      <p className="text-2xl font-bold text-gray-900">{formatValue(value)}</p>
-      {trend && (
-        <div className="mt-2 text-sm">
-          {getTrendIcon()}
+    <div className={`bg-panel rounded-sk p-6 border border-white/10 ${className}`}>
+      <div className="flex items-start justify-between mb-4">
+        <div className="p-2 bg-accent/10 rounded-sk">
+          {icon || <Activity className="w-5 h-5 text-accent" />}
         </div>
-      )}
+        <div className={`flex items-center gap-1 ${getTrendColor()}`}>
+          {getTrendIcon()}
+          <span className="text-sm font-medium">
+            {change ? `${change > 0 ? '+' : ''}${change}%` : '0%'}
+          </span>
+        </div>
+      </div>
+      
+      <div>
+        <p className="text-sm text-muted mb-1">{title}</p>
+        <p className="text-2xl font-bold text-text">{value}</p>
+        {changeLabel && (
+          <p className="text-xs text-muted mt-2">{changeLabel}</p>
+        )}
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default KpiCard;
+import { Activity } from 'lucide-react'

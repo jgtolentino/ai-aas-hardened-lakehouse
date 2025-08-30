@@ -1,0 +1,16 @@
+{
+  "name": "Scout AI Assistant",
+  "id": "scout-ai-assistant",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma", "figjam"],
+  "networkAccess": {
+    "allowedDomains": ["https://cxzllzyxwpyptfretryc.supabase.co"],
+    "reasoning": "Connect to Scout AI database for insights"
+  },
+  "permissions": ["currentuser"]
+}

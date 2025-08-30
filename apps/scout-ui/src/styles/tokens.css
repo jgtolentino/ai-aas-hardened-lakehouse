@@ -1,0 +1,29 @@
+:root {
+  /* neutrals */
+  --bg: #0b0d12;
+  --panel: #121622;
+  --text: #e6e9f2;
+  --muted: #9aa3b2;
+  /* brand */
+  --accent: #0057ff; /* TBWA primary blue */
+  --accent-2: #2ecc71;
+  --danger: #ff4d4f;
+  --warn: #ffb020;
+  --info: #3aa3ff;
+  /* sizing */
+  --radius: 10px;
+  --pad: 16px;
+}
+/* faces (pbi/tableau/superset) via CSS variables only */
+:root[data-face="pbi"] {
+  --accent: #f2c811;
+  --bg: #0b0b0b; --panel:#161616; --text:#ededed; --muted:#a7a7a7;
+}
+:root[data-face="tableau"] {
+  --accent: #1f77b4;
+  --bg: #0a0e14; --panel:#0f1420; --text:#e2e8f0; --muted:#94a3b8;
+}
+:root[data-face="superset"] {
+  --accent: #20a29a;
+  --bg: #0b0e13; --panel:#121723; --text:#e8edf7; --muted:#9fb0c5;
+}

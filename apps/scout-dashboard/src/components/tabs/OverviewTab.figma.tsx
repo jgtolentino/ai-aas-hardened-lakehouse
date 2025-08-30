@@ -2,50 +2,52 @@ import figma from '@figma/code-connect';
 import { OverviewTab } from './OverviewTab';
 
 /**
- * Overview Tab - Main dashboard view with KPIs and charts
- * Maps to Figma Overview Dashboard component with persona-based customization
+ * Overview Tab - Main Dashboard View
+ * Maps to Figma's overview dashboard with KPIs, charts, and insights
  */
-figma.connect(OverviewTab, 'https://www.figma.com/design/FILE_ID/OVERVIEW_NODE_ID', {
-  example: ({ persona }) => (
-    <OverviewTab 
-      persona={figma.enum('Persona', {
-        'Executive': 'executive',
-        'Manager': 'manager', 
-        'Analyst': 'analyst',
-        'Store Manager': 'store_manager'
+figma.connect(OverviewTab, 'https://www.figma.com/design/Rjh4xxbrZr8otmfpPqiVPC/Scout-Dashboard-Overview', {
+  example: ({ period, viewMode, showInsights }) => (
+    <OverviewTab
+      period={figma.enum('Time Period', {
+        'Today': 'today',
+        'Yesterday': 'yesterday',
+        'Last 7 Days': '7d',
+        'Last 30 Days': '30d',
+        'Last Quarter': 'quarter',
+        'Year to Date': 'ytd',
+        'Custom': 'custom'
+      })}
+      viewMode={figma.enum('View Mode', {
+        'Executive Summary': 'executive',
+        'Detailed Analytics': 'detailed',
+        'Comparison': 'comparison'
+      })}
+      showInsights={figma.boolean('Show AI Insights', true)}
+      layout={figma.enum('Layout', {
+        'Grid': 'grid',
+        'List': 'list',
+        'Dashboard': 'dashboard'
       })}
     />
   ),
   props: {
-    persona: figma.enum('Persona', {
-      'Executive': 'executive',
-      'Manager': 'manager',
-      'Analyst': 'analyst', 
-      'Store Manager': 'store_manager'
+    period: figma.string('Time Period'),
+    viewMode: figma.enum('View Mode', {
+      'Executive Summary': 'executive',
+      'Detailed Analytics': 'detailed',
+      'Comparison': 'comparison'
+    }),
+    showInsights: figma.boolean('Show AI Insights'),
+    layout: figma.enum('Layout', {
+      'Grid': 'grid',
+      'List': 'list',
+      'Dashboard': 'dashboard'
     })
-  }
-});
-
-/**
- * Variant mapping for different dashboard layouts based on user role
- */
-figma.connect(OverviewTab, 'https://www.figma.com/design/FILE_ID/EXECUTIVE_OVERVIEW_NODE_ID', {
-  variant: { 'Dashboard Type': 'Executive' },
-  example: () => (
-    <OverviewTab persona="executive" />
-  )
-});
-
-figma.connect(OverviewTab, 'https://www.figma.com/design/FILE_ID/MANAGER_OVERVIEW_NODE_ID', {
-  variant: { 'Dashboard Type': 'Manager' },
-  example: () => (
-    <OverviewTab persona="manager" />
-  )
-});
-
-figma.connect(OverviewTab, 'https://www.figma.com/design/FILE_ID/ANALYST_OVERVIEW_NODE_ID', {
-  variant: { 'Dashboard Type': 'Analyst' },
-  example: () => (
-    <OverviewTab persona="analyst" />
-  )
+  },
+  imports: [
+    "import { OverviewTab } from '@/components/tabs/OverviewTab';",
+    "import { KpiCard } from '@/components/scout/KpiCard';",
+    "import { AnalyticsChart } from '@/components/charts/AnalyticsChart';",
+    "import { RecommendationPanel } from '@/components/ai/RecommendationPanel';"
+  ]
 });

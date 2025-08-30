@@ -2,42 +2,67 @@ import figma from '@figma/code-connect';
 import { AnalyticsChart } from './AnalyticsChart';
 
 /**
- * Analytics Chart component for financial/retail metrics visualization
- * Maps to Figma Finebank chart components with financial styling
+ * Analytics Chart Component
+ * Flexible charting component that supports multiple chart types
  */
-figma.connect(AnalyticsChart, 'https://www.figma.com/design/Rjh4xxbrZr8otmfpPqiVPC/Finebank---Financial-Management-Dashboard-UI-Kits--Community-?node-id=66-1754', {
-  example: ({ chartType, data, theme }) => (
-    <AnalyticsChart 
+figma.connect(AnalyticsChart, 'https://www.figma.com/design/Rjh4xxbrZr8otmfpPqiVPC/Scout-Analytics-Chart', {
+  example: ({ chartType, title, showLegend, showGrid, theme }) => (
+    <AnalyticsChart
       type={figma.enum('Chart Type', {
         'Line': 'line',
         'Bar': 'bar',
         'Area': 'area',
-        'Composed': 'composed'
+        'Scatter': 'scatter',
+        'Pie': 'pie',
+        'Donut': 'donut',
+        'Radar': 'radar',
+        'Heatmap': 'heatmap',
+        'Funnel': 'funnel',
+        'Sankey': 'sankey'
       })}
-      data={figma.instance('Chart Data')}
       title={figma.string('Chart Title')}
-      color={figma.enum('Chart Color', {
-        'Primary': '#0ea5e9',
-        'Success': '#10b981', 
-        'Warning': '#f59e0b',
-        'Danger': '#ef4444'
+      showLegend={figma.boolean('Show Legend', true)}
+      showGrid={figma.boolean('Show Grid', true)}
+      showTooltip={figma.boolean('Show Tooltip', true)}
+      theme={figma.enum('Theme', {
+        'Light': 'light',
+        'Dark': 'dark',
+        'Auto': 'auto'
       })}
-      showGrid={figma.boolean('Show Grid')}
-      showLegend={figma.boolean('Show Legend')}
-      responsive={figma.boolean('Responsive')}
+      height={figma.number('Height', 400)}
+      responsive={figma.boolean('Responsive', true)}
+      exportable={figma.boolean('Exportable', true)}
     />
   ),
   props: {
     type: figma.enum('Chart Type', {
       'Line': 'line',
-      'Bar': 'bar', 
+      'Bar': 'bar',
       'Area': 'area',
-      'Composed': 'composed'
+      'Scatter': 'scatter',
+      'Pie': 'pie',
+      'Donut': 'donut',
+      'Radar': 'radar',
+      'Heatmap': 'heatmap',
+      'Funnel': 'funnel',
+      'Sankey': 'sankey'
     }),
     title: figma.string('Chart Title'),
+    showLegend: figma.boolean('Show Legend'),
+    showGrid: figma.boolean('Show Grid'),
+    showTooltip: figma.boolean('Show Tooltip'),
     theme: figma.enum('Theme', {
       'Light': 'light',
-      'Dark': 'dark'
-    })
-  }
+      'Dark': 'dark',
+      'Auto': 'auto'
+    }),
+    height: figma.number('Height'),
+    responsive: figma.boolean('Responsive'),
+    exportable: figma.boolean('Exportable')
+  },
+  imports: [
+    "import { AnalyticsChart } from '@/components/charts/AnalyticsChart';",
+    "import { useTheme } from '@/hooks/useTheme';",
+    "import { formatNumber, formatCurrency } from '@/utils/format';"
+  ]
 });

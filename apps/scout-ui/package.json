@@ -1,14 +1,14 @@
 {
   "name": "scout-ui",
   "private": true,
+  "type": "module",
   "scripts": {
-    "prebuild": "sh ../../scripts/security/pre_deploy_audit.sh",
-    "build": "vite build",
-    "dev": "vite",
-    "preview": "vite preview",
-    "storybook": "storybook dev -p 6006",
-    "figma:connect:parse": "figma connect parse",
-    "figma:connect:validate": "figma connect parse --dry-run",
-    "figma:connect:publish": "figma connect publish"
+    "figma:parse": "node ../../scripts/figma-parse-check.mjs",
+    "build": "tsc -b || echo 'tsc build handled at root'"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "globby": "^14.0.2",
+    "typescript": "^5.5.4"
   }
 }

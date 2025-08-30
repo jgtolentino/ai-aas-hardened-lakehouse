@@ -4,6 +4,8 @@
  */
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
+import { createJSONGuard, withRetry } from '@scout/ai-cookbook';
+import { z } from 'zod';
 
 export interface FigmaBridgeConfig {
   port: number;
@@ -17,6 +19,28 @@ export interface BridgeCommand {
   data?: any;
   timestamp?: number;
 }
+
+// Zod schemas for JSON validation guards
+const FigmaResponseSchema = z.object({
+  ok: z.boolean(),
+  error: z.string().optional(),
+  data: z.any().optional(),
+  id: z.string().optional()
+});
+
+const PRDContentSchema = z.object({
+  userStories: z.array(z.string()).optional(),
+  requirements: z.array(z.string()).optional(),
+  wireframes: z.array(z.object({
+    name: z.string(),
+    url: z.string()
+  })).optional(),
+  components: z.array(z.string()).optional()
+});
+
+// Guards for strict JSON validation
+const figmaResponseGuard = createJSONGuard(FigmaResponseSchema);
+const prdContentGuard = createJSONGuard(PRDContentSchema);
 
 export class FigmaBridge extends EventEmitter {
   private wss: WebSocket.Server;
@@ -50,10 +74,17 @@ export class FigmaBridge extends EventEmitter {
 
       ws.on('message', (data: WebSocket.Data) => {
         try {
-          const message = JSON.parse(data.toString());
-          this.handlePluginMessage(ws, message);
+          const rawMessage = JSON.parse(data.toString());
+          // Apply JSON guard for strict validation
+          const validatedMessage = figmaResponseGuard.validate(rawMessage);
+          this.handlePluginMessage(ws, validatedMessage);
         } catch (error) {
-          console.error('❌ Invalid message from Figma plugin:', error);
+          console.error('❌ Invalid message from Figma plugin (failed guard validation):', error);
+          ws.send(JSON.stringify({
+            type: 'error',
+            error: 'Message failed JSON validation',
+            details: error instanceof Error ? error.message : 'Unknown validation error'
+          }));
         }
       });
 
@@ -159,22 +190,34 @@ export class FigmaBridge extends EventEmitter {
    * Extract PRD content from Figma board
    */
   async extractPRDContent(boardUrl: string, extractionTargets: string[] = []): Promise<any> {
-    return this.executeCommand({
-      type: 'extract-prd-content',
-      data: {
-        boardUrl,
-        extractionTargets: extractionTargets.length > 0 ? extractionTargets : [
-          'user-stories',
-          'requirements', 
-          'wireframes',
-          'user-flows',
-          'acceptance-criteria',
-          'technical-specs',
-          'design-tokens',
-          'components'
-        ]
+    try {
+      const rawResponse = await this.executeCommand({
+        type: 'extract-prd-content',
+        data: {
+          boardUrl,
+          extractionTargets: extractionTargets.length > 0 ? extractionTargets : [
+            'user-stories',
+            'requirements', 
+            'wireframes',
+            'user-flows',
+            'acceptance-criteria',
+            'technical-specs',
+            'design-tokens',
+            'components'
+          ]
+        }
+      });
+
+      // Apply PRD content guard for strict validation
+      if (rawResponse.data) {
+        rawResponse.data = prdContentGuard.validate(rawResponse.data);
       }
-    });
+      
+      return rawResponse;
+    } catch (error) {
+      console.error('❌ PRD extraction failed validation:', error);
+      throw new Error(`PRD content validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**

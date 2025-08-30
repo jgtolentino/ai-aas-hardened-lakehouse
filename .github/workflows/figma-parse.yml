@@ -1,0 +1,20 @@
+name: Code Connect Parse
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm -v
+      - name: Install minimal deps
+        run: |
+          cd apps/scout-ui
+          npm ci || npm i
+      - name: Validate Code Connect mappings
+        run: |
+          npm run -w apps/scout-ui figma:parse

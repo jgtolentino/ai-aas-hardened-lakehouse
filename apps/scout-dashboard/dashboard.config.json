@@ -1,73 +1,222 @@
 {
-  "dashboard": "Scout v6.0",
+  "dashboard": "Scout Intelligence Dashboard v6.0",
+  "face": "pbi",
   "grid": { "cols": 12, "gutter": 16, "outer": 24 },
   "globals": {
-    "filters": ["dateRange","region","barangay","category","brand","channel"],
+    "filters": ["dateRange", "region", "barangay", "company", "category", "brand", "subCategory", "channel"],
     "dateRange": { "default": ["last_28d"] },
-    "region": { "default": ["ALL"] }
+    "region": { "default": ["ALL"] },
+    "barangay": { "default": [] },
+    "company": { "default": [] },
+    "category": { "default": [] },
+    "brand": { "default": [] },
+    "subCategory": { "default": [] },
+    "channel": { "default": [] }
   },
-  "modules": [
+
+  "sections": [
     {
-      "id": "kpi-trends",
-      "title": "Overview",
+      "id": "executive",
+      "title": "Executive Dashboard",
       "rows": [
-        { "cards": [
-          { "type": "kpi", "metric": "revenue", "span": 3 },
-          { "type": "kpi", "metric": "transactions", "span": 3 },
-          { "type": "kpi", "metric": "basket_size", "span": 3 },
-          { "type": "kpi", "metric": "unique_shoppers", "span": 3 }
-        ]},
-        { "cards": [
-          { "type": "timeseries", "title": "Revenue Trend", "span": 8,
-            "query": { "rpc": "scout_get_revenue_trend", "params": ["dateRange","region","category","brand"] },
-            "aiOverlay": true
-          },
-          { "type": "heatmap", "title": "Hour x Weekday", "span": 4,
-            "query": { "rpc": "scout_get_hour_weekday", "params": ["dateRange","region"] },
-            "aiOverlay": true
-          }
-        ]}
+        {
+          "cards": [
+            {
+              "type": "kpi_row",
+              "title": "KPI Overview",
+              "span": 12,
+              "kpis": [
+                { "metric": "revenue", "delta": "revenue_delta" },
+                { "metric": "transactions", "delta": "transactions_delta" },
+                { "metric": "basket_size", "delta": "basket_delta" },
+                { "metric": "gross_margin", "delta": "margin_delta" }
+              ],
+              "query": { "rpc": "scout_get_kpis", "params": ["dateRange","region","barangay","company","category","brand","subCategory","channel"] },
+              "aiOverlay": true
+            }
+          ]
+        },
+        {
+          "cards": [
+            {
+              "type": "timeseries",
+              "title": "Sales & Profit Over Time",
+              "span": 12,
+              "query": { "rpc": "scout_get_sales_profit_trend", "params": ["dateRange","region","barangay","company","category","brand","subCategory","channel"] },
+              "options": { "series": ["sales","profit"], "granularityDefault": "D" },
+              "aiOverlay": true
+            }
+          ]
+        }
       ]
     },
-    { "id": "mix", "title": "Product Mix", "rows": [
-      { "cards": [
-        { "type": "pareto", "title": "Top SKUs", "span": 6,
-          "query": { "rpc": "scout_get_pareto_skus", "params": ["dateRange","region","category"] }, "aiOverlay": true
+
+    {
+      "id": "transaction-trends",
+      "title": "Transaction Trends",
+      "rows": [
+        {
+          "cards": [
+            {
+              "type": "heatmap",
+              "title": "Volume by Hour × Weekday",
+              "span": 6,
+              "query": { "rpc": "scout_get_hour_weekday", "params": ["dateRange","region","barangay","channel"] },
+              "aiOverlay": true
+            },
+            {
+              "type": "boxplot",
+              "title": "Basket Value Distribution",
+              "span": 6,
+              "query": { "rpc": "scout_get_basket_boxplot", "params": ["dateRange","region","barangay","category","brand"] },
+              "aiOverlay": true
+            }
+          ]
         },
-        { "type": "sankey", "title": "Substitution Flows", "span": 6,
-          "query": { "rpc": "scout_get_substitution", "params": ["dateRange","region","category","windowDays"] }, "aiOverlay": true
+        {
+          "cards": [
+            {
+              "type": "timeseries",
+              "title": "Transactions by Location",
+              "span": 12,
+              "query": { "rpc": "scout_txn_rate_by_location", "params": ["dateRange","region","barangay","channel"] },
+              "aiOverlay": true
+            }
+          ]
         }
-      ]}
-    ]},
-    { "id": "competitive", "title": "Competitive", "rows": [
-      { "cards": [
-        { "type": "stackedbar", "title": "Category Share Over Time", "span": 7,
-          "query": { "rpc": "scout_get_share_time", "params": ["dateRange","region","category","brandSet"] }, "aiOverlay": true
+      ]
+    },
+
+    {
+      "id": "product-mix",
+      "title": "Product Mix & SKU Info",
+      "rows": [
+        {
+          "cards": [
+            {
+              "type": "pareto",
+              "title": "Top SKUs (80/20)",
+              "span": 6,
+              "query": { "rpc": "scout_get_pareto_skus", "params": ["dateRange","region","barangay","category","brand"] },
+              "aiOverlay": true
+            },
+            {
+              "type": "sankey",
+              "title": "Substitution Flows (Brand → Brand)",
+              "span": 6,
+              "query": { "rpc": "scout_get_substitution", "params": ["dateRange","region","barangay","category","brand","windowDays"] },
+              "aiOverlay": true
+            }
+          ]
         },
-        { "type": "matrix", "title": "Positioning (Price × Share)", "span": 5,
-          "query": { "rpc": "scout_get_positioning", "params": ["dateRange","region","category","brandSet"] }, "aiOverlay": true
+        {
+          "cards": [
+            {
+              "type": "bar_stacked",
+              "title": "Category/Brand Mix",
+              "span": 12,
+              "query": { "rpc": "scout_get_category_brand_mix", "params": ["dateRange","region","barangay","category","brand"] },
+              "aiOverlay": true
+            }
+          ]
         }
-      ]}
-    ]},
-    { "id": "geography", "title": "Geography", "rows": [
-      { "cards": [
-        { "type": "choropleth", "title": "Revenue by Region", "span": 12,
-          "query": { "rpc": "scout_geo_summary", "params": ["dateRange","region","metric"] }, "aiOverlay": true
+      ]
+    },
+
+    {
+      "id": "consumer-behavior",
+      "title": "Consumer Behavior & Preference Signals",
+      "rows": [
+        {
+          "cards": [
+            {
+              "type": "funnel",
+              "title": "Request → Suggestion → Purchase",
+              "span": 6,
+              "query": { "rpc": "scout_request_to_purchase", "params": ["dateRange","region","barangay","category","brand"] },
+              "aiOverlay": true
+            },
+            {
+              "type": "bar_grouped",
+              "title": "Request Type Distribution (Branded/Unbranded/Unsure)",
+              "span": 6,
+              "query": { "rpc": "scout_request_type_distribution", "params": ["dateRange","region","barangay","category"] },
+              "aiOverlay": true
+            }
+          ]
         }
-      ]}
-    ]},
-    { "id": "consumers", "title": "Consumers", "rows": [
-      { "cards": [
-        { "type": "funnel", "title": "Request → Purchase", "span": 6,
-          "query": { "rpc": "scout_request_to_purchase", "params": ["dateRange","region","category"] }, "aiOverlay": true
-        },
-        { "type": "demographic", "title": "Age × Gender Mix", "span": 6,
-          "query": { "rpc": "scout_demographic_mix", "params": ["dateRange","region"] }, "aiOverlay": true
+      ]
+    },
+
+    {
+      "id": "consumer-profiling",
+      "title": "Consumer Profiling",
+      "rows": [
+        {
+          "cards": [
+            {
+              "type": "donut",
+              "title": "Gender Mix",
+              "span": 4,
+              "query": { "rpc": "scout_demographic_gender", "params": ["dateRange","region","barangay"] },
+              "aiOverlay": true
+            },
+            {
+              "type": "donut",
+              "title": "Age Brackets",
+              "span": 4,
+              "query": { "rpc": "scout_demographic_age", "params": ["dateRange","region","barangay"] },
+              "aiOverlay": true
+            },
+            {
+              "type": "choropleth",
+              "title": "Geo Heatmap",
+              "span": 4,
+              "query": { "rpc": "scout_geo_summary", "params": ["dateRange","region","barangay","channel"] },
+              "aiOverlay": true
+            }
+          ]
         }
-      ]}
-    ]},
-    { "id": "ai-chat", "title": "AI Chat", "rows": [
-      { "cards": [ { "type": "chat", "title": "Ask Scout", "span": 12, "aiOverlay": false } ] }
-    ]}
+      ]
+    },
+
+    {
+      "id": "ai-panel",
+      "title": "AI Recommendation Panel",
+      "rows": [
+        {
+          "cards": [
+            {
+              "type": "ai_recommendations",
+              "title": "AI Recommendations",
+              "span": 12,
+              "query": { "rpc": "ai_generate_recommendations", "params": ["dateRange","region","barangay","company","category","brand","subCategory","channel"] },
+              "aiOverlay": false,
+              "actions": ["copy", "export", "deepLink"]
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "filters",
+      "title": "Filters",
+      "kind": "panel",
+      "rows": [
+        {
+          "cards": [
+            { "type": "filter", "control": "dateRange",  "label": "Date",          "span": 12 },
+            { "type": "filter", "control": "region",     "label": "Region",        "span": 12 },
+            { "type": "filter", "control": "barangay",   "label": "Barangay",      "span": 12 },
+            { "type": "filter", "control": "company",    "label": "Company",       "span": 12 },
+            { "type": "filter", "control": "category",   "label": "Category",      "span": 12 },
+            { "type": "filter", "control": "brand",      "label": "Brand",         "span": 12 },
+            { "type": "filter", "control": "subCategory","label": "Sub-Category",  "span": 12 },
+            { "type": "filter", "control": "channel",    "label": "Channel",       "span": 12 }
+          ]
+        }
+      ]
+    }
   ]
 }

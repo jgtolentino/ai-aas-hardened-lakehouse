@@ -1,0 +1,11 @@
+{
+  "projectName": "Scout UI",
+  "framework": "react",
+  "language": "typescript",
+  "componentsDir": "src/components",
+  "mappingsGlob": "src/components/**/*.figma.tsx",
+  "tokens": {
+    "source": "css-vars",
+    "files": ["src/styles/tokens.css"]
+  }
+}

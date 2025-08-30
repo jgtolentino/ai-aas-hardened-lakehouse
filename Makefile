@@ -1,6 +1,7 @@
 SHELL := /bin/bash
+ROOT ?= /Users/tbwa/ai-aas-hardened-lakehouse
 
-.PHONY: sec audit rls mcp-check dev-next dev-vite deploy-next story preflight hub hub-dev hub-openapi hub-tunnel sb-push sb-diff sweep validate seed precommit
+.PHONY: sec audit rls mcp-check dev-next dev-vite deploy-next story preflight hub hub-dev hub-openapi hub-tunnel sb-push sb-diff sweep validate seed precommit deploy deploy-staging deploy-prod rollback smoke
 
 preflight: sec audit rls
 
@@ -55,3 +56,22 @@ seed: ; ./.backlog_sweep/seed_issues_from_backlog.py
 precommit:
 	python3 -m pip install -q pre-commit
 	pre-commit install
+
+# Scout v6.0 Deployment Targets
+deploy: deploy-staging
+
+deploy-staging:
+	@echo "🚀 Deploying Scout v6.0 to STAGING"
+	@TARGET=staging bash $(ROOT)/scripts/deploy/deploy-scout-batch.sh
+
+deploy-prod:
+	@echo "🚀 Deploying Scout v6.0 to PRODUCTION"
+	@TARGET=prod DEPLOY_VERCEL=1 bash $(ROOT)/scripts/deploy/deploy-scout-batch.sh
+
+rollback:
+	@echo "⚠️ Rolling back database from snapshot"
+	@bash $(ROOT)/scripts/deploy/rollback-from-snapshot.sh $(SNAP)
+
+smoke:
+	@echo "🔍 Running smoke tests"
+	@bash $(ROOT)/scripts/deploy/smoke.sh

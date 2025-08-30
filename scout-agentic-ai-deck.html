@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Agentic AI - Client Deck</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .slide {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+        }
+        
+        .slide-content {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 60px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        h2 {
+            font-size: 36px;
+            margin-bottom: 30px;
+            color: #2d3748;
+        }
+        
+        h3 {
+            font-size: 24px;
+            margin: 30px 0 15px;
+            color: #4a5568;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .card {
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .card.highlight {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border: 2px solid #667eea;
+        }
+        
+        .flow-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 40px 0;
+            position: relative;
+        }
+        
+        .flow-step {
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 50%;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .flow-step .number {
+            font-size: 24px;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .flow-step .label {
+            font-size: 16px;
+            color: #2d3748;
+        }
+        
+        .flow-arrow {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            z-index: 1;
+        }
+        
+        .case-study {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin: 30px 0;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+        
+        .metric .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .metric .label {
+            font-size: 14px;
+            color: #718096;
+            margin-top: 5px;
+        }
+        
+        .implementation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+        
+        .implementation-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        
+        .implementation-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .implementation-table tr:hover {
+            background: #f7fafc;
+        }
+        
+        .cta {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            margin-top: 30px;
+            display: inline-block;
+        }
+        
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Slide 1: Title -->
+<div class="slide">
+    <div class="slide-content">
+        <h1>Scout Agentic AI Platform</h1>
+        <h2>Implementing Tableau's Vision Today</h2>
+        <p style="font-size: 20px; color: #718096; margin: 30px 0;">
+            How Scout transforms insights into autonomous actions
+        </p>
+        <div class="metrics-grid">
+            <div class="metric">
+                <div class="value">95%</div>
+                <div class="label">Anomaly Detection</div>
+            </div>
+            <div class="metric">
+                <div class="value">48x</div>
+                <div class="label">Faster Response</div>
+            </div>
+            <div class="metric">
+                <div class="value">2.5x</div>
+                <div class="label">Average ROI</div>
+            </div>
+            <div class="metric">
+                <div class="value">24/7</div>
+                <div class="label">Autonomous</div>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">1 / 5</div>
+</div>
+
+<!-- Slide 2: Tableau Framework -->
+<div class="slide">
+    <div class="slide-content">
+        <h2>Tableau's Agentic AI Vision</h2>
+        <p style="font-size: 18px; color: #718096; margin-bottom: 30px;">
+            "Bridging the Insight-Action Gap with Autonomous Intelligence"
+        </p>
+        
+        <div class="flow-diagram">
+            <div class="flow-arrow"></div>
+            <div class="flow-step">
+                <div class="number">1</div>
+                <div class="label">DETECT</div>
+            </div>
+            <div class="flow-step">
+                <div class="number">2</div>
+                <div class="label">RECOMMEND</div>
+            </div>
+            <div class="flow-step">
+                <div class="number">3</div>
+                <div class="label">AUTOMATE</div>
+            </div>
+            <div class="flow-step">
+                <div class="number">4</div>
+                <div class="label">EXPLAIN</div>
+            </div>
+        </div>
+        
+        <div class="comparison-grid">
+            <div class="card">
+                <h3>Traditional Analytics</h3>
+                <ul style="line-height: 1.8;">
+                    <li>Static dashboards</li>
+                    <li>"Sales dropped 15%"</li>
+                    <li>Human interprets data</li>
+                    <li>Manual action required</li>
+                    <li>Insights stop at charts</li>
+                </ul>
+            </div>
+            <div class="card highlight">
+                <h3>Agentic Analytics</h3>
+                <ul style="line-height: 1.8;">
+                    <li>Self-optimizing control panels</li>
+                    <li>"Sales dropped 15% - launching counter-campaign"</li>
+                    <li>AI understands context</li>
+                    <li>Automatic execution</li>
+                    <li>Insights trigger actions</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">2 / 5</div>
+</div>
+
+<!-- Slide 3: Scout Implementation -->
+<div class="slide">
+    <div class="slide-content">
+        <h2>Scout's Implementation: Already Live</h2>
+        
+        <table class="implementation-table">
+            <thead>
+                <tr>
+                    <th>Tableau Step</th>
+                    <th>Scout Components</th>
+                    <th>Real Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>DETECT</strong></td>
+                    <td>
+                        • WrenAI semantic queries<br>
+                        • SUQI anomaly detection<br>
+                        • Pattern recognition
+                    </td>
+                    <td>Marlboro +250% spike in Region VI detected in 2 hours</td>
+                </tr>
+                <tr>
+                    <td><strong>RECOMMEND</strong></td>
+                    <td>
+                        • Predictive metrics<br>
+                        • Strategy engine<br>
+                        • ChartVision insights
+                    </td>
+                    <td>3 counter-strategies generated: E-Sports recommended (2.5x ROI)</td>
+                </tr>
+                <tr>
+                    <td><strong>AUTOMATE</strong></td>
+                    <td>
+                        • Edge Functions<br>
+                        • MCP Hub routing<br>
+                        • Agent orchestration
+                    </td>
+                    <td>Campaign auto-launched, inventory adjusted, stakeholders notified</td>
+                </tr>
+                <tr>
+                    <td><strong>EXPLAIN</strong></td>
+                    <td>
+                        • Reasoning chains<br>
+                        • SUQI overlays<br>
+                        • GenieView docs
+                    </td>
+                    <td>4-step reasoning with 91% confidence score provided</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div style="background: #f0fff4; padding: 20px; border-radius: 8px; margin-top: 30px;">
+            <strong style="color: #22543d;">✅ Key Differentiator:</strong>
+            <span style="color: #2f855a;">Scout isn't planning this - it's running in production today</span>
+        </div>
+    </div>
+    <div class="slide-number">3 / 5</div>
+</div>
+
+<!-- Slide 4: Case Study -->
+<div class="slide">
+    <div class="slide-content">
+        <h2>Real-World Impact: JTI vs Philip Morris</h2>
+        
+        <div class="case-study">
+            <h3 style="color: white;">The Challenge</h3>
+            <p>Philip Morris launched a stealth basketball league in Visayas to build youth loyalty before a tax increase.</p>
+            
+            <h3 style="color: white; margin-top: 20px;">Scout's Response</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 20px;">
+                <div>
+                    <strong>Day 1, Hour 1:</strong> Anomaly detected<br>
+                    <strong>Day 1, Hour 2:</strong> Social evidence found<br>
+                    <strong>Day 1, Hour 4:</strong> Strategy selected<br>
+                    <strong>Day 2:</strong> E-Sports campaign launched
+                </div>
+                <div>
+                    <strong>Investment:</strong> ₱1.5M (vs ₱3M direct)<br>
+                    <strong>Timeline:</strong> 2 weeks (vs 2 months)<br>
+                    <strong>Result:</strong> 35% share recovered<br>
+                    <strong>ROI:</strong> 2.8x achieved
+                </div>
+            </div>
+        </div>
+        
+        <h3>Without Scout (Traditional Approach)</h3>
+        <div style="background: #fed7d7; padding: 20px; border-radius: 8px;">
+            <div style="color: #742a2a;">
+                • Week 1-2: Reviewing monthly reports<br>
+                • Week 3-4: Management discussions<br>
+                • Week 5-6: Campaign planning<br>
+                • Week 8+: Response (too late)<br>
+                <strong>Result: Lost market share, reactive position</strong>
+            </div>
+        </div>
+    </div>
+    <div class="slide-number">4 / 5</div>
+</div>
+
+<!-- Slide 5: Why Scout -->
+<div class="slide">
+    <div class="slide-content">
+        <h2>Why Scout Delivers on the Agentic Promise</h2>
+        
+        <div class="metrics-grid">
+            <div class="metric">
+                <div class="value">500+</div>
+                <div class="label">SKUs Monitored</div>
+            </div>
+            <div class="metric">
+                <div class="value">17</div>
+                <div class="label">Regions Covered</div>
+            </div>
+            <div class="metric">
+                <div class="value">4</div>
+                <div class="label">Agent Types</div>
+            </div>
+            <div class="metric">
+                <div class="value">87%</div>
+                <div class="label">Forecast Accuracy</div>
+            </div>
+        </div>
+        
+        <h3>Scout vs Tableau's Vision</h3>
+        <table class="implementation-table">
+            <tr>
+                <td>✅ "Bridge the insight-action gap"</td>
+                <td>Fully automated pipeline from detection to execution</td>
+            </tr>
+            <tr>
+                <td>✅ "Agentic AI for decisions"</td>
+                <td>4 agent types deployed and operational</td>
+            </tr>
+            <tr>
+                <td>✅ "Explainable recommendations"</td>
+                <td>Complete reasoning chains with confidence scores</td>
+            </tr>
+            <tr>
+                <td>✅ "Closed-loop automation"</td>
+                <td>Edge Functions + MCP Hub + Real-time triggers</td>
+            </tr>
+            <tr>
+                <td>✅ "Beyond static dashboards"</td>
+                <td>Self-optimizing control panels with autonomous actions</td>
+            </tr>
+        </table>
+        
+        <div style="text-align: center; margin-top: 40px;">
+            <h3 style="color: #667eea; font-size: 28px; margin-bottom: 20px;">
+                "Every ₱20 transaction doesn't just reveal insights -<br>
+                it triggers actions that capture the next ₱20 million"
+            </h3>
+            <button class="cta">Schedule Your Demo Today</button>
+        </div>
+    </div>
+    <div class="slide-number">5 / 5</div>
+</div>
+
+</body>
+</html>

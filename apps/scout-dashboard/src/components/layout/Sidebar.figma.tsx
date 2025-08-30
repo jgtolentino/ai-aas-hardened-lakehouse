@@ -2,66 +2,49 @@ import figma from '@figma/code-connect';
 import { Sidebar } from './Sidebar';
 
 /**
- * Sidebar Navigation - Financial dashboard navigation
- * Maps to Figma Finebank sidebar component with financial navigation structure
+ * Sidebar Navigation Component
+ * Maps to Figma's sidebar navigation with all menu items and states
  */
-figma.connect(Sidebar, 'https://www.figma.com/design/Rjh4xxbrZr8otmfpPqiVPC/Finebank---Financial-Management-Dashboard-UI-Kits--Community-?node-id=66-1754', {
-  example: ({ isCollapsed, activeTab }) => (
+figma.connect(Sidebar, 'https://www.figma.com/design/Rjh4xxbrZr8otmfpPqiVPC/Scout-Dashboard', {
+  example: ({ activeItem, collapsed, theme }) => (
     <Sidebar 
-      isCollapsed={figma.boolean('Collapsed State')}
-      activeTab={figma.enum('Active Tab', {
+      activeItem={figma.enum('Active Item', {
         'Overview': 'overview',
-        'Analytics': 'analytics', 
-        'Geography': 'geography',
+        'AI Recommendations': 'ai',
+        'Analytics': 'analytics',
         'Consumers': 'consumers',
+        'Geography': 'geography',
+        'Competitive': 'competitive',
         'Mix': 'mix',
-        'AI': 'ai',
-        'Competitive': 'competitive'
+        'Reports': 'reports',
+        'Finebank': 'finebank'
+      })}
+      collapsed={figma.boolean('Collapsed', false)}
+      theme={figma.enum('Theme', {
+        'Light': 'light',
+        'Dark': 'dark'
       })}
       userRole={figma.enum('User Role', {
         'Executive': 'executive',
-        'Manager': 'manager',
         'Analyst': 'analyst',
-        'Store Manager': 'store_manager'
+        'Viewer': 'viewer'
       })}
-      organizationLogo={figma.instance('Logo')}
-      showBadges={figma.boolean('Show Notifications')}
     />
   ),
   props: {
-    isCollapsed: figma.boolean('Collapsed State'),
-    activeTab: figma.enum('Active Tab', {
-      'Overview': 'overview',
-      'Analytics': 'analytics',
-      'Geography': 'geography', 
-      'Consumers': 'consumers',
-      'Mix': 'mix',
-      'AI': 'ai',
-      'Competitive': 'competitive'
+    activeItem: figma.string('Active Item'),
+    collapsed: figma.boolean('Collapsed'),
+    theme: figma.enum('Theme', {
+      'Light': 'light',
+      'Dark': 'dark'
     }),
     userRole: figma.enum('User Role', {
       'Executive': 'executive',
-      'Manager': 'manager',
       'Analyst': 'analyst',
-      'Store Manager': 'store_manager'
+      'Viewer': 'viewer'
     })
-  }
-});
-
-/**
- * Navigation Item mapping
- */
-figma.connect(Sidebar, 'https://www.figma.com/design/Rjh4xxbrZr8otmfpPqiVPC/Finebank---Financial-Management-Dashboard-UI-Kits--Community-?node-id=66-1754', {
-  variant: { 'Component': 'Navigation Item' },
-  example: () => (
-    <div className="finebank-nav__item">
-      {figma.instance('Icon')}
-      <span>{figma.string('Label')}</span>
-      {figma.boolean('Show Badge') && (
-        <span className="finebank-nav__badge">
-          {figma.string('Badge Text')}
-        </span>
-      )}
-    </div>
-  )
+  },
+  imports: [
+    "import { Sidebar } from '@/components/layout/Sidebar';"
+  ]
 });

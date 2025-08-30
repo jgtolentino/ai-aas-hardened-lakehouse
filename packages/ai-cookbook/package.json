@@ -1,0 +1,55 @@
+{
+  "name": "@scout/ai-cookbook",
+  "version": "1.0.0",
+  "description": "Structured output, retry logic, and MCP tool contracts for TBWA AI platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "opentelemetry-api": "^1.9.0",
+    "p-retry": "^6.2.0",
+    "fast-json-stringify": "^5.16.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "tsup": "^8.0.0",
+    "vitest": "^2.0.0",
+    "eslint": "^8.57.0",
+    "@types/node": "^20.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./schemas": {
+      "import": "./dist/schemas/index.mjs",
+      "require": "./dist/schemas/index.js",
+      "types": "./dist/schemas/index.d.ts"
+    },
+    "./adapters": {
+      "import": "./dist/adapters/index.mjs",
+      "require": "./dist/adapters/index.js",
+      "types": "./dist/adapters/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "ai",
+    "mcp",
+    "structured-output",
+    "figma",
+    "supabase",
+    "anthropic"
+  ]
+}

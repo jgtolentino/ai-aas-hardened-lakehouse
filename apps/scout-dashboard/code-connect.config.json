@@ -1,0 +1,73 @@
+{
+  "version": "1.0.0",
+  "components": [
+    {
+      "name": "Dashboard Layout",
+      "path": "src/components/layout",
+      "figmaNodes": {
+        "Sidebar": "66-1754",
+        "Topbar": "66-1755",
+        "MainContent": "66-1756"
+      }
+    },
+    {
+      "name": "KPI Components",
+      "path": "src/components/scout/KpiCard",
+      "figmaNodes": {
+        "KpiCard": "66-1754",
+        "KpiRow": "66-1760",
+        "KpiSection": "66-1765"
+      }
+    },
+    {
+      "name": "Chart Components",
+      "path": "src/components/charts",
+      "figmaNodes": {
+        "AnalyticsChart": "66-1770",
+        "RevenueChart": "66-1775",
+        "GeographicChart": "66-1780",
+        "FunnelChart": "66-1785",
+        "SankeyChart": "66-1790"
+      }
+    },
+    {
+      "name": "AI Components",
+      "path": "src/components/ai",
+      "figmaNodes": {
+        "RecommendationPanel": "66-1800",
+        "InsightCard": "66-1805",
+        "AiChatPanel": "66-1810"
+      }
+    },
+    {
+      "name": "Tab Views",
+      "path": "src/components/tabs",
+      "figmaNodes": {
+        "OverviewTab": "66-1820",
+        "AITab": "66-1825",
+        "ConsumersTab": "66-1830",
+        "GeographyTab": "66-1835",
+        "CompetitiveTab": "66-1840",
+        "MixTab": "66-1845"
+      }
+    }
+  ],
+  "mappings": {
+    "imports": {
+      "@/components": "./src/components",
+      "@/hooks": "./src/hooks",
+      "@/lib": "./src/lib",
+      "@/utils": "./src/utils",
+      "@/store": "./src/store",
+      "@/data": "./src/data"
+    }
+  },
+  "config": {
+    "parser": "react",
+    "framework": "next",
+    "typescript": true,
+    "cssFramework": "tailwind",
+    "stateManagement": "zustand",
+    "dataFetching": "tanstack-query"
+  }
+}

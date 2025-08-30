@@ -1,0 +1,257 @@
+# Claude Figma Agent - Resident Dev Mode Agent
+# Enables design → code → database → GitHub sync from within Figma Make
+
+id: claude-figma-agent
+name: "Claude Figma Dev Mode Agent"
+version: "1.0.0"
+description: >
+  Resident Claude agent that lives inside Figma Make Dev Mode.
+  Automatically syncs frames → React components → Supabase migrations → GitHub commits.
+  Enables seamless design-to-code workflow with database evolution.
+
+# Agent Configuration
+agent_type: "figma_resident"
+environment: "figma_dev_mode"
+runtime: "mcp_bridge"
+
+# Capabilities
+capabilities:
+  - frame_to_component_generation
+  - database_schema_inference
+  - supabase_migration_creation
+  - github_auto_commit
+  - real_time_code_preview
+  - design_token_sync
+
+# Permissions (Secure by default)
+permissions:
+  allow_shell: false
+  allow_credentials: false
+  allow_network: true  # Required for MCP Hub communication
+  allow_file_write: true  # Required for component generation
+
+# MCP Bridge Configuration
+mcp_bridge:
+  hub_url: "ws://localhost:8787/figma-bridge"
+  timeout: 30000
+  max_retries: 3
+  heartbeat_interval: 5000
+
+# Tools Available
+tools:
+  figma:
+    - read_selection
+    - read_frame_properties
+    - read_design_tokens
+    - read_component_variants
+    - export_frame_metadata
+  
+  supabase:
+    - execute_sql
+    - create_migration
+    - apply_migration
+    - list_tables
+    - generate_types
+  
+  github:
+    - create_branch
+    - commit_file
+    - create_pull_request
+  
+  filesystem:
+    - read_component_templates
+    - write_component_file
+    - update_component_mapping
+
+# Workflow Triggers
+triggers:
+  - event: "figma.frame.selected"
+    condition: "frame.name.includes('Component') || frame.name.includes('Dashboard')"
+    action: "generate_component_workflow"
+    
+  - event: "figma.design_tokens.updated"
+    condition: "tokens.category === 'color' || tokens.category === 'spacing'"
+    action: "sync_design_tokens_workflow"
+    
+  - event: "figma.component.exported"
+    condition: "component.type === 'KPI' || component.type === 'Chart'"
+    action: "create_database_schema_workflow"
+
+# Workflow Definitions
+workflows:
+  generate_component_workflow:
+    description: "Generate React component from Figma frame"
+    steps:
+      - id: "extract_frame_metadata"
+        tool: "figma.read_frame_properties"
+        output: "frame_metadata"
+        
+      - id: "generate_component_code"
+        tool: "filesystem.write_component_file"
+        input: 
+          template: "src/templates/component.tsx.template"
+          frame_data: "${frame_metadata}"
+          output_path: "apps/scout-dashboard/src/components/generated/${frame.name}.tsx"
+          
+      - id: "create_code_connect_mapping"
+        tool: "filesystem.write_component_file"
+        input:
+          template: "src/templates/figma-mapping.tsx.template"
+          frame_data: "${frame_metadata}"
+          output_path: "apps/scout-dashboard/src/components/generated/${frame.name}.figma.tsx"
+          
+      - id: "commit_to_github"
+        tool: "github.commit_file"
+        input:
+          branch: "chore/figma-sync-${timestamp}"
+          message: "feat: Add ${frame.name} component from Figma\n\n🎨 Generated with Figma Dev Mode Agent\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+          files: 
+            - "apps/scout-dashboard/src/components/generated/${frame.name}.tsx"
+            - "apps/scout-dashboard/src/components/generated/${frame.name}.figma.tsx"
+
+  create_database_schema_workflow:
+    description: "Infer and create database schema from component requirements"
+    steps:
+      - id: "analyze_component_data_needs"
+        tool: "figma.read_frame_properties"
+        filter: "properties.data_source"
+        output: "data_requirements"
+        
+      - id: "generate_migration_sql"
+        tool: "supabase.create_migration"
+        input:
+          migration_name: "add_${frame.name.toLowerCase()}_state_tracking"
+          sql_content: |
+            -- Generated from Figma component: ${frame.name}
+            CREATE TABLE IF NOT EXISTS scout.${frame.name.toLowerCase()}_states (
+              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              component_id TEXT NOT NULL,
+              state_data JSONB NOT NULL,
+              updated_at TIMESTAMP DEFAULT NOW()
+            );
+            
+            -- Enable RLS
+            ALTER TABLE scout.${frame.name.toLowerCase()}_states ENABLE ROW LEVEL SECURITY;
+            
+            -- Policy for authenticated users
+            CREATE POLICY "${frame.name.toLowerCase()}_access" ON scout.${frame.name.toLowerCase()}_states
+              FOR ALL USING (auth.role() = 'authenticated');
+              
+      - id: "apply_migration"
+        tool: "supabase.apply_migration"
+        depends_on: ["generate_migration_sql"]
+        
+      - id: "generate_typescript_types"
+        tool: "supabase.generate_types"
+        output: "packages/types/database.types.ts"
+
+  sync_design_tokens_workflow:
+    description: "Sync Figma design tokens to Tailwind/CSS variables"
+    steps:
+      - id: "extract_design_tokens"
+        tool: "figma.read_design_tokens"
+        output: "design_tokens"
+        
+      - id: "update_tailwind_config"
+        tool: "filesystem.update_component_mapping"
+        input:
+          file: "apps/scout-dashboard/tailwind.config.ts"
+          tokens: "${design_tokens}"
+          
+      - id: "update_css_variables"
+        tool: "filesystem.write_component_file"
+        input:
+          template: "src/templates/design-tokens.css.template"
+          tokens: "${design_tokens}"
+          output_path: "apps/scout-dashboard/src/styles/design-tokens.css"
+
+# Error Handling
+error_handling:
+  max_retries: 3
+  retry_delay: 2000
+  fallback_action: "log_error_and_notify"
+  
+# Logging Configuration
+logging:
+  level: "info"
+  destinations:
+    - "console"
+    - "supabase.agent_logs"
+  
+# Analytics
+analytics:
+  track_usage: true
+  supabase_table: "agent_repository.agent_usage"
+  metrics:
+    - "components_generated"
+    - "migrations_created" 
+    - "tokens_synced"
+    - "errors_encountered"
+
+# Rate Limiting
+rate_limiting:
+  max_operations_per_minute: 20
+  max_database_operations_per_hour: 100
+  
+# Validation Rules
+validation:
+  component_naming:
+    pattern: "^[A-Z][a-zA-Z0-9]*$"
+    max_length: 50
+    
+  migration_naming:
+    pattern: "^[a-z][a-z0-9_]*$"
+    max_length: 100
+    
+  file_paths:
+    allowed_directories:
+      - "apps/scout-dashboard/src/components/"
+      - "apps/scout-dashboard/src/styles/"
+      - "supabase/migrations/"
+      - "packages/types/"
+
+# Integration Settings
+integrations:
+  figma:
+    dev_mode_enabled: true
+    plugin_id: "tbwa-creative-bridge"
+    websocket_url: "ws://localhost:8787/figma-bridge"
+    
+  supabase:
+    project_ref: "${SUPABASE_PROJECT_REF}"
+    service_role_required: true
+    migration_auto_apply: false  # Require manual approval for safety
+    
+  github:
+    auto_branch_creation: true
+    auto_pr_creation: false  # Create branches, not PRs
+    commit_verification: true
+
+# Security Configuration
+security:
+  sandbox_mode: true
+  allowed_domains:
+    - "localhost"
+    - "supabase.co"
+    - "github.com"
+  
+  secret_handling:
+    use_env_vars: true
+    never_log_secrets: true
+    
+  code_generation:
+    safe_mode: true
+    template_validation: true
+    no_eval: true
+
+# Development Settings
+development:
+  hot_reload: true
+  debug_mode: false
+  mock_external_apis: false
+  
+# Documentation
+documentation:
+  usage_guide: "docs/agents/claude-figma-agent.md"
+  api_reference: "docs/agents/claude-figma-agent-api.md"
+  troubleshooting: "docs/agents/claude-figma-agent-troubleshooting.md"

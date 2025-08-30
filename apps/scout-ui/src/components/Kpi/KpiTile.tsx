@@ -1,41 +1,41 @@
-import React from "react";
+'use client'
 
-export type KpiTileProps = {
-  label: string;
-  value: string | number;
-  delta?: number;           // positive/negative drives state color
-  hint?: string;            // secondary text
-  state?: "default" | "loading" | "error" | "empty";
-  onClick?: () => void;
-};
+import React from 'react'
 
-export const KpiTile: React.FC<KpiTileProps> = ({
-  label, value, delta, hint, state = "default", onClick
+interface KpiTileProps {
+  title: string
+  value: string | number
+  change?: number
+  changeType?: 'positive' | 'negative' | 'neutral'
+  className?: string
+}
+
+export const KpiTile: React.FC<KpiTileProps> = ({ 
+  title, 
+  value, 
+  change, 
+  changeType = 'neutral',
+  className = '' 
 }) => {
-  const isPos = typeof delta === "number" && delta >= 0;
-  const tint =
-    state === "error" ? "text-red-600"
-  : state === "loading" ? "text-gray-400"
-  : state === "empty"   ? "text-gray-500"
-  : isPos               ? "text-emerald-600"
-  :                       "text-rose-600";
+  const getChangeColor = () => {
+    switch (changeType) {
+      case 'positive': return 'text-green-600'
+      case 'negative': return 'text-red-600'
+      default: return 'text-gray-600'
+    }
+  }
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-turquoise/60 transition"
-      aria-busy={state === "loading"}
-      aria-disabled={state === "loading" || state === "empty"}
-    >
-      <div className="text-sm text-gray-600">{label}</div>
-      <div className="mt-1 text-3xl font-semibold text-gray-900">{value}</div>
-      {typeof delta === "number" && (
-        <div className={`mt-1 text-sm ${tint}`}>
-          {isPos ? "▲" : "▼"} {Math.abs(delta).toFixed(1)}%
+    <div className={`bg-white rounded-lg border p-6 ${className}`}>
+      <h3 className="text-sm font-medium text-gray-500 mb-2">{title}</h3>
+      <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
+      {change !== undefined && (
+        <div className={`text-sm ${getChangeColor()}`}>
+          {change > 0 ? '+' : ''}{change}%
         </div>
       )}
-      {hint && <div className="mt-2 text-xs text-gray-500">{hint}</div>}
-    </button>
-  );
-};
+    </div>
+  )
+}
+
+export default KpiTile
