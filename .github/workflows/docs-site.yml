@@ -1,74 +1,80 @@
-name: Documentation Site
+name: docs-site
 
 on:
+  pull_request:
+    paths:
+      - 'docs-site/**'
+      - 'packages/**'
+      - 'apps/**'
+      - 'agents/**'
+      - 'typedoc.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
   push:
     branches: [main]
     paths:
       - 'docs-site/**'
-      - 'packages/*/src/**'
-      - 'apps/*/src/**'
-      - 'agents/*/src/**'
       - 'typedoc.json'
       - 'package.json'
-  pull_request:
-    paths:
-      - 'docs-site/**'
-      - 'packages/*/src/**'
-      - 'apps/*/src/**'
-      - 'agents/*/src/**'
-      - 'typedoc.json'
+      - 'pnpm-lock.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: docs-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-docs:
+  build:
+    # Skip Dependabot PRs; run on main and human PRs
+    if: ${{ github.event_name == 'push' || (github.event.pull_request.user.login != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')) }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Enable pnpm
+        run: corepack enable
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: Generate API documentation
-        run: |
-          # Create TypeScript entry points if they don't exist
-          mkdir -p packages/temp apps/temp agents/temp
-          echo "export {};" > packages/temp/src/index.ts 2>/dev/null || true
-          echo "export {};" > apps/temp/src/index.ts 2>/dev/null || true
-          echo "export {};" > agents/temp/src/index.ts 2>/dev/null || true
-          
-          # Generate API docs (will fail gracefully if no TS files found)
-          npm run docs:api || echo "No TypeScript files found for API generation"
+      - name: Generate API docs (optional)
+        run: pnpm run docs:api
 
-      - name: Install docs dependencies
-        run: cd docs-site && npm ci
+      - name: Build Docusaurus site
+        run: pnpm run docs:build
 
-      - name: Build documentation site
-        run: cd docs-site && npm run build
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-dist
+          path: docs-site/build
 
-      - name: Upload build artifact
+      - name: Upload GitHub Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs-site/build
 
-  deploy-docs:
+  deploy-pages:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build-docs
+    needs: build
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
+    timeout-minutes: 5
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
