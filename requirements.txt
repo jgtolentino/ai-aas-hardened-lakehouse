@@ -4,7 +4,7 @@
 dbt-core==1.7.4
 dbt-postgres==1.7.4
 dbt-trino==1.7.1
-great-expectations==0.18.8
+great-expectations==1.5.10
 
 # Database
 psycopg[binary]==3.1.16
