@@ -1,15 +1,17 @@
 name: Universal CI
 
 on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-    # Run on ALL PRs regardless of paths
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: universal-ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -22,10 +24,14 @@ jobs:
     name: Universal Validation
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Skip Dependabot PRs; run on main and human PRs
+    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request_target' && github.event.pull_request.user.login != 'dependabot[bot]' && !startsWith(github.event.pull_request.head.ref, 'dependabot/')) }}
     steps:
-      - name: Checkout
+      - name: Checkout PR head
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Basic Repository Health
