@@ -1,5 +1,0 @@
-apps/scout-dashboard/**: ["area:next"]
-apps/scout-ui/**: ["area:vite"]
-packages/**: ["area:packages"]
-scripts/**: ["area:infra"]
-docs/**: ["area:docs"]

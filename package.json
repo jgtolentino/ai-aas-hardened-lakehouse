@@ -7,6 +7,7 @@
     "scaffold:slice": "tsx scripts/scaffold-slice.ts",
     "gen:slice": "tsx scripts/scaffold-slice.ts",
     "docs:generate": "bash scripts/generate_docs.sh",
+    "docs:api": "typedoc",
     "docs:serve": "cd docs-site && npm start",
     "docs:build": "cd docs-site && npm run build",
     "test:connection": "tsx apps/web/src/test-connection.ts",
@@ -22,7 +23,9 @@
   "devDependencies": {
     "tsx": "^4.7.0",
     "turbo": "^1.11.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "typedoc": "^0.26.0",
+    "typedoc-plugin-missing-exports": "^3.0.0"
   },
   "workspaces": [
     "apps/*",

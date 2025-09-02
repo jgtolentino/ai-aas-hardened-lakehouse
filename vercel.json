@@ -2,9 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "name": "ai-aas-hardened-lakehouse",
-  "buildCommand": "echo 'Build completed successfully'",
-  "devCommand": "echo 'Dev server not configured'",
-  "installCommand": "pnpm install --frozen-lockfile --ignore-scripts || npm install --no-optional || echo 'Install completed'",
+  "build": {
+    "env": {
+      "SKIP_BUILD": "true"
+    }
+  },
+  "buildCommand": "echo 'Vercel deployment disabled - this is a monorepo. Dashboard apps deploy separately.'",
   "outputDirectory": "public",
   "framework": null,
   "cleanUrls": true,

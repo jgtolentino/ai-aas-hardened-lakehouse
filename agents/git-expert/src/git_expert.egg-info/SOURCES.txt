@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+src/git_expert/__init__.py
+src/git_expert/audit.py
+src/git_expert/cli.py
+src/git_expert/fixer.py
+src/git_expert/rate_limiter.py
+src/git_expert/security.py
+src/git_expert/templates.py
+src/git_expert.egg-info/PKG-INFO
+src/git_expert.egg-info/SOURCES.txt
+src/git_expert.egg-info/dependency_links.txt
+src/git_expert.egg-info/entry_points.txt
+src/git_expert.egg-info/requires.txt
+src/git_expert.egg-info/top_level.txt
+tests/test_git_expert.py
+tests/test_security.py

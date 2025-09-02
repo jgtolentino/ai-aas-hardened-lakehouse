@@ -1,3 +1,0 @@
-# Use with any HTTP client to sanity-check local port reachability.
-# Not all MCP endpoints respond to plain GETs; this simply checks the port is open.
-GET http://127.0.0.1:3845/ HTTP/1.1
