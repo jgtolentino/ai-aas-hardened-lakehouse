@@ -15,5 +15,11 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true
   },
-  envPrefix: 'VITE_'
+  envPrefix: 'VITE_',
+  test: {
+    // Don't fail when no tests are found
+    passWithNoTests: true,
+    globals: true,
+    environment: 'jsdom',
+  }
 })

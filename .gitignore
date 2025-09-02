@@ -1,86 +1,18 @@
-# Environment and secrets
+# Editors/agents
+.claude-code/
+.cursor/
+.vscode/
+
+# Env/secrets
 .env
 .env.*
-!.env.example
-*.key
-*.pem
-*.p12
+*.local
 
-# Kubernetes secrets
-*-secret.yaml
-!*-secret.yaml.example
-platform/k8s/secrets/superset-mapbox-secret.yaml
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-env/
-*.egg-info/
-
-# Node
+# Builds
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-
-# Build outputs
 dist/
-build/
-*.log
+.next/
+.vercel/
 
-# Benchmark results
-benchmark_results/
-*.png
-choropleth_*.png
-
-# Temporary files
-/tmp/
-*.tmp
-*.temp
-
-# Database dumps
-*.sql.gz
-*.dump
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Coverage
-coverage/
-.coverage
-htmlcov/
-
-# Superset
-superset.db
-superset_cache/
-
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
-
-# Helm
-*.tgz
-charts/*.lock
-
-# Scout Analytics generated data
-tools/scout_seed_data/
-tools/.env
-
-# QA artifacts and dependencies
-qa/node_modules/
-qa/.env
-artifacts/
-*.junit.xml
-*.report.jsonplatform/scout/blueprint-dashboard/.env.local
+# MCP specific
+mcp/_meta/clients.jsonc

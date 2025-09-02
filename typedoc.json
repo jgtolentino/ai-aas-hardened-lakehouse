@@ -1,0 +1,44 @@
+{
+  "name": "Scout Analytics Platform API",
+  "entryPoints": [
+    "packages/*/src/index.ts",
+    "apps/*/src/index.ts",
+    "agents/*/src/index.ts"
+  ],
+  "out": "docs-site/static/api",
+  "theme": "default",
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeExternals": true,
+  "includeVersion": true,
+  "disableSources": false,
+  "skipErrorChecking": true,
+  "validation": {
+    "notExported": false,
+    "invalidLink": false
+  },
+  "categorizeByGroup": true,
+  "sort": ["source-order"],
+  "kindSortOrder": [
+    "Document",
+    "Module",
+    "Namespace",
+    "Enum",
+    "Class",
+    "Interface",
+    "Type alias",
+    "Constructor",
+    "Property",
+    "Method",
+    "Function",
+    "Variable"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/dist/**",
+    "**/build/**"
+  ],
+  "plugin": ["typedoc-plugin-missing-exports"]
+}

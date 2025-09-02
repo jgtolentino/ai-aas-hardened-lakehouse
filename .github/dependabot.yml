@@ -1,57 +1,12 @@
 version: 2
 updates:
-  # NPM updates with strict throttling and grouping
   - package-ecosystem: "npm"
     directory: "/"
-    schedule:
-      interval: "daily"
-      time: "07:00"
-    open-pull-requests-limit: 2  # Max 2 PRs to prevent pile-up
-    labels:
-      - "dependencies"
-      - "npm"
-    groups:
-      # Group minor and patch updates to reduce PR count
-      minor-and-patch:
-        patterns: ["*"]
-        update-types: ["minor", "patch"]
-    allow:
-      - dependency-type: "direct"  # Only direct dependencies
+    schedule: { interval: "weekly" }
+    open-pull-requests-limit: 5
     ignore:
-      - dependency-type: "development"  # Skip dev dependencies for now
-    
-  # Python updates - very conservative
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "monthly"
-      day: "monday"
-      time: "07:00"
-    open-pull-requests-limit: 1  # Only 1 Python PR at a time
-    labels:
-      - "dependencies"
-      - "python"
-    allow:
-      - dependency-type: "direct"
-    ignore:
-      # Ignore non-critical dependencies
-      - dependency-name: "pytest*"
-        update-types: ["version-update:semver-minor"]
-      - dependency-name: "pandas"
-        update-types: ["version-update:semver-minor"]
-      - dependency-name: "numpy"
-        update-types: ["version-update:semver-major"]  # Numpy major versions can break things
-      
-  # GitHub Actions only - critical security updates
+      - dependency-name: "next"
+        versions: ["<14"]  # ignore ancient bumps
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "07:00"
-    open-pull-requests-limit: 1  # Actions updates are usually important
-    labels:
-      - "dependencies"
-      - "github-actions"
-    allow:
-      - dependency-type: "direct"
+    schedule: { interval: "monthly" }
