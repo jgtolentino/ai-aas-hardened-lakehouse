@@ -1,22 +1,40 @@
 name: Security Scan
 on:
-  pull_request:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
+
+permissions:
+  contents: read
+
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: security-scan-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
-    if: github.actor != 'app/dependabot'
+    # Skip Dependabot PRs by author or branch prefix
+    if: ${{ !(
+      github.event_name == 'pull_request_target' && (
+        github.event.pull_request.user.login == 'dependabot[bot]' ||
+        startsWith(github.event.pull_request.head.ref, 'dependabot/')
+      )
+    ) }}
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+      - name: Checkout PR head (no credentials)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
         with:
           args: detect --source . --no-git --redact --report-format sarif --report-path gitleaks.sarif
+      
       - name: Upload SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@v3

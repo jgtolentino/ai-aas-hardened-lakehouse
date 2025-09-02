@@ -1,25 +1,25 @@
 version: 2
 updates:
-  # Enable version updates for npm
+  # Temporarily disable all updates during workflow reset
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "04:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0  # DISABLED for reset
     labels:
       - "dependencies"
       - "npm"
     
-  # Enable version updates for Python
+  # Temporarily disable all updates during workflow reset
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "monthly"  # Reduced frequency
+      interval: "monthly"
       day: "monday"
       time: "04:00"
-    open-pull-requests-limit: 3  # Max 3 PRs at a time
+    open-pull-requests-limit: 0  # DISABLED for reset
     labels:
       - "dependencies"
       - "python"
@@ -30,24 +30,26 @@ updates:
       - dependency-name: "pandas"
         update-types: ["version-update:semver-minor"]
       
-  # Enable version updates for Docker
+  # Temporarily disable all updates during workflow reset
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "04:00"
+    open-pull-requests-limit: 0  # DISABLED for reset
     labels:
       - "dependencies"
       - "docker"
       
-  # Enable version updates for GitHub Actions
+  # Temporarily disable all updates during workflow reset
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "04:00"
+    open-pull-requests-limit: 0  # DISABLED for reset
     labels:
       - "dependencies"
       - "github-actions"

@@ -24,6 +24,13 @@ jobs:
   db-build-test:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    # Skip for Dependabot PRs - dependency updates don't need full DB tests
+    if: ${{ !(
+      github.event_name == 'pull_request' && (
+        github.actor == 'dependabot[bot]' ||
+        startsWith(github.head_ref, 'dependabot/')
+      )
+    ) }}
     services:
       postgres:
         image: ankane/pgvector:pg16
