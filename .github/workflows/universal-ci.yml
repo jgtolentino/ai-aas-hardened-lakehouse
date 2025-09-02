@@ -2,9 +2,9 @@ name: Universal CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
     # Run on ALL PRs regardless of paths
   workflow_dispatch:
 
@@ -52,11 +52,11 @@ jobs:
           # Check for common issues
           echo "=== Checking for common issues ==="
           
-          # Check for secrets in common files
-          if grep -r "password\|secret\|token" . --include="*.json" --include="*.js" --include="*.ts" | head -5; then
-            echo "⚠ Potential secrets found (review needed)"
+          # Basic security check (simplified)
+          if find . -name "*.env*" -type f | head -1; then
+            echo "⚠ Environment files found (review needed)"
           else
-            echo "✓ No obvious secrets in code"
+            echo "✓ No obvious environment files"
           fi
 
       - name: Security Scan (Gitleaks)
