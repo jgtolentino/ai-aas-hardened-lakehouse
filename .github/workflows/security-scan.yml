@@ -9,7 +9,7 @@ concurrency:
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot[bot]'
+    if: github.actor != 'app/dependabot'
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
