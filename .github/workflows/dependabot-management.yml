@@ -1,0 +1,135 @@
+name: 🤖 Dependabot Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+        - 'status' 
+        - 'recreate-failing'
+        - 'auto-merge'
+        - 'auto-merge-dry-run'
+        default: 'status'
+      
+      specific_pr:
+        description: 'Specific PR number (optional, for single PR actions)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  dependabot-management:
+    name: Dependabot ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup GitHub CLI
+        run: |
+          gh --version
+          gh auth status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Make scripts executable
+        run: |
+          chmod +x scripts/dependabot-*.sh
+      
+      - name: Status Report
+        if: inputs.action == 'status'
+        run: |
+          echo "📊 Generating Dependabot status report..."
+          ./scripts/dependabot-verify-status.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Recreate Failing PRs
+        if: inputs.action == 'recreate-failing'
+        run: |
+          echo "🔄 Recreating all failing Dependabot PRs..."
+          ./scripts/dependabot-recreate-failing.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Auto-merge Passing PRs (Dry Run)
+        if: inputs.action == 'auto-merge-dry-run'
+        run: |
+          echo "🔍 Dry run: checking which PRs would be auto-merged..."
+          ./scripts/dependabot-auto-merge.sh --dry-run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Auto-merge Passing PRs
+        if: inputs.action == 'auto-merge'
+        run: |
+          echo "🚀 Auto-merging passing Dependabot PRs..."
+          ./scripts/dependabot-auto-merge.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Single PR Action
+        if: inputs.specific_pr != ''
+        run: |
+          PR="${{ inputs.specific_pr }}"
+          ACTION="${{ inputs.action }}"
+          
+          echo "🎯 Performing $ACTION on PR #$PR..."
+          
+          case $ACTION in
+            "status")
+              echo "PR #$PR status:"
+              gh pr checks "$PR" --json name,bucket,state -q '.[] | "\(.name): \(.bucket) (\(.state))"'
+              ;;
+            "recreate-failing")
+              FAIL_COUNT=$(gh pr checks "$PR" --json bucket -q '[.[] | select(.bucket=="fail")] | length')
+              if [[ "$FAIL_COUNT" -gt 0 ]]; then
+                echo "Recreating PR #$PR (has $FAIL_COUNT failing checks)..."
+                gh pr comment "$PR" --body "@dependabot recreate"
+              else
+                echo "PR #$PR is not failing - skipping recreate"
+              fi
+              ;;
+            "auto-merge"|"auto-merge-dry-run")
+              FAIL_COUNT=$(gh pr checks "$PR" --json bucket -q '[.[] | select(.bucket=="fail")] | length')
+              if [[ "$FAIL_COUNT" -eq 0 ]]; then
+                if [[ "$ACTION" == "auto-merge-dry-run" ]]; then
+                  echo "[DRY RUN] Would auto-merge PR #$PR"
+                else
+                  echo "Auto-merging PR #$PR..."
+                  gh pr merge "$PR" --squash --auto
+                fi
+              else
+                echo "PR #$PR has failing checks - cannot auto-merge"
+              fi
+              ;;
+          esac
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Summary
+        run: |
+          echo ""
+          echo "🎯 Action completed: ${{ inputs.action }}"
+          if [[ -n "${{ inputs.specific_pr }}" ]]; then
+            echo "🔍 Target PR: #${{ inputs.specific_pr }}"
+          fi
+          echo ""
+          echo "📋 Available actions:"
+          echo "  • status: Show current PR status"
+          echo "  • recreate-failing: Comment @dependabot recreate on failing PRs"
+          echo "  • auto-merge-dry-run: Preview which PRs would be merged"
+          echo "  • auto-merge: Enable auto-merge for passing PRs"
+          echo ""
+          echo "🔧 Scripts available in repository:"
+          echo "  • scripts/dependabot-verify-status.sh"
+          echo "  • scripts/dependabot-recreate-failing.sh" 
+          echo "  • scripts/dependabot-auto-merge.sh"
