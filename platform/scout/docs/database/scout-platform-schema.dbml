@@ -1,0 +1,623 @@
+// =============================================================================
+// Scout Analytics Platform - Comprehensive Database Schema (DBML)
+// =============================================================================
+// Philippine Retail Intelligence Platform with Medallion Architecture
+// Generated: 2025-01-15 | Version: 1.0.0 | Framework: Supabase PostgreSQL
+// 
+// Architecture: Bronze (Raw) → Silver (Clean) → Gold (Aggregated) → Platinum (ML)
+// Public Schemas: scout_gold.*, scout_platinum.* (RLS protected)
+// Internal Schemas: scout_bronze.*, scout_silver.*, scout.* (service-only)
+// =============================================================================
+
+Project scout_platform {
+  database_type: 'PostgreSQL'
+  Note: '''
+    Scout Analytics Platform - Philippine Retail Intelligence System
+    
+    **Medallion Architecture Layers:**
+    - Bronze: Raw transaction data from POS systems, APIs, files
+    - Silver: Cleaned, validated, and enriched transactional data
+    - Gold: Business-ready aggregates, KPIs, and analytics datasets (PUBLIC)
+    - Platinum: ML models, predictions, and advanced analytics (PUBLIC)
+    
+    **Data Governance:**
+    - Row Level Security (RLS) on all public schemas
+    - Audit logging for all data modifications
+    - Data lineage tracking across transformation layers
+    - Quality metrics and validation rules
+  '''
+}
+
+// =============================================================================
+// GOVERNANCE LAYER - Schema Registry & Metadata
+// =============================================================================
+
+Table scout.schema_registry {
+  id uuid [pk, default: `gen_random_uuid()`]
+  schema_name text [not null, unique]
+  purpose text [not null]
+  access_level text [not null, note: 'public, authenticated, internal, service']
+  data_classification text [not null, note: 'public, internal, confidential, restricted']
+  retention_period_days integer
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  Note: 'Central registry for all schemas in the Scout platform'
+}
+
+Table scout.table_metadata {
+  id uuid [pk, default: `gen_random_uuid()`]
+  schema_name text [not null]
+  table_name text [not null]
+  business_purpose text
+  data_source text [note: 'POS, API, File Import, Manual Entry']
+  update_frequency text [note: 'Real-time, Hourly, Daily, Weekly']
+  data_owner text
+  steward_email text
+  quality_score decimal(5,2) [note: 'Quality score 0-100']
+  last_quality_check timestamptz
+  record_count bigint
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  indexes {
+    (schema_name, table_name) [unique]
+  }
+  
+  Note: 'Metadata and governance information for all tables'
+}
+
+Table scout.data_lineage {
+  id uuid [pk, default: `gen_random_uuid()`]
+  source_schema text [not null]
+  source_table text [not null]
+  target_schema text [not null]
+  target_table text [not null]
+  transformation_type text [note: 'ETL, ELT, View, Function']
+  transformation_logic text
+  dependency_level integer [note: 'Depth in transformation chain']
+  created_at timestamptz [default: `now()`]
+  
+  Note: 'Data lineage tracking across all transformation layers'
+}
+
+// =============================================================================
+// AUDIT LAYER - Change Tracking & Compliance
+// =============================================================================
+
+Table scout.audit_log {
+  id uuid [pk, default: `gen_random_uuid()`]
+  schema_name text [not null]
+  table_name text [not null]
+  record_id uuid
+  operation_type text [not null, note: 'INSERT, UPDATE, DELETE, TRUNCATE']
+  old_values jsonb
+  new_values jsonb
+  changed_by uuid [note: 'User ID from auth.users']
+  changed_at timestamptz [default: `now()`]
+  change_reason text
+  ip_address inet
+  user_agent text
+  
+  indexes {
+    (schema_name, table_name, changed_at)
+    (changed_by, changed_at)
+    changed_at
+  }
+  
+  Note: 'Complete audit trail for all data modifications'
+}
+
+// =============================================================================
+// BRONZE LAYER - Raw Data Ingestion
+// =============================================================================
+
+Table scout_bronze.raw_transactions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  source_system text [not null, note: 'POS_SYSTEM, ECOMMERCE, MOBILE_APP']
+  external_transaction_id text
+  raw_payload jsonb [not null, note: 'Original transaction data as received']
+  ingestion_timestamp timestamptz [default: `now()`]
+  file_name text [note: 'Source file if batch import']
+  batch_id uuid [note: 'Batch processing identifier']
+  validation_status text [default: 'PENDING', note: 'PENDING, VALIDATED, FAILED']
+  validation_errors jsonb
+  processed_at timestamptz
+  
+  indexes {
+    (source_system, ingestion_timestamp)
+    (external_transaction_id)
+    (batch_id)
+    validation_status
+  }
+  
+  Note: 'Raw transaction data from all sources before any processing'
+}
+
+Table scout_bronze.raw_products {
+  id uuid [pk, default: `gen_random_uuid()`]
+  source_system text [not null]
+  external_product_id text
+  raw_payload jsonb [not null]
+  ingestion_timestamp timestamptz [default: `now()`]
+  batch_id uuid
+  validation_status text [default: 'PENDING']
+  validation_errors jsonb
+  
+  indexes {
+    (source_system, external_product_id)
+    ingestion_timestamp
+  }
+  
+  Note: 'Raw product catalog data from all sources'
+}
+
+Table scout_bronze.raw_customers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  source_system text [not null]
+  external_customer_id text
+  raw_payload jsonb [not null]
+  ingestion_timestamp timestamptz [default: `now()`]
+  batch_id uuid
+  validation_status text [default: 'PENDING']
+  validation_errors jsonb
+  pii_masked boolean [default: false]
+  
+  indexes {
+    (source_system, external_customer_id)
+    ingestion_timestamp
+  }
+  
+  Note: 'Raw customer data with PII protection'
+}
+
+// =============================================================================
+// SILVER LAYER - Cleaned & Validated Data
+// =============================================================================
+
+Table scout_silver.transactions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  bronze_source_id uuid [ref: > scout_bronze.raw_transactions.id]
+  transaction_id text [not null, unique]
+  store_id uuid [not null]
+  customer_id uuid
+  transaction_date timestamptz [not null]
+  subtotal decimal(15,2) [not null]
+  tax_amount decimal(15,2) [default: 0]
+  discount_amount decimal(15,2) [default: 0]
+  total_amount decimal(15,2) [not null]
+  payment_method text [note: 'CASH, CARD, GCASH, PAYMAYA, INSTALLMENT']
+  currency text [default: 'PHP', not null]
+  receipt_number text
+  pos_terminal_id text
+  cashier_id text
+  transaction_status text [default: 'COMPLETED', note: 'COMPLETED, VOIDED, REFUNDED, PARTIAL_REFUND']
+  notes text
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  indexes {
+    (store_id, transaction_date)
+    (customer_id, transaction_date)
+    transaction_date
+    transaction_status
+  }
+  
+  Note: 'Cleaned and validated transactions ready for analytics'
+}
+
+Table scout_silver.transaction_items {
+  id uuid [pk, default: `gen_random_uuid()`]
+  transaction_id uuid [ref: > scout_silver.transactions.id, not null]
+  product_id uuid [not null]
+  product_sku text [not null]
+  product_name text [not null]
+  category text
+  brand text
+  quantity decimal(10,2) [not null]
+  unit_price decimal(15,2) [not null]
+  line_discount decimal(15,2) [default: 0]
+  line_total decimal(15,2) [not null]
+  cost_of_goods decimal(15,2) [note: 'For margin calculations']
+  promotion_code text
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (transaction_id)
+    (product_id, transaction_id)
+    (product_sku)
+  }
+  
+  Note: 'Individual line items from transactions'
+}
+
+Table scout_silver.stores {
+  id uuid [pk, default: `gen_random_uuid()`]
+  store_code text [not null, unique]
+  store_name text [not null]
+  store_type text [note: 'FLAGSHIP, REGULAR, OUTLET, KIOSK']
+  region text [not null, note: 'NCR, LUZON, VISAYAS, MINDANAO']
+  province text [not null]
+  city text [not null]
+  barangay text
+  address text [not null]
+  postal_code text
+  psgc_code text [note: 'Philippine Standard Geographic Code']
+  latitude decimal(10,8)
+  longitude decimal(11,8)
+  mall_name text
+  floor_level text
+  store_size_sqm decimal(10,2)
+  opening_date date
+  manager_name text
+  contact_phone text
+  status text [default: 'ACTIVE', note: 'ACTIVE, INACTIVE, TEMPORARY_CLOSED']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  indexes {
+    (region, province, city)
+    (psgc_code)
+    status
+  }
+  
+  Note: 'Philippine store locations with geographic and operational data'
+}
+
+Table scout_silver.products {
+  id uuid [pk, default: `gen_random_uuid()`]
+  product_sku text [not null, unique]
+  product_name text [not null]
+  description text
+  category text [not null]
+  subcategory text
+  brand text [not null]
+  unit_of_measure text [default: 'PCS']
+  unit_cost decimal(15,2)
+  suggested_retail_price decimal(15,2)
+  wholesale_price decimal(15,2)
+  weight_grams decimal(10,2)
+  dimensions_cm text [note: 'LxWxH format']
+  barcode text
+  supplier_name text
+  country_of_origin text [default: 'Philippines']
+  is_active boolean [default: true]
+  launch_date date
+  discontinue_date date
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  indexes {
+    (category, subcategory, brand)
+    (barcode)
+    is_active
+  }
+  
+  Note: 'Product catalog with Philippine market specifications'
+}
+
+Table scout_silver.customers {
+  id uuid [pk, default: `gen_random_uuid()`]
+  customer_code text [unique]
+  email text [unique]
+  phone_number text
+  date_of_birth date
+  gender text [note: 'M, F, X, PREFER_NOT_TO_SAY']
+  region text [note: 'Customer region for demographic analysis']
+  province text
+  city text
+  signup_date date
+  preferred_language text [default: 'en', note: 'en, fil, ceb, ilo, war']
+  loyalty_tier text [default: 'BRONZE', note: 'BRONZE, SILVER, GOLD, PLATINUM']
+  total_lifetime_value decimal(15,2) [default: 0]
+  total_transactions integer [default: 0]
+  last_transaction_date timestamptz
+  customer_status text [default: 'ACTIVE', note: 'ACTIVE, INACTIVE, CHURNED']
+  acquisition_channel text [note: 'ORGANIC, REFERRAL, SOCIAL_MEDIA, ADVERTISING']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  
+  indexes {
+    (region, province, city)
+    loyalty_tier
+    customer_status
+    last_transaction_date
+  }
+  
+  Note: 'Customer profiles with Philippine demographics and loyalty status'
+}
+
+// =============================================================================
+// GOLD LAYER - Business Analytics (PUBLIC SCHEMA)
+// =============================================================================
+
+Table scout_gold.kpi_daily_summary {
+  id uuid [pk, default: `gen_random_uuid()`]
+  date date [not null]
+  store_id uuid [ref: > scout_silver.stores.id]
+  total_revenue decimal(15,2) [not null]
+  total_transactions integer [not null]
+  unique_customers integer [not null]
+  average_transaction_value decimal(15,2) [not null]
+  items_sold integer [not null]
+  gross_margin decimal(15,2) [not null]
+  top_category text
+  top_product_sku text
+  weather_condition text [note: 'For correlation analysis']
+  is_holiday boolean [default: false]
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (date, store_id) [unique]
+    date
+    store_id
+  }
+  
+  Note: 'Daily KPI summary for business intelligence dashboards'
+}
+
+Table scout_gold.product_performance {
+  id uuid [pk, default: `gen_random_uuid()`]
+  product_sku text [not null]
+  product_name text [not null]
+  category text [not null]
+  brand text [not null]
+  time_period text [not null, note: 'DAILY, WEEKLY, MONTHLY, QUARTERLY']
+  period_start date [not null]
+  period_end date [not null]
+  units_sold integer [not null]
+  gross_revenue decimal(15,2) [not null]
+  gross_margin decimal(15,2) [not null]
+  margin_percentage decimal(5,2) [not null]
+  inventory_turns decimal(10,2)
+  stockout_days integer [default: 0]
+  velocity_rank integer
+  abc_classification text [note: 'A (Fast), B (Medium), C (Slow)']
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (product_sku, time_period, period_start)
+    (category, time_period, period_start)
+    (velocity_rank, time_period, period_start)
+  }
+  
+  Note: 'Product performance analytics across different time periods'
+}
+
+Table scout_gold.customer_segments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  customer_id uuid [ref: > scout_silver.customers.id, not null]
+  segment_name text [not null, note: 'HIGH_VALUE, FREQUENT, OCCASIONAL, AT_RISK, CHURNED']
+  segment_score decimal(5,2) [not null]
+  lifetime_value decimal(15,2) [not null]
+  recency_days integer [not null, note: 'Days since last purchase']
+  frequency_score integer [not null, note: 'Transaction frequency score 1-5']
+  monetary_score integer [not null, note: 'Spending level score 1-5']
+  rfm_segment text [not null, note: 'RFM analysis result']
+  predicted_next_purchase_date date
+  churn_probability decimal(5,4) [note: 'Probability of churn 0-1']
+  recommended_actions jsonb [note: 'Marketing recommendations']
+  segment_date date [not null]
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (customer_id, segment_date)
+    (segment_name, segment_date)
+    (churn_probability, segment_date)
+  }
+  
+  Note: 'Customer segmentation and behavior analysis for marketing'
+}
+
+Table scout_gold.store_performance {
+  id uuid [pk, default: `gen_random_uuid()`]
+  store_id uuid [ref: > scout_silver.stores.id, not null]
+  time_period text [not null, note: 'WEEKLY, MONTHLY, QUARTERLY, YEARLY']
+  period_start date [not null]
+  period_end date [not null]
+  total_revenue decimal(15,2) [not null]
+  revenue_growth_percentage decimal(5,2)
+  total_transactions integer [not null]
+  transaction_growth_percentage decimal(5,2)
+  average_basket_size decimal(15,2) [not null]
+  conversion_rate decimal(5,4) [note: 'Transactions per customer visit']
+  customer_satisfaction_score decimal(3,2) [note: '1-5 rating']
+  staff_productivity_score decimal(5,2)
+  region_rank integer
+  performance_tier text [note: 'TOP_PERFORMER, ABOVE_AVERAGE, AVERAGE, BELOW_AVERAGE, UNDERPERFORMER']
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (store_id, time_period, period_start)
+    (performance_tier, time_period, period_start)
+    (region_rank, time_period, period_start)
+  }
+  
+  Note: 'Store performance metrics and rankings for operational insights'
+}
+
+Table scout_gold.market_basket_analysis {
+  id uuid [pk, default: `gen_random_uuid()`]
+  product_a_sku text [not null]
+  product_b_sku text [not null]
+  support_count integer [not null, note: 'Number of transactions with both products']
+  confidence decimal(5,4) [not null, note: 'P(B|A) - probability of B given A']
+  lift decimal(10,4) [not null, note: 'Strength of association']
+  conviction decimal(10,4) [note: 'How much more likely B is without A']
+  analysis_period_start date [not null]
+  analysis_period_end date [not null]
+  minimum_support_threshold decimal(5,4) [not null]
+  is_significant boolean [default: false, note: 'Statistical significance flag']
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (product_a_sku, product_b_sku, analysis_period_start) [unique]
+    (lift, analysis_period_start)
+    is_significant
+  }
+  
+  Note: 'Market basket analysis for product recommendations and cross-selling'
+}
+
+// =============================================================================
+// PLATINUM LAYER - Advanced Analytics & ML (PUBLIC SCHEMA)
+// =============================================================================
+
+Table scout_platinum.demand_forecast {
+  id uuid [pk, default: `gen_random_uuid()`]
+  product_sku text [not null]
+  store_id uuid [ref: > scout_silver.stores.id, not null]
+  forecast_date date [not null]
+  predicted_demand integer [not null]
+  confidence_interval_lower integer [not null]
+  confidence_interval_upper integer [not null]
+  model_accuracy decimal(5,4) [note: 'Model accuracy score 0-1']
+  seasonality_factor decimal(8,4) [not null]
+  trend_factor decimal(8,4) [not null]
+  external_factors jsonb [note: 'Weather, holidays, promotions impact']
+  model_version text [not null]
+  forecast_generated_at timestamptz [default: `now()`]
+  
+  indexes {
+    (product_sku, store_id, forecast_date) [unique]
+    (forecast_date, model_accuracy)
+  }
+  
+  Note: 'ML-powered demand forecasting for inventory optimization'
+}
+
+Table scout_platinum.price_optimization {
+  id uuid [pk, default: `gen_random_uuid()`]
+  product_sku text [not null]
+  store_id uuid [ref: > scout_silver.stores.id, not null]
+  current_price decimal(15,2) [not null]
+  recommended_price decimal(15,2) [not null]
+  price_elasticity decimal(8,4) [not null, note: 'Price sensitivity coefficient']
+  demand_at_current_price integer [not null]
+  demand_at_recommended_price integer [not null]
+  revenue_impact decimal(15,2) [not null]
+  margin_impact decimal(15,2) [not null]
+  competitor_price_avg decimal(15,2)
+  market_share_impact decimal(5,4)
+  recommendation_confidence decimal(5,4) [not null]
+  valid_from date [not null]
+  valid_until date [not null]
+  model_version text [not null]
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (product_sku, store_id, valid_from)
+    (recommendation_confidence, valid_from)
+  }
+  
+  Note: 'AI-driven price optimization recommendations'
+}
+
+Table scout_platinum.customer_lifetime_value {
+  id uuid [pk, default: `gen_random_uuid()`]
+  customer_id uuid [ref: > scout_silver.customers.id, not null]
+  predicted_clv decimal(15,2) [not null, note: 'Predicted Customer Lifetime Value']
+  historical_clv decimal(15,2) [not null, note: 'Current CLV to date']
+  clv_percentile integer [not null, note: 'Percentile rank 1-100']
+  predicted_tenure_months integer [not null]
+  churn_risk_score decimal(5,4) [not null, note: '0 = low risk, 1 = high risk']
+  next_purchase_probability decimal(5,4) [not null]
+  recommended_marketing_spend decimal(15,2) [not null]
+  customer_stage text [not null, note: 'PROSPECT, NEW, DEVELOPING, ESTABLISHED, LOYAL, AT_RISK']
+  key_value_drivers jsonb [note: 'Factors that drive customer value']
+  model_version text [not null]
+  prediction_date date [not null]
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (customer_id, prediction_date)
+    (churn_risk_score, prediction_date)
+    (clv_percentile, prediction_date)
+  }
+  
+  Note: 'ML-driven customer lifetime value predictions and risk assessment'
+}
+
+Table scout_platinum.anomaly_detection {
+  id uuid [pk, default: `gen_random_uuid()`]
+  anomaly_type text [not null, note: 'SALES_DROP, UNUSUAL_PATTERN, FRAUD_RISK, INVENTORY_ISSUE']
+  entity_type text [not null, note: 'STORE, PRODUCT, CUSTOMER, TRANSACTION']
+  entity_id uuid [not null]
+  anomaly_score decimal(5,4) [not null, note: 'Severity score 0-1']
+  expected_value decimal(15,2)
+  actual_value decimal(15,2)
+  deviation_percentage decimal(8,4)
+  detection_timestamp timestamptz [not null]
+  is_confirmed boolean [default: false]
+  root_cause text
+  resolution_action text
+  resolved_at timestamptz
+  model_version text [not null]
+  additional_context jsonb
+  
+  indexes {
+    (anomaly_type, detection_timestamp)
+    (entity_type, entity_id, detection_timestamp)
+    (anomaly_score, detection_timestamp)
+    is_confirmed
+  }
+  
+  Note: 'ML-powered anomaly detection across all business entities'
+}
+
+// =============================================================================
+// REFERENCE DATA - Philippine Market Specifics
+// =============================================================================
+
+Table scout.psgc_codes {
+  id uuid [pk, default: `gen_random_uuid()`]
+  psgc_code text [not null, unique]
+  region_name text [not null]
+  province_name text [not null]
+  city_municipality text [not null]
+  barangay_name text
+  geographic_level text [not null, note: 'REGION, PROVINCE, CITY, MUNICIPALITY, BARANGAY']
+  island_group text [not null, note: 'LUZON, VISAYAS, MINDANAO']
+  population integer
+  land_area_sqkm decimal(10,2)
+  is_urban boolean [default: false]
+  economic_zone text [note: 'CBD, RESIDENTIAL, INDUSTRIAL, RURAL']
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    (region_name, province_name, city_municipality)
+    psgc_code
+    island_group
+  }
+  
+  Note: 'Philippine Standard Geographic Classification for location standardization'
+}
+
+Table scout.philippine_holidays {
+  id uuid [pk, default: `gen_random_uuid()`]
+  holiday_date date [not null]
+  holiday_name text [not null]
+  holiday_type text [not null, note: 'NATIONAL, REGIONAL, RELIGIOUS, SPECIAL']
+  is_nationwide boolean [default: true]
+  affected_regions text[] [note: 'Array of regions if not nationwide']
+  business_impact text [note: 'HIGH, MEDIUM, LOW based on shopping behavior']
+  created_at timestamptz [default: `now()`]
+  
+  indexes {
+    holiday_date
+    (holiday_type, holiday_date)
+  }
+  
+  Note: 'Philippine holidays for sales pattern analysis and forecasting'
+}
+
+// =============================================================================
+// RLS POLICIES DOCUMENTATION
+// =============================================================================
+
+// Note: Row Level Security (RLS) is enabled on all Gold and Platinum tables
+// Policies allow:
+// 1. Service role: Full access for backend operations
+// 2. Authenticated users: Access to their organization's data only
+// 3. Anonymous users: No access (must authenticate)
+// 4. API keys: Specific endpoint access with rate limiting

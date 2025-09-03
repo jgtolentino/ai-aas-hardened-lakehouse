@@ -1,0 +1,70 @@
+digraph scout_platform {
+    rankdir=TB;
+    node [shape=record, style=filled, fillcolor=lightblue];
+    edge [color=darkgreen];
+    
+    // Medallion Architecture Layers
+    subgraph cluster_bronze {
+        label="🥉 BRONZE LAYER - Raw Data";
+        style=filled;
+        fillcolor=lightgray;
+        
+        raw_transactions [label="raw_transactions|+ id\l+ source_system\l+ raw_payload\l+ ingestion_timestamp\l"];
+        raw_products [label="raw_products|+ id\l+ source_system\l+ raw_payload\l"];
+        raw_customers [label="raw_customers|+ id\l+ source_system\l+ raw_payload\l"];
+    }
+    
+    subgraph cluster_silver {
+        label="🥈 SILVER LAYER - Cleaned Data";
+        style=filled;
+        fillcolor=lightcyan;
+        
+        transactions [label="transactions|+ id\l+ transaction_id\l+ store_id\l+ customer_id\l+ total_amount\l"];
+        transaction_items [label="transaction_items|+ id\l+ transaction_id\l+ product_id\l+ quantity\l+ line_total\l"];
+        stores [label="stores|+ id\l+ store_code\l+ store_name\l+ region\l+ province\l"];
+        products [label="products|+ id\l+ product_sku\l+ product_name\l+ category\l+ brand\l"];
+        customers [label="customers|+ id\l+ customer_code\l+ email\l+ loyalty_tier\l"];
+    }
+    
+    subgraph cluster_gold {
+        label="🥇 GOLD LAYER - Business Analytics";
+        style=filled;
+        fillcolor=lightyellow;
+        
+        kpi_daily_summary [label="kpi_daily_summary|+ id\l+ date\l+ store_id\l+ total_revenue\l+ total_transactions\l"];
+        product_performance [label="product_performance|+ id\l+ product_sku\l+ time_period\l+ units_sold\l+ gross_revenue\l"];
+        customer_segments [label="customer_segments|+ id\l+ customer_id\l+ segment_name\l+ lifetime_value\l"];
+        store_performance [label="store_performance|+ id\l+ store_id\l+ total_revenue\l+ performance_tier\l"];
+    }
+    
+    subgraph cluster_platinum {
+        label="💎 PLATINUM LAYER - ML & AI";
+        style=filled;
+        fillcolor=lightpink;
+        
+        demand_forecast [label="demand_forecast|+ id\l+ product_sku\l+ store_id\l+ predicted_demand\l"];
+        price_optimization [label="price_optimization|+ id\l+ product_sku\l+ recommended_price\l"];
+        customer_lifetime_value [label="customer_lifetime_value|+ id\l+ customer_id\l+ predicted_clv\l"];
+        anomaly_detection [label="anomaly_detection|+ id\l+ anomaly_type\l+ entity_id\l+ anomaly_score\l"];
+    }
+    
+    // Data Flow (Bronze → Silver → Gold → Platinum)
+    raw_transactions -> transactions [label="ETL"];
+    raw_products -> products [label="ETL"];
+    raw_customers -> customers [label="ETL"];
+    
+    transactions -> kpi_daily_summary [label="Aggregate"];
+    transaction_items -> product_performance [label="Aggregate"];
+    customers -> customer_segments [label="Segment"];
+    stores -> store_performance [label="Analyze"];
+    
+    product_performance -> demand_forecast [label="ML Model"];
+    customer_segments -> customer_lifetime_value [label="ML Model"];
+    kpi_daily_summary -> anomaly_detection [label="ML Model"];
+    
+    // Relationships within Silver layer
+    transactions -> transaction_items [label="1:N"];
+    stores -> transactions [label="1:N"];
+    customers -> transactions [label="1:N"];
+    products -> transaction_items [label="1:N"];
+}

@@ -1,0 +1,69 @@
+erDiagram
+    %% PLATINUM LAYER - Scout Analytics Platform
+    demand_forecast {
+        uuid id
+        text product_sku
+        uuid store_id
+        date forecast_date
+        integer predicted_demand
+        integer confidence_interval_lower
+        integer confidence_interval_upper
+        decimal model_accuracy
+        decimal seasonality_factor
+        decimal trend_factor
+        jsonb external_factors
+        text model_version
+        timestamptz forecast_generated_at
+    }
+    price_optimization {
+        uuid id
+        text product_sku
+        uuid store_id
+        decimal current_price
+        decimal recommended_price
+        decimal price_elasticity
+        integer demand_at_current_price
+        integer demand_at_recommended_price
+        decimal revenue_impact
+        decimal margin_impact
+        decimal competitor_price_avg
+        decimal market_share_impact
+        decimal recommendation_confidence
+        date valid_from
+        date valid_until
+        text model_version
+        timestamptz created_at
+    }
+    customer_lifetime_value {
+        uuid id
+        uuid customer_id
+        decimal predicted_clv
+        decimal historical_clv
+        integer clv_percentile
+        integer predicted_tenure_months
+        decimal churn_risk_score
+        decimal next_purchase_probability
+        decimal recommended_marketing_spend
+        text customer_stage
+        jsonb key_value_drivers
+        text model_version
+        date prediction_date
+        timestamptz created_at
+    }
+    anomaly_detection {
+        uuid id
+        text anomaly_type
+        text entity_type
+        uuid entity_id
+        decimal anomaly_score
+        decimal expected_value
+        decimal actual_value
+        decimal deviation_percentage
+        timestamptz detection_timestamp
+        boolean is_confirmed
+        text root_cause
+        text resolution_action
+        timestamptz resolved_at
+        text model_version
+        jsonb additional_context
+    }

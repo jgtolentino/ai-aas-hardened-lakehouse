@@ -1,0 +1,77 @@
+erDiagram
+    %% GOVERNANCE LAYER - Scout Analytics Platform
+    schema_registry {
+        uuid id
+        text schema_name
+        text purpose
+        text access_level
+        text data_classification
+        integer retention_period_days
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    table_metadata {
+        uuid id
+        text schema_name
+        text table_name
+        text business_purpose
+        text data_source
+        text update_frequency
+        text data_owner
+        text steward_email
+        decimal quality_score
+        timestamptz last_quality_check
+        bigint record_count
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    data_lineage {
+        uuid id
+        text source_schema
+        text source_table
+        text target_schema
+        text target_table
+        text transformation_type
+        text transformation_logic
+        integer dependency_level
+        timestamptz created_at
+    }
+    audit_log {
+        uuid id
+        text schema_name
+        text table_name
+        uuid record_id
+        text operation_type
+        jsonb old_values
+        jsonb new_values
+        uuid changed_by
+        timestamptz changed_at
+        text change_reason
+        inet ip_address
+        text user_agent
+    }
+    psgc_codes {
+        uuid id
+        text psgc_code
+        text region_name
+        text province_name
+        text city_municipality
+        text barangay_name
+        text geographic_level
+        text island_group
+        integer population
+        decimal land_area_sqkm
+        boolean is_urban
+        text economic_zone
+        timestamptz created_at
+    }
+    philippine_holidays {
+        uuid id
+        date holiday_date
+        text holiday_name
+        text holiday_type
+        boolean is_nationwide
+        text affected_regions
+        text business_impact
+        timestamptz created_at
+    }

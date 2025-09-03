@@ -1,0 +1,35 @@
+erDiagram
+    %% BRONZE LAYER - Scout Analytics Platform
+    raw_transactions {
+        uuid id
+        text source_system
+        text external_transaction_id
+        jsonb raw_payload
+        timestamptz ingestion_timestamp
+        text file_name
+        uuid batch_id
+        text validation_status
+        jsonb validation_errors
+        timestamptz processed_at
+    }
+    raw_products {
+        uuid id
+        text source_system
+        text external_product_id
+        jsonb raw_payload
+        timestamptz ingestion_timestamp
+        uuid batch_id
+        text validation_status
+        jsonb validation_errors
+    }
+    raw_customers {
+        uuid id
+        text source_system
+        text external_customer_id
+        jsonb raw_payload
+        timestamptz ingestion_timestamp
+        uuid batch_id
+        text validation_status
+        jsonb validation_errors
+        boolean pii_masked
+    }
