@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "supabase-scout": {
+      "command": "/Users/tbwa/ai-aas-hardened-lakehouse/scripts/supabase_scout_mcp_full.sh"
+    }
+  }
+}
