@@ -1,0 +1,20 @@
+{
+  "name": "memory-bridge-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for memory bridging and context management",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@supabase/supabase-js": "^2.38.0",
+    "openai": "^4.20.0",
+    "@anthropic-ai/sdk": "^0.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

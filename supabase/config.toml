@@ -1,0 +1,317 @@
+# Supabase Configuration
+# Edge Functions and Cron Job Scheduling for Scout Analytics
+
+[project]
+id = "cxzllzyxwpyptfretryc"
+name = "Scout Analytics"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "scout", "agentdash", "scout_monitoring"]
+extra_search_path = ["public", "extensions"]
+
+[db]
+enabled = true
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[realtime]
+enabled = true
+port = 54323
+
+[studio]
+enabled = true
+port = 54324
+
+[edge_runtime]
+enabled = true
+port = 54325
+inspector_port = 54326
+
+[auth]
+enabled = true
+port = 54327
+
+[storage]
+enabled = true
+port = 54328
+
+# ============================================================================
+# EDGE FUNCTIONS CONFIGURATION
+# Scheduled functions for automated agent and data processing
+# ============================================================================
+
+# Daily SKU and brand metadata scraper
+[functions.isko-sku-scraper]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run daily at 5:00 AM UTC
+schedule = "0 5 * * *"
+
+# Hourly deep research data ingestion
+[functions.deep-research-landing]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run every hour at minute 0
+schedule = "0 * * * *"
+
+# Agent trace evaluation and metrics collection
+[functions.trace-agent-evaluations]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run every 15 minutes
+schedule = "15 * * * *"
+
+# Weekly benchmark updates from external sources
+[functions.benchmark-updater]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run weekly on Monday at 2:00 AM UTC
+schedule = "0 2 * * 1"
+
+# ETL brand data processing
+[functions.etl-ingest-brand-data]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run every 30 minutes
+schedule = "*/30 * * * *"
+
+# Knowledge graph vector sync
+[functions.knowledge-graph-sync]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run every 4 hours
+schedule = "0 */4 * * *"
+
+# Agent performance aggregation
+[functions.agent-performance-aggregator]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run hourly at minute 5
+schedule = "5 * * * *"
+
+# Deep benchmark analysis
+[functions.deep-benchmark-analyzer]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run daily at 3:00 AM UTC
+schedule = "0 3 * * *"
+
+# Data quality monitoring
+[functions.data-quality-monitor]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run every 2 hours
+schedule = "0 */2 * * *"
+
+# System health checker
+[functions.system-health-check]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+# Run every 10 minutes
+schedule = "*/10 * * * *"
+
+# ============================================================================
+# EXISTING FUNCTIONS (from scout platform)
+# ============================================================================
+
+[functions.genie-query]
+verify_jwt = true
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.ingest-transaction]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.ingest-doc]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.embed-batch]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.dataset-proxy]
+verify_jwt = true
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.export-parquet]
+verify_jwt = true
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.usage-analytics]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.superset-jwt-proxy]
+verify_jwt = true
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.dataset-versioning]
+verify_jwt = true
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.cross-region-replication]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.dataset-subscriptions]
+verify_jwt = true
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.ingest-bronze]
+verify_jwt = false
+import_map = "./supabase/functions/_shared/import_map.json"
+
+[functions.export-platinum]
+verify_jwt = true
+import_map = "./supabase/functions/_shared/import_map.json"
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+
+[env]
+# Supabase
+SUPABASE_URL = "https://cxzllzyxwpyptfretryc.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY = "env(SUPABASE_SERVICE_ROLE_KEY)"
+SUPABASE_ANON_KEY = "env(SUPABASE_ANON_KEY)"
+
+# Agent Configuration
+AGENT_TRACE_ENABLED = "true"
+AGENT_PERFORMANCE_THRESHOLD = "70"
+AGENT_ERROR_THRESHOLD = "5"
+
+# Knowledge Graph
+KG_VECTOR_DIMENSIONS = "1536"
+KG_SIMILARITY_THRESHOLD = "0.8"
+
+# Benchmark Sources
+WARC_API_KEY = "env(WARC_API_KEY)"
+CANNES_API_KEY = "env(CANNES_API_KEY)"
+BENCHMARK_UPDATE_INTERVAL = "weekly"
+
+# Monitoring
+ALERT_WEBHOOK_URL = "env(ALERT_WEBHOOK_URL)"
+MONITORING_ENABLED = "true"
+LOG_LEVEL = "info"
+
+# Deep Research
+DEEP_RESEARCH_ENABLED = "true"
+SKU_SCRAPER_ENABLED = "true"
+BRAND_DATA_SOURCE = "multiple"
+
+# Performance
+FUNCTION_TIMEOUT_MS = "300000"
+BATCH_SIZE = "100"
+MAX_RETRIES = "3"
+
+# ============================================================================
+# STORAGE CONFIGURATION
+# ============================================================================
+
+[storage]
+file_size_limit = "50MB"
+file_types = ["image/png", "image/jpeg", "image/gif", "image/webp", "application/json", "text/csv", "application/pdf"]
+
+[storage.buckets.agent-artifacts]
+public = false
+file_size_limit = "10MB"
+allowed_mime_types = ["application/json", "text/csv", "image/png"]
+
+[storage.buckets.benchmark-data]
+public = false
+file_size_limit = "100MB"
+allowed_mime_types = ["application/json", "text/csv", "application/pdf"]
+
+[storage.buckets.deep-research]
+public = false
+file_size_limit = "50MB"
+allowed_mime_types = ["application/json", "text/csv", "image/png", "image/jpeg"]
+
+# ============================================================================
+# DATABASE CONFIGURATION
+# ============================================================================
+
+[db.settings]
+# Enable extensions
+extensions = ["vector", "pg_cron", "pg_stat_statements", "pgcrypto", "uuid-ossp", "pg_trgm"]
+
+# Performance tuning
+shared_preload_libraries = ["pg_stat_statements", "pg_cron"]
+max_connections = "200"
+shared_buffers = "256MB"
+effective_cache_size = "1GB"
+work_mem = "4MB"
+maintenance_work_mem = "64MB"
+
+# Monitoring
+log_statement = "all"
+log_duration = true
+log_min_duration_statement = "1000"
+
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+
+[logging]
+level = "info"
+format = "json"
+
+[logging.sources.functions]
+level = "info"
+enabled = true
+
+[logging.sources.db]
+level = "warn"
+enabled = true
+
+[logging.sources.realtime]
+level = "info"
+enabled = true
+
+[logging.sources.storage]
+level = "info"
+enabled = true
+
+# ============================================================================
+# SECURITY CONFIGURATION
+# ============================================================================
+
+[auth.security]
+jwt_secret = "env(JWT_SECRET)"
+jwt_expiry = "3600"
+enable_signup = false
+double_confirm_changes = true
+enable_confirmations = true
+
+# Rate limiting
+rate_limit_requests_per_second = "100"
+rate_limit_burst_capacity = "200"
+
+# CORS configuration
+cors_allowed_origins = ["http://localhost:3000", "https://*.vercel.app", "https://scout-analytics.tbwa.com"]
+
+# ============================================================================
+# COMMENTS AND DOCUMENTATION
+# ============================================================================
+
+# This configuration file sets up:
+# 1. Scheduled edge functions for agent trace collection and evaluation
+# 2. Data ingestion pipelines for brands, SKUs, and benchmarks
+# 3. Knowledge graph synchronization and vector updates
+# 4. Performance monitoring and alerting
+# 5. Deep research data processing
+# 6. Security and rate limiting configuration
+#
+# Cron Schedule Format: "minute hour day_of_month month day_of_week"
+# Examples:
+# - "0 5 * * *" = Daily at 5:00 AM UTC
+# - "15 * * * *" = Every hour at minute 15
+# - "*/30 * * * *" = Every 30 minutes
+# - "0 2 * * 1" = Weekly on Monday at 2:00 AM UTC
+#
+# For production deployment, ensure all environment variables are properly set
+# in your Supabase dashboard under Settings > Environment Variables

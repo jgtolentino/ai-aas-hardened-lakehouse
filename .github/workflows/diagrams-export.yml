@@ -1,0 +1,37 @@
+name: diagrams-export
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/architecture/**'
+      - 'scripts/diagrams/**'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    if: "${{ github.event_name == 'push' }}"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: node --version
+      - run: npm -v
+      - name: Export diagrams from Figma
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+        run: |
+          node scripts/diagrams/figma-export.mjs
+      - name: Commit updated diagrams
+        run: |
+          if [ -n "$(git status --porcelain docs/architecture/diagrams)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/architecture/diagrams
+            git commit -m "chore(diagrams): export from Figma"
+            git push
+          else
+            echo "No diagram changes"
+          fi

@@ -1,0 +1,27 @@
+{
+  "name": "mcp-scout",
+  "version": "1.0.0",
+  "description": "Scout Schema MCP Server with direct Supabase connection",
+  "main": "index.js",
+  "type": "module",
+  "icon": "./assets/icon.svg",
+  "icons": {
+    "light": "./assets/icon.svg",
+    "dark": "./assets/icon-dark.svg"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  },
+  "design": {
+    "figma-url": "https://figma.com/design/scout-mcp-icon",
+    "design-tokens": "./assets/design-tokens.json",
+    "brand-elements": ["supabase", "github", "anthropic"],
+    "award-category": "Best Tech Icon Design 2025"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "dxt_version": 1,
+  "id": "com.scout.analytics.mcp",
+  "name": "Scout Analytics MCP",
+  "version": "1.0.0",
+  "description": "Read-only Postgres access for Scout Analytics (keychain-backed).",
+  "compatibility": {
+    "os": ["darwin"],
+    "arch": ["arm64", "x64"]
+  },
+  "icons": {
+    "default": "icon.png"
+  },
+  "servers": [
+    {
+      "id": "scout-analytics",
+      "type": "mcp",
+      "transport": "stdio",
+      "command": "node",
+      "args": ["index.js"],
+      "env": {}
+    }
+  ],
+  "user_config": [
+    {
+      "key": "KC_SERVICE",
+      "type": "string",
+      "label": "Keychain service name (optional)",
+      "required": false,
+      "default": "ai-aas-hardened-lakehouse.supabase"
+    },
+    {
+      "key": "DATABASE_URL",
+      "type": "secret",
+      "label": "Postgres DATABASE_URL (optional - uses keychain if blank)",
+      "required": false
+    },
+    {
+      "key": "ALLOW_WRITE",
+      "type": "boolean",
+      "label": "Allow Write Operations",
+      "required": false,
+      "default": false
+    }
+  ]
+}

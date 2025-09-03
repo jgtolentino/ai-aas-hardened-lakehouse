@@ -1,0 +1,20 @@
+{
+  "fileKey": "__figma_file_key__",
+  "frames": [
+    "01_System_Context",
+    "02_Containers",
+    "03_Runtime",
+    "04_Dataflow_Online",
+    "05_Dataflow_Batch",
+    "06_Security",
+    "07_Observability",
+    "08_Topologies",
+    "09_DR",
+    "10_Landing_Zone_Guardrails",
+    "11_Integration_Runtimes",
+    "12_Promotion_and_Exfil_Controls",
+    "13_Lakehouse_S3"
+  ],
+  "formats": ["png","svg"],
+  "outDir": "docs/architecture/diagrams"
+}

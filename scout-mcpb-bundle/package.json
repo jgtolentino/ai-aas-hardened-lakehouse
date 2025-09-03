@@ -1,0 +1,27 @@
+{
+  "name": "scout-analytics-mcp",
+  "version": "1.0.0",
+  "description": "Scout Analytics MCP Server for Claude Desktop",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "pg": "^8.11.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "TBWA Scout Analytics Team",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "claude",
+    "analytics",
+    "database",
+    "supabase",
+    "sql"
+  ]
+}

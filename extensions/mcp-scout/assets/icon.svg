@@ -1,0 +1,133 @@
+<!-- Scout MCP Icon - Award-winning cat design combining Supabase, GitHub, and Anthropic elements -->
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Supabase Gradient -->
+    <linearGradient id="supabaseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3ECF8E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1F9F5C;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Anthropic Orange Accent -->
+    <linearGradient id="anthropicAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#DC6B3C;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF7F4A;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Subtle glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Drop shadow -->
+    <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(62, 207, 142, 0.3)"/>
+    </filter>
+  </defs>
+  
+  <!-- Main cat body with Supabase gradient -->
+  <path d="M256 64
+           C200 64 156 108 156 164
+           C156 180 158 195 162 210
+           L140 230
+           C130 240 130 256 140 266
+           L162 288
+           C180 340 216 380 256 380
+           C296 380 332 340 350 288
+           L372 266
+           C382 256 382 240 372 230
+           L350 210
+           C354 195 356 180 356 164
+           C356 108 312 64 256 64 Z" 
+           fill="url(#supabaseGradient)" 
+           filter="url(#dropshadow)"/>
+  
+  <!-- GitHub-inspired ear tentacles -->
+  <g opacity="0.9">
+    <!-- Left ear/tentacle -->
+    <path d="M180 100
+             C170 90 160 85 150 88
+             C140 92 138 105 148 115
+             L168 135
+             C175 142 185 140 190 132
+             Z" 
+             fill="url(#supabaseGradient)" 
+             opacity="0.8"/>
+    
+    <!-- Right ear/tentacle -->
+    <path d="M332 100
+             C342 90 352 85 362 88
+             C372 92 374 105 364 115
+             L344 135
+             C337 142 327 140 322 132
+             Z" 
+             fill="url(#supabaseGradient)" 
+             opacity="0.8"/>
+  </g>
+  
+  <!-- Eyes with geometric Anthropic influence -->
+  <g>
+    <!-- Left eye -->
+    <ellipse cx="220" cy="200" rx="24" ry="28" fill="#24292E"/>
+    <ellipse cx="220" cy="200" rx="16" ry="20" fill="#FFFFFF"/>
+    <circle cx="225" cy="195" r="8" fill="#24292E"/>
+    <circle cx="228" cy="192" r="3" fill="#FFFFFF"/>
+    
+    <!-- Right eye -->
+    <ellipse cx="292" cy="200" rx="24" ry="28" fill="#24292E"/>
+    <ellipse cx="292" cy="200" rx="16" ry="20" fill="#FFFFFF"/>
+    <circle cx="287" cy="195" r="8" fill="#24292E"/>
+    <circle cx="284" cy="192" r="3" fill="#FFFFFF"/>
+  </g>
+  
+  <!-- Anthropic nose with orange accent -->
+  <ellipse cx="256" cy="240" rx="12" ry="8" fill="url(#anthropicAccent)"/>
+  <ellipse cx="256" cy="238" rx="8" ry="5" fill="#FF7F4A"/>
+  
+  <!-- Code bracket whiskers (GitHub developer touch) -->
+  <g stroke="#24292E" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.7">
+    <!-- Left whiskers -->
+    <path d="M180 220 L160 215"/>
+    <path d="M180 235 L150 235"/>
+    <path d="M180 250 L160 255"/>
+    
+    <!-- Right whiskers -->
+    <path d="M332 220 L352 215"/>
+    <path d="M332 235 L362 235"/>
+    <path d="M332 250 L352 255"/>
+  </g>
+  
+  <!-- Mouth with subtle smile -->
+  <path d="M240 270 Q256 285 272 270" 
+        stroke="#24292E" 
+        stroke-width="3" 
+        stroke-linecap="round" 
+        fill="none"/>
+  
+  <!-- GitHub-style body pattern (subtle) -->
+  <g opacity="0.1">
+    <circle cx="200" cy="300" r="8" fill="#24292E"/>
+    <circle cx="230" cy="320" r="6" fill="#24292E"/>
+    <circle cx="282" cy="320" r="6" fill="#24292E"/>
+    <circle cx="312" cy="300" r="8" fill="#24292E"/>
+  </g>
+  
+  <!-- Anthropic geometric accent on chest -->
+  <g opacity="0.8">
+    <polygon points="256,280 266,300 246,300" fill="url(#anthropicAccent)"/>
+    <circle cx="256" cy="295" r="4" fill="#FF7F4A"/>
+  </g>
+  
+  <!-- Tail with tentacle influence -->
+  <path d="M356 300
+           C380 310 400 330 410 360
+           C415 380 405 400 385 395
+           C370 390 360 370 365 350
+           C368 340 370 330 365 320
+           Z" 
+           fill="url(#supabaseGradient)" 
+           opacity="0.9"/>
+</svg>

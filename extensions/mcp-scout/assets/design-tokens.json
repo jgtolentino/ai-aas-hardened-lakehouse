@@ -1,0 +1,53 @@
+{
+  "scout-mcp-icon": {
+    "colors": {
+      "supabase": {
+        "primary": "#3ECF8E",
+        "secondary": "#1F9F5C",
+        "gradient": "linear-gradient(135deg, #3ECF8E 0%, #1F9F5C 100%)"
+      },
+      "github": {
+        "primary": "#24292E",
+        "secondary": "#586069",
+        "octocat": "#F6F8FA"
+      },
+      "anthropic": {
+        "primary": "#DC6B3C",
+        "secondary": "#FF7F4A",
+        "claude": "#FF6B35"
+      },
+      "neutral": {
+        "white": "#FFFFFF",
+        "black": "#000000",
+        "gray-50": "#F9FAFB",
+        "gray-900": "#111827"
+      }
+    },
+    "gradients": {
+      "primary": "linear-gradient(135deg, #3ECF8E 0%, #1F9F5C 100%)",
+      "accent": "linear-gradient(45deg, #DC6B3C 0%, #FF7F4A 100%)",
+      "github-subtle": "linear-gradient(180deg, #F6F8FA 0%, #FFFFFF 100%)"
+    },
+    "shadows": {
+      "soft": "0 4px 8px rgba(0, 0, 0, 0.1)",
+      "medium": "0 8px 16px rgba(0, 0, 0, 0.15)",
+      "brand": "0 4px 12px rgba(62, 207, 142, 0.3)"
+    },
+    "sizes": {
+      "icon-xs": "16px",
+      "icon-sm": "24px",
+      "icon-md": "32px", 
+      "icon-lg": "64px",
+      "icon-xl": "128px",
+      "icon-2xl": "256px",
+      "icon-3xl": "512px"
+    },
+    "meta": {
+      "name": "Scout MCP Icon",
+      "description": "Multi-brand cat icon combining Supabase, GitHub, and Anthropic design elements",
+      "version": "1.0.0",
+      "created": "2025-09-03",
+      "figma-url": "https://figma.com/design/scout-mcp-icon"
+    }
+  }
+}

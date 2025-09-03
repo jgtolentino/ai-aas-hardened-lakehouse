@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source:*)",
+      "Bash(echo:*)",
+      "Bash(brew install:*)",
+      "Bash(op signin:*)",
+      "Bash(sudo mkdir:*)",
+      "Bash(sudo chown:*)",
+      "Bash(security add-generic-password:*)",
+      "Bash(chmod:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "/Users/tbwa/.config",
+      "/Users/tbwa/Library"
+    ]
+  }
+}

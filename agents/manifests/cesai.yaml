@@ -1,0 +1,268 @@
+# ============================================================================
+# CESAI (Creative Effectiveness AI) Agent Manifest
+# Specialized in creative analysis, benchmark evaluation, and trend detection
+# ============================================================================
+
+agent:
+  id: "CESAI"
+  name: "Creative Effectiveness AI"
+  version: "2.1.0"
+  description: "Advanced AI agent specializing in creative effectiveness analysis, competitive benchmarking, and advertising trend detection across global campaigns"
+  
+  # Agent Classification
+  type: "creative_analyzer"
+  category: "intelligence"
+  tier: "premium"
+  
+  # Operational Configuration
+  status: "active"
+  deployment_environment: "production"
+  resource_requirements:
+    memory_mb: 2048
+    cpu_cores: 2
+    gpu_required: false
+    storage_mb: 1024
+  
+  # Performance Specifications
+  performance:
+    expected_response_time_ms: 3000
+    throughput_per_minute: 15
+    accuracy_target: 92.0
+    reliability_target: 95.0
+  
+  # Security and Access
+  security:
+    authentication_required: true
+    authorization_level: "analyst"
+    data_classification: "confidential"
+    pii_handling: "none"
+    encryption_required: true
+
+# ============================================================================
+# CORE CAPABILITIES AND SPECIALIZATIONS
+# ============================================================================
+
+capabilities:
+  primary:
+    - creative_effectiveness_scoring
+    - benchmark_competitive_analysis
+    - advertising_trend_detection
+    - campaign_performance_prediction
+    - creative_element_decomposition
+  
+  secondary:
+    - brand_positioning_analysis
+    - audience_sentiment_evaluation
+    - cross_platform_optimization
+    - creative_testing_recommendations
+    - roi_prediction_modeling
+  
+  specialized_domains:
+    - fmcg_creative_analysis
+    - digital_advertising_optimization
+    - traditional_media_effectiveness
+    - cross_cultural_campaign_adaptation
+    - premium_brand_storytelling
+
+# Knowledge Sources and Data Integration
+knowledge_sources:
+  primary_databases:
+    - warc_effectiveness_awards
+    - cannes_lions_archive
+    - d_ad_global_winners
+    - effie_awards_database
+    - thinkbox_effectiveness_studies
+  
+  real_time_feeds:
+    - google_trends_creative
+    - social_media_creative_sentiment
+    - competitor_campaign_launches
+    - industry_creative_benchmarks
+    - platform_algorithm_updates
+  
+  proprietary_datasets:
+    - tbwa_campaign_performance_history
+    - client_brand_creative_dna
+    - regional_cultural_insights
+    - category_effectiveness_patterns
+
+# ============================================================================
+# EVALUATION AND SCORING WEIGHTS
+# ============================================================================
+
+evaluation_weights:
+  # Performance dimensions with CESAI-specific multipliers
+  accuracy: 1.2        # Enhanced for creative analysis precision
+  reliability: 1.1     # Elevated for consistent benchmark quality
+  efficiency: 1.0      # Standard weight for processing speed
+  task_completion: 1.0 # Standard weight for workflow adherence
+  
+  # Specialized performance metrics
+  creative_insight_depth: 1.3
+  benchmark_data_freshness: 1.2
+  trend_prediction_accuracy: 1.4
+  competitive_analysis_comprehensiveness: 1.1
+
+# Quality Assurance Parameters
+quality_metrics:
+  output_validation:
+    - creative_score_consistency_check
+    - benchmark_data_correlation_verification
+    - trend_confidence_interval_calculation
+    - competitive_gap_analysis_accuracy
+  
+  error_detection:
+    - anomaly_detection_in_scoring
+    - data_source_reliability_monitoring
+    - bias_detection_in_recommendations
+    - temporal_consistency_validation
+
+# ============================================================================
+# INTEGRATION AND WORKFLOW SPECIFICATIONS
+# ============================================================================
+
+integrations:
+  upstream_agents:
+    - echo_data_extraction
+    - scout_data_pipeline
+    - benchmark_data_ingestion
+  
+  downstream_consumers:
+    - claudia_orchestration
+    - insight_template_runner
+    - dashboard_visualization_engine
+    - client_reporting_system
+  
+  external_apis:
+    - warc_effectiveness_api
+    - google_trends_api
+    - social_listening_platforms
+    - creative_testing_tools
+
+# Workflow Integration Points
+workflow_triggers:
+  scheduled:
+    - daily_benchmark_update: "0 6 * * *"    # 6 AM UTC daily
+    - weekly_trend_analysis: "0 2 * * 1"     # Monday 2 AM UTC
+    - monthly_competitive_deep_dive: "0 1 1 * *" # 1st of month 1 AM UTC
+  
+  event_driven:
+    - new_campaign_launch_detected
+    - competitor_creative_update
+    - benchmark_database_refresh
+    - client_brief_submission
+
+# Output Specifications
+output_formats:
+  primary:
+    - creative_effectiveness_score_json
+    - competitive_analysis_report_pdf
+    - trend_insights_dashboard_data
+    - benchmark_comparison_charts
+  
+  specialized:
+    - creative_element_heatmaps
+    - audience_sentiment_matrices
+    - roi_prediction_models
+    - optimization_recommendations
+
+# ============================================================================
+# MONITORING AND OBSERVABILITY
+# ============================================================================
+
+monitoring:
+  trace_collection: true
+  metrics_reporting: true
+  alert_thresholds:
+    response_time_ms: 5000
+    error_rate_percent: 2.0
+    accuracy_drop_percent: 5.0
+    data_freshness_hours: 24
+  
+  health_checks:
+    - benchmark_database_connectivity
+    - creative_scoring_model_availability  
+    - trend_analysis_engine_responsiveness
+    - competitive_data_source_reliability
+
+# Performance Baselines
+baselines:
+  creative_scoring_accuracy: 91.5
+  benchmark_analysis_completeness: 94.2
+  trend_prediction_reliability: 87.8
+  competitive_insight_depth: 89.1
+
+# ============================================================================
+# DEPLOYMENT AND MAINTENANCE
+# ============================================================================
+
+deployment:
+  container_image: "scout-analytics/cesai:2.1.0"
+  environment_variables:
+    - WARC_API_KEY
+    - CANNES_LIONS_ACCESS_TOKEN
+    - GOOGLE_TRENDS_API_KEY
+    - CREATIVE_SCORING_MODEL_PATH
+    - BENCHMARK_DATABASE_URL
+  
+  secrets:
+    - cesai_api_credentials
+    - benchmark_database_password
+    - external_api_tokens
+
+maintenance:
+  update_frequency: "monthly"
+  model_retraining_schedule: "quarterly"
+  benchmark_data_refresh: "weekly"
+  performance_review_cycle: "bi_weekly"
+  
+  backup_requirements:
+    - creative_scoring_models
+    - historical_analysis_results
+    - benchmark_correlation_matrices
+    - trend_prediction_weights
+
+# ============================================================================
+# CONFIGURATION TEMPLATES AND EXAMPLES
+# ============================================================================
+
+configuration_examples:
+  creative_analysis_request:
+    input:
+      campaign_assets: ["video_url", "display_creatives", "copy_variants"]
+      brand_context: "premium_fmcg"
+      target_audience: "millennials_apac"
+      competitive_set: ["p&g", "unilever", "colgate"]
+    
+    expected_output:
+      effectiveness_score: 8.7
+      benchmark_position: "top_decile"
+      optimization_recommendations: ["emotional_appeal_strengthening", "mobile_optimization"]
+      competitive_advantages: ["unique_visual_storytelling", "strong_brand_integration"]
+
+  trend_analysis_request:
+    input:
+      category: "personal_care"
+      region: "north_america"
+      time_horizon: "next_6_months"
+      confidence_threshold: 0.8
+    
+    expected_output:
+      emerging_trends: ["sustainability_messaging", "inclusive_representation"]
+      declining_patterns: ["celebrity_endorsement_reliance"]
+      opportunity_areas: ["ai_personalization", "community_driven_content"]
+
+# Agent Metadata
+metadata:
+  created_by: "TBWA Scout Analytics Team"
+  created_date: "2024-12-15"
+  last_updated: "2025-01-20"
+  documentation_url: "https://docs.scout-analytics.tbwa.com/agents/cesai"
+  support_contact: "scout-support@tbwa.com"
+  
+  tags:
+    - creative_intelligence
+    - competitive_analysis
+    - effectiveness_measurement
+    - trend_prediction
+    - premium_analytics

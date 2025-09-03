@@ -1,0 +1,139 @@
+name: "Supabase Inventory Audit & Drift Detection"
+
+on:
+  push:
+    paths:
+      - 'supabase/**'
+      - '.inventory/**'
+      - 'scripts/inventory/**'
+      - 'modules/*/supabase/**'
+  schedule:
+    - cron: '0 8 * * 1'  # Weekly on Mondays at 8 AM UTC
+  workflow_dispatch: {}
+
+env:
+  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+jobs:
+  inventory-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install -g @supabase/cli
+          sudo apt-get update
+          sudo apt-get install -y jq postgresql-client
+
+      - name: Setup database connection
+        run: |
+          # Create DATABASE_URL from secrets for psql access
+          echo "DATABASE_URL=postgresql://postgres.${SUPABASE_PROJECT_REF}:${SUPABASE_DB_PASSWORD}@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres" >> $GITHUB_ENV
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - name: Run inventory collection
+        run: |
+          export KC_SERVICE="ai-aas-hardened-lakehouse.supabase"
+          # In CI, we use secrets directly instead of keychain
+          export ROOT="${{ github.workspace }}"
+          ./scripts/inventory/inventory.sh
+        
+      - name: Run drift validation
+        run: |
+          ./scripts/inventory/validate-drift.sh
+
+      - name: Upload inventory artifacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: supabase-inventory
+          path: |
+            out/supabase_inventory.json
+            docs/INVENTORY_AUTO.md
+          retention-days: 30
+
+      - name: Check for drift violations
+        if: failure()
+        run: |
+          echo "::error::Supabase inventory drift detected!"
+          echo "::error::Review the validation output and either:"
+          echo "::error::1. Fix the actual system state, or"
+          echo "::error::2. Update expectations in .inventory/EXPECTATIONS.json"
+          echo ""
+          echo "Current inventory summary:"
+          if [ -f "out/supabase_inventory.json" ]; then
+            jq -r '
+              "Edge Functions: " + (.edge_functions | length | tostring) +
+              " | Migrations: " + (.migrations.main | length | tostring) +
+              " | Tables: " + (.db.table_counts | map(select(.schema=="scout")) | .[0].tables | tostring // "0") +
+              " | Policies: " + (.db.policies | length | tostring)
+            ' out/supabase_inventory.json
+          fi
+
+      - name: Comment on PR (if applicable)
+        uses: actions/github-script@v6
+        if: github.event_name == 'push' && github.event.pull_request
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('docs/INVENTORY_AUTO.md')) {
+              const inventory = fs.readFileSync('docs/INVENTORY_AUTO.md', 'utf8');
+              const summary = inventory.split('\n').slice(0, 20).join('\n');
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 📊 Supabase Inventory Update
+                
+${summary}
+
+[View full inventory](${context.payload.pull_request.html_url}/files#diff-inventory)
+                `
+              });
+            }
+
+  security-check:
+    runs-on: ubuntu-latest
+    needs: inventory-audit
+    if: always() && needs.inventory-audit.result == 'success'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download inventory
+        uses: actions/download-artifact@v3
+        with:
+          name: supabase-inventory
+
+      - name: Security validation
+        run: |
+          echo "🔐 Running security checks on inventory..."
+          
+          # Check for exposed sensitive data
+          if jq -e '.edge_functions[] | select(.name | contains("debug") or contains("test"))' out/supabase_inventory.json >/dev/null; then
+            echo "::warning::Debug/test edge functions found in production inventory"
+          fi
+          
+          # Verify RLS policies exist for sensitive tables
+          policy_count=$(jq '.db.policies | length' out/supabase_inventory.json)
+          if (( policy_count < 5 )); then
+            echo "::warning::Low RLS policy count ($policy_count) - verify security coverage"
+          fi
+          
+          echo "✅ Security validation complete"

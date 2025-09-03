@@ -1,0 +1,107 @@
+{
+  "scout-mcp-icon-components": {
+    "meta": {
+      "version": "1.0.0",
+      "created": "2025-09-03",
+      "figma-url": "https://figma.com/design/scout-mcp-icon",
+      "designer": "AI Assistant + Figma Workflow"
+    },
+    "components": {
+      "base-cat": {
+        "name": "Base Cat Shape",
+        "description": "Main body using Supabase gradient",
+        "fill": "supabaseGradient",
+        "constraints": "center, scale proportionally",
+        "variants": ["light", "dark"]
+      },
+      "tentacle-ears": {
+        "name": "GitHub Tentacle Ears", 
+        "description": "Octocat-inspired ear shapes",
+        "fill": "supabaseGradient",
+        "opacity": 0.8,
+        "github-influence": "tentacle shape language"
+      },
+      "geometric-eyes": {
+        "name": "Database Eyes",
+        "description": "Eyes with data-inspired pupils",
+        "fills": ["#24292E", "#FFFFFF", "supabaseGradient"],
+        "anthropic-influence": "geometric precision"
+      },
+      "bracket-whiskers": {
+        "name": "Code Bracket Whiskers",
+        "description": "Whiskers shaped like code brackets {}",
+        "stroke": "#24292E",
+        "stroke-width": 4,
+        "github-influence": "developer aesthetic"
+      },
+      "anthropic-nose": {
+        "name": "Orange Accent Nose",
+        "description": "Nose with Anthropic brand colors",
+        "fill": "anthropicAccent",
+        "brand-weight": "15%"
+      },
+      "data-tail": {
+        "name": "GitHub-style Tail",
+        "description": "Tail with subtle tentacle influence",
+        "fill": "supabaseGradient",
+        "opacity": 0.9,
+        "shape": "curved, organic"
+      }
+    },
+    "variants": {
+      "light-mode": {
+        "background": "transparent",
+        "primary-gradient": "#3ECF8E → #1F9F5C",
+        "accent-color": "#DC6B3C",
+        "contrast-elements": "#24292E",
+        "shadows": "rgba(62, 207, 142, 0.3)"
+      },
+      "dark-mode": {
+        "background": "transparent", 
+        "primary-gradient": "#4FE19E → #2FAF6C",
+        "accent-color": "#FF7F4A",
+        "contrast-elements": "#F6F8FA",
+        "shadows": "rgba(79, 225, 158, 0.4)",
+        "glow": "enhanced for dark backgrounds"
+      },
+      "monochrome": {
+        "background": "transparent",
+        "fill": "#24292E",
+        "accent": "none",
+        "use-case": "print, single-color applications"
+      }
+    },
+    "export-settings": {
+      "svg": {
+        "optimize": true,
+        "include-xmlns": true,
+        "decimal-places": 2,
+        "minify": true
+      },
+      "png": {
+        "scales": [1, 2, 3],
+        "sizes": [16, 24, 32, 64, 128, 256, 512],
+        "format": "PNG-24",
+        "background": "transparent"
+      }
+    },
+    "design-principles": {
+      "brand-balance": {
+        "supabase": "60% - primary visual weight",
+        "github": "25% - shape language and developer touches", 
+        "anthropic": "15% - accent colors and geometric elements"
+      },
+      "scalability": {
+        "minimum-size": "16px",
+        "optimal-sizes": ["32px", "64px", "128px"],
+        "maximum-size": "512px",
+        "clarity": "maintains detail at all scales"
+      },
+      "accessibility": {
+        "contrast-ratio": "4.5:1 minimum",
+        "color-blind-friendly": "true",
+        "alternative-text": "Scout MCP Extension Icon"
+      }
+    }
+  }
+}

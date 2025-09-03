@@ -1,0 +1,25 @@
+{
+  "edge_functions_expected": 13,
+  "migrations_min": 25,
+  "schemas_expected": ["scout", "public", "auth", "storage"],
+  "table_count_scout_min": 10,
+  "medallion_bronze_min": 1,
+  "medallion_silver_min": 3,
+  "medallion_gold_min": 2,
+  "medallion_platinum_min": 1,
+  "policies_scout_min": 5,
+  "generated_at": "2025-09-03",
+  "tolerance": {
+    "edge_functions_max_deviation": 5,
+    "migrations_max_deviation": 10,
+    "table_count_max_deviation_percent": 20,
+    "medallion_max_deviation": 3,
+    "policies_max_deviation": 10
+  },
+  "notes": {
+    "edge_functions": "Expected count based on main + modules, tolerance for development",
+    "migrations": "Minimum migration count, allows growth",
+    "medallion": "Bronze->Silver->Gold->Platinum pipeline counts",
+    "policies": "Scout schema RLS policy count"
+  }
+}
