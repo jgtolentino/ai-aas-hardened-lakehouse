@@ -1,0 +1,6 @@
+{
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://cxzllzyxwpyptfretryc.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4emxsenl4d3B5cHRmcmV0cnljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjM2NDczNjQsImV4cCI6MjAzOTIyMzM2NH0.gTJXGSJhgTqsUrwgW2UO5U_YQ4nxQz6XGBKXHG3oRFk"
+  }
+}
