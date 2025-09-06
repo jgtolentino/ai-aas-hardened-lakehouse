@@ -1,0 +1,22 @@
+date,product_category,sales_amount,region,customer_segment,units_sold
+2024-01-01,Electronics,15000,North America,Enterprise,150
+2024-01-01,Software,25000,Europe,SMB,45
+2024-01-01,Services,8000,Asia Pacific,Enterprise,12
+2024-01-02,Electronics,18000,Europe,SMB,180
+2024-01-02,Software,32000,North America,Enterprise,65
+2024-01-02,Services,12000,Asia Pacific,SMB,18
+2024-01-03,Electronics,22000,Asia Pacific,Enterprise,220
+2024-01-03,Software,28000,Europe,SMB,55
+2024-01-03,Services,15000,North America,Enterprise,22
+2024-01-04,Electronics,16000,North America,SMB,160
+2024-01-04,Software,35000,Europe,Enterprise,70
+2024-01-04,Services,9500,Asia Pacific,SMB,14
+2024-01-05,Electronics,24000,Europe,Enterprise,240
+2024-01-05,Software,29000,North America,SMB,60
+2024-01-05,Services,11000,Asia Pacific,Enterprise,16
+2024-01-06,Electronics,19000,Asia Pacific,SMB,190
+2024-01-06,Software,31000,Europe,Enterprise,62
+2024-01-06,Services,13500,North America,SMB,20
+2024-01-07,Electronics,21000,North America,Enterprise,210
+2024-01-07,Software,27000,Asia Pacific,SMB,52
+2024-01-07,Services,14000,Europe,Enterprise,21
